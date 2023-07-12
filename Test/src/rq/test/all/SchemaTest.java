@@ -63,18 +63,26 @@ class SchemaTest {
 	@Test
 	void testAttributeIndex() {
 		assertEquals(Optional.of(0), this.s1.attributeIndex(new Attribute("A", Integer.class)));
+		assertEquals(Optional.of(1), this.s1.attributeIndex("B"));
+		assertTrue(this.s1.attributeIndex(new Attribute("A", String.class)).isEmpty());
+		assertTrue(this.s1.attributeIndex("C").isEmpty());
 	}
 
 	@Test
 	void testToString() {
-		assertEquals("A(java.lang.Integer)B(java.lang.String)", this.s1.toString());
+		assertEquals("A(java.lang.Integer), B(java.lang.String)", this.s1.toString());
 	}
 
 	@Test
-	void testEqualsObject() {
+	void testEqualsObject() throws DuplicateAttributeNameException {
 		assertEquals(this.s1, this.s1);
 		assertNotEquals(this.s1, this.s2);
 		assertNotEquals(this.s1, this.s3);
+		
+		//This is problem:
+		assertEquals(
+				Schema.factory(new Attribute("A", Integer.class), new Attribute("B", Integer.class)),
+				Schema.factory(new Attribute("B", Integer.class), new Attribute("A", Integer.class)));
 	}
 
 }

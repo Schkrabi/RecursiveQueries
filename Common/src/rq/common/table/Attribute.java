@@ -5,7 +5,7 @@ package rq.common.table;
  * @author Mgr. R.Skrabal
  *
  */
-public class Attribute {
+public class Attribute implements Comparable<Attribute>{
 	public final String name;
 	public final Class<?> domain;
 	
@@ -49,5 +49,14 @@ public class Attribute {
 				.append(this.domain.toString())
 				.toString()
 				.hashCode();
+	}
+
+	@Override
+	public int compareTo(Attribute o) {
+		int cmp = this.name.compareTo(o.name);
+		if(cmp != 0) {
+			return cmp;
+		}
+		return this.domain.getName().compareTo(o.domain.getName());
 	}
 }
