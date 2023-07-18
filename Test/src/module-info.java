@@ -6,6 +6,8 @@
  *
  */
 module rq.test {
+	requires com.opencsv;
 	requires org.junit.jupiter.api;
-	requires rq.common;
+	requires transitive rq.common;
+	requires transitive rq.files;
 }
