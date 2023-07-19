@@ -172,7 +172,7 @@ public class Record {
 			return false;
 		}
 		Record r = (Record) other;
-		if (!this.schema.equals(r.schema) || !this.rank.equals(r.rank) || this.values.length != r.values.length) {
+		if (!this.schema.equals(r.schema) || !this.rank.equals(r.rank)) {
 			return false;
 		}
 
@@ -190,5 +190,24 @@ public class Record {
 		return new StringBuilder().append(this.schema)
 				.append(Arrays.stream(this.values).map(x -> x.toString()).reduce((x, y) -> x + y)).append(this.rank)
 				.toString().hashCode();
+	}
+	
+	/**
+	 * Returns true if other record is equal to this, excluding rank. Returns false otherwise.
+	 * @param other
+	 * @return true or false
+	 */
+	public boolean equalsNoRank(Record other) {
+		if (!this.schema.equals(other.schema)) {
+			return false;
+		}
+		//If schemas are equal, the value arrays must also be equal
+		for (int i = 0; i < this.values.length; i++) {
+			if (!this.values[i].equals(other.values[i])) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

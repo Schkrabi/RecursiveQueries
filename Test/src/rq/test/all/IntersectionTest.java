@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.SchemaNotEqualException;
+import rq.common.latices.Lukasiewitz;
 import rq.common.operators.Intersection;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
@@ -30,9 +31,9 @@ class IntersectionTest {
 	
 	Schema schema;
 	Attribute a, b;
-	Record r1, r2, r3;
-	Table t1, t2;
-	Intersection i1;
+	Record r1, r2, r3, r4;
+	Table t1, t2, t3;
+	Intersection i1, i2;
 
 	/**
 	 * @throws java.lang.Exception
@@ -74,6 +75,12 @@ class IntersectionTest {
 						new Record.AttributeValuePair(a, 3), 
 						new Record.AttributeValuePair(b,"foo")), 
 				0.8d);
+		r4 = Record.factory(
+				schema, 
+				Arrays.asList(
+						new Record.AttributeValuePair(a, 1),
+						new Record.AttributeValuePair(b, "foo")), 
+				0.7d);
 		
 		t1 = new Table(this.schema);
 		t1.insert(r1);
@@ -83,7 +90,12 @@ class IntersectionTest {
 		t2.insert(r1);
 		t2.insert(r3);
 		
-		i1 = Intersection.factory(t1, t2);
+		t3 = new Table(this.schema);
+		t3.insert(r3);
+		t3.insert(r4);
+		
+		i1 = Intersection.factory(t1, t2, Lukasiewitz.INFIMUM);
+		i2 = Intersection.factory(t1, t3, Lukasiewitz.INFIMUM);
 	}
 
 	/**
@@ -102,7 +114,8 @@ class IntersectionTest {
 				SchemaNotEqualException.class,
 				() -> Intersection.factory(
 						t1, 
-						new Table(Schema.factory(a)))
+						new Table(Schema.factory(a)),
+						Lukasiewitz.INFIMUM)
 				);
 	}
 
@@ -116,6 +129,10 @@ class IntersectionTest {
 		assertEquals(1, rcrds.size());
 		assertTrue(rcrds.contains(this.r1));
 		
+		rslt = i2.eval();
+		rcrds = rslt.stream().collect(Collectors.toSet());
+		assertEquals(1, rcrds.size());
+		assertTrue(rcrds.contains(this.r4));
 	}
 
 	/**
@@ -124,6 +141,7 @@ class IntersectionTest {
 	@Test
 	void testSchema() {
 		assertEquals(this.schema, i1.schema());
+		assertEquals(this.schema, i2.schema());
 	}
 
 }

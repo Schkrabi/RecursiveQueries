@@ -6,6 +6,7 @@ package rq.test.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -28,8 +29,8 @@ class TableTest {
 	
 	Schema schema;
 	Attribute a, b;
-	Record r1, r2, r3;
-	Table t1, t2, t3;
+	Record r1, r2, r3, r4;
+	Table t1, t2, t3, t4;
 
 	/**
 	 * @throws java.lang.Exception
@@ -72,6 +73,14 @@ class TableTest {
 						new Record.AttributeValuePair(b,"foo")), 
 				0.8d);
 		
+		r4 = Record.factory(
+				schema, 
+				Arrays.asList(
+						new Record.AttributeValuePair(a, 3),
+						new Record.AttributeValuePair(b, "baz")), 
+				1.0f);
+		
+		
 		t1 = new Table(this.schema);
 		t2 = new Table(this.schema);
 		t2.insert(r1);
@@ -80,6 +89,10 @@ class TableTest {
 		
 		t3 = new Table(this.schema);
 		t3.insert(r1);
+		
+		t4 = new Table(this.schema);
+		t4.insert(r1);
+		t4.insert(r2);
 	}
 
 	/**
@@ -187,5 +200,18 @@ class TableTest {
 								1.0d));
 				});
 	}
+	
+	@Test
+	void testContainsNoRank() {
+		assertTrue(this.t4.containsNoRank(this.r1));;
+		assertFalse(this.t4.containsNoRank(this.r4));
+		assertTrue(this.t4.containsNoRank(this.r3));
+	}
 
+	@Test
+	void testFindNoRank() {
+		assertEquals(Optional.of(this.r1), this.t4.findNoRank(r1));
+		assertTrue(this.t4.findNoRank(this.r4).isEmpty());
+		assertEquals(Optional.of(this.r1), this.t4.findNoRank(this.r3));
+	}
 }

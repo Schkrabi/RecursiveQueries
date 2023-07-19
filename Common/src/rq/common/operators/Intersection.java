@@ -3,22 +3,31 @@
  */
 package rq.common.operators;
 
+import java.util.Optional;
+import java.util.function.BiFunction;
+
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.Table;
 import rq.common.table.TabularExpression;
 
 /**
- * @author r.skrabal
+ * @author Mgr. R.Skrabal
  *
  */
 public class Intersection implements TabularExpression {
 	private final TabularExpression argument1, argument2;
+	private final BiFunction<Double, Double, Double> infimum;
 	
-	private Intersection(TabularExpression argument1, TabularExpression argument2) {
+	private Intersection(
+			TabularExpression argument1, 
+			TabularExpression argument2,
+			BiFunction<Double, Double, Double> infimum) {
 		this.argument1 = argument1;
 		this.argument2 = argument2;
+		this.infimum = infimum;
 	}
 	
 	/**
@@ -28,14 +37,20 @@ public class Intersection implements TabularExpression {
 	 * @return Intersection instance
 	 * @throws SchemaNotEqualException
 	 */
-	public static Intersection factory(TabularExpression argument1, TabularExpression argument2)
+	public static Intersection factory(
+			TabularExpression argument1, 
+			TabularExpression argument2,
+			BiFunction<Double, Double, Double> infimum)
 		throws SchemaNotEqualException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema(); 
 		if(!schema1.equals(schema2)) {
 			throw new SchemaNotEqualException(schema1, schema2);
 		}
-		return new Intersection(argument1, argument2);
+		return new Intersection(argument1, argument2, infimum);
+	}
+	
+	private record RecordPair(rq.common.table.Record r1, rq.common.table.Record r2) {
 	}
 
 	@Override
@@ -43,10 +58,19 @@ public class Intersection implements TabularExpression {
 		Table table = new Table(this.schema());
 		Table table2 = this.argument2.eval();
 		this.argument1.eval().stream()
-			.filter(r -> table2.contains(r))
-			.forEach(r -> {
+			.map(r -> {
+				Optional<rq.common.table.Record> o = table2.findNoRank(r);
+				if(o.isEmpty()) {
+					return null;
+				}
+				return new RecordPair(r, o.get());
+			})
+			.filter(p -> p != null)
+			.forEach(p -> {
 				try {
-					table.insert(r);
+					Record r1 = p.r1;
+					Record r2 = p.r2;
+					table.insert(new Record(r1, this.infimum.apply(r1.rank, r2.rank)));
 				} catch (TableRecordSchemaMismatch e) {
 					// Unlikely
 					throw new RuntimeException(e);

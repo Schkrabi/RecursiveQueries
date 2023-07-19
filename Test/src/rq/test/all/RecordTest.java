@@ -134,5 +134,13 @@ class RecordTest {
 		assertNotEquals(this.r1, this.r3);
 		assertNotEquals(this.r1, this.r4);
 	}
+	
+	@Test
+	void testEqualsNoRank() {
+		assertTrue(this.r1.equalsNoRank(this.r1));
+		assertFalse(this.r1.equalsNoRank(this.r2));
+		assertFalse(this.r1.equalsNoRank(this.r3));
+		assertTrue(this.r1.equalsNoRank(this.r4));
+	}
 
 }

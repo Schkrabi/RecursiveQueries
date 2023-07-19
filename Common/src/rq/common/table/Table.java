@@ -10,6 +10,7 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * Represents a table of records
@@ -131,5 +132,23 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 */
 	public boolean contains(Record r) {
 		return this.records.contains(r);
+	}
+	
+	/**
+	 * Returns true if this table contains given record, not taking rank into account. Returns false otherwise.
+	 * @param r
+	 * @return true or false
+	 */
+	public boolean containsNoRank(Record r) {
+		return this.stream().anyMatch(x -> r.equalsNoRank(x));
+	}
+	
+	/**
+	 * Tries to find specific record without taking rank into account.
+	 * @param r
+	 * @return Oprional of recod if it is present, Empty optional otherwise.
+	 */
+	public Optional<Record> findNoRank(Record r) {
+		return this.stream().filter(x -> r.equalsNoRank(x)).findAny();
 	}
 }
