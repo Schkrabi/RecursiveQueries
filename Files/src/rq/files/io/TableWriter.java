@@ -72,13 +72,14 @@ public class TableWriter implements Closeable {
 	 * @return csv header
 	 */
 	private String[] serializeHeader(Schema schema) {
-		String[] serialized = new String[schema.size()];
+		String[] serialized = new String[schema.size()+1];
 		int i = 0;
 		for(Attribute a : schema) {
 			String s = AttributeSerializer.serialize(a);
 			serialized[i] = s;
 			i++;
 		}
+		serialized[i] = "rank";
 		
 		return serialized;
 	}
@@ -106,6 +107,7 @@ public class TableWriter implements Closeable {
 			serialized[i] = s;
 			i++;
 		}
+		serialized[i] = Double.toString(record.rank);
 		
 		return serialized;
 	}

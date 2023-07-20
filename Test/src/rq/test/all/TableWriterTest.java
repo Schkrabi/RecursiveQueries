@@ -68,7 +68,7 @@ class TableWriterTest {
 				Arrays.asList(
 						new Record.AttributeValuePair(a, 2), 
 						new Record.AttributeValuePair(b,"bar")), 
-				1.0d);
+				0.8d);
 		
 		t1 = new Table(this.schema);
 		t1.insert(r1);
@@ -100,9 +100,9 @@ class TableWriterTest {
 		this.writer.write(t1);
 		String rslt = this.oStream.toString();
 		assertEquals(
-					"A:java.lang.Integer,B:java.lang.String\n"
-				+	"1, \"foo\"\n"
-				+	"2, \"bar\"",
+					"A:java.lang.Integer,B:java.lang.String,rank\n"
+				+	"1, \"foo\", 1.0\n"
+				+	"2, \"bar\", 0.8",
 				rslt);
 	}
 

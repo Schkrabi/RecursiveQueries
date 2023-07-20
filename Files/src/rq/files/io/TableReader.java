@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Function;
 import java.util.ArrayList;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -37,6 +38,7 @@ public class TableReader implements Closeable{
 	private Schema schema = null;
 	private List<Attribute> columnOrder = null;
 	private ValueParserContext context;
+	private Function<String[], Double> rankParser = (String[] s) -> 1.0d;
 	
 	private TableReader(CSVReader reader, ValueParserContext context) {
 		this.reader = reader;
@@ -116,11 +118,19 @@ public class TableReader implements Closeable{
 	 */
 	private Schema parseSchema(String[] headers) throws ClassNotFoundException, DuplicateAttributeNameException {
 		this.columnOrder = new ArrayList<Attribute>();
-		for(String s : headers) {
-			this.columnOrder.add(AttributeParser.parse(s));
+		
+		for(int i = 0; i < headers.length; i++) {
+			String s = headers[i];
+			if(!s.equals("rank")) {
+				this.columnOrder.add(AttributeParser.parse(s));
+			} else {
+				final int j = i;
+				this.rankParser = (String[] r) -> Double.parseDouble(r[j]);
+				this.columnOrder.add(null);
+			}
 		}
 		
-		Schema s = Schema.factory(this.columnOrder);
+		Schema s = Schema.factory(this.columnOrder.stream().filter(x -> x != null).toList());
 		this.schema = s;
 		return s;
 	}
@@ -140,15 +150,20 @@ public class TableReader implements Closeable{
 		List<Record.AttributeValuePair> l = new ArrayList<Record.AttributeValuePair>();
 		int i = 0;
 		for(Attribute a : this.columnOrder) {
-			Object o = ValueParser.parse(a, line[i], this.context);
-			Record.AttributeValuePair pair = new Record.AttributeValuePair(a, o);
-			l.add(pair);
+			if(a!= null) {
+				Object o = ValueParser.parse(a, line[i], this.context);
+				Record.AttributeValuePair pair = new Record.AttributeValuePair(a, o);
+				l.add(pair);
+			}
 			i++;
 		}
 		
 		Record r;
 		try {
-			r = Record.factory(this.schema, l, 1.0d);
+			r = Record.factory(
+					this.schema, 
+					l, 
+					this.rankParser.apply(line));
 		} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
 			// Unlikely
 			throw new RuntimeException(e);
