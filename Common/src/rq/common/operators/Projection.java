@@ -94,4 +94,14 @@ public class Projection implements TabularExpression {
 		return this.schema;
 	}
 
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("PROJECT(")
+				.append(this.argument)
+				.append(")")
+				.append(" TO ")
+				.append(this.schema.toString())
+				.toString();
+	}
 }

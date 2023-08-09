@@ -41,5 +41,15 @@ public class Restriction implements TabularExpression {
 	public Schema schema() {
 		return this.argument.schema();
 	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("SELECT ")
+				.append(this.argument.toString())
+				.append(" WHERE ")
+				.append(this.predicate.toString())
+				.toString();
+	}
 
 }

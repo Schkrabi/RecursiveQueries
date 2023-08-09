@@ -151,4 +151,12 @@ public class Table implements Iterable<Record>, TabularExpression {
 	public Optional<Record> findNoRank(Record r) {
 		return this.stream().filter(x -> r.equalsNoRank(x)).findAny();
 	}
+	
+	/**
+	 * Returns true if this table is empty. Returns false otherwise.
+	 * @return true or false
+	 */
+	public boolean isEmpty() {
+		return this.records.isEmpty();
+	}
 }

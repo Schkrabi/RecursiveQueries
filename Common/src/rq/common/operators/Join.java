@@ -189,4 +189,16 @@ public class Join implements TabularExpression {
 		return schema;
 	}
 
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("(")
+				.append(this.argument1.toString())
+				.append(" JOIN ")
+				.append(this.argument2)
+				.append(" ON ")
+				.append(this.onClause.stream().map(p -> p.attribute1 + " = " + p.attribute2).reduce((s1, s2) -> s1 + " AND " + s2))
+				.append(")")
+				.toString();
+	}
 }

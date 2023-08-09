@@ -143,4 +143,15 @@ class RecordTest {
 		assertTrue(this.r1.equalsNoRank(this.r4));
 	}
 
+	@Test
+	void testSet() throws AttributeNotInSchemaException, TypeSchemaMismatchException {
+		assertThrows(AttributeNotInSchemaException.class, 
+				() -> r1.set(new Attribute("C", Integer.class), "foo"));
+		assertThrows(TypeSchemaMismatchException.class,
+				() -> r1.set(this.a, "foo"));
+		Record s = r1.set(this.b, "bar");
+		assertNotNull(s);
+		assertEquals(s.get(a), 1);
+		assertEquals(s.get(b), "bar");
+	}
 }

@@ -83,5 +83,16 @@ public class Intersection implements TabularExpression {
 	public Schema schema() {
 		return this.argument1.schema();
 	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("INTERSECT (")
+				.append(this.argument1.toString())
+				.append(", ")
+				.append(this.argument2.toString())
+				.append(")")
+				.toString();
+	}
 
 }

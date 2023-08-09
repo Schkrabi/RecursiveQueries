@@ -210,4 +210,26 @@ public class Record {
 
 		return true;
 	}
+	
+	/**
+	 * Creates a new record identical to this, except attribute has value value
+	 * @param attribute set attribute
+	 * @param value new value of the attribute
+	 * @return new Record instance
+	 * @throws AttributeNotInSchemaException 
+	 * @throws TypeSchemaMismatchException 
+	 */
+	public Record set(Attribute attribute, Object value) throws AttributeNotInSchemaException, TypeSchemaMismatchException {
+		if(!this.schema.contains(attribute)) {
+			throw new AttributeNotInSchemaException(attribute, this.schema);
+		}
+		if(!value.getClass().equals(attribute.domain)) {
+			throw new TypeSchemaMismatchException(schema,
+					Arrays.asList(values).stream().map(x -> x.getClass()).collect(Collectors.toList()));
+		}
+		
+		Object[] vls = Arrays.copyOf(this.values, this.values.length);
+		vls[schema.attributeIndex(attribute).get()] = value;
+		return new Record(this.schema, vls, this.rank);		
+	}
 }
