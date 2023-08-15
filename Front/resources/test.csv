@@ -1,0 +1,4 @@
+A:java.lang.Integer,B:java.lang.String,rank
+1, "foo", 0.8
+2, "bar", 0.5
+3, "baz", 0.7

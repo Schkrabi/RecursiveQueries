@@ -91,7 +91,7 @@ public class TableWriter implements Closeable {
 	 * @throws ClassNotInContextException
 	 */
 	private String[] serialize(Record record) throws ClassNotInContextException {
-		String[] serialized = new String[record.schema.size()];
+		String[] serialized = new String[record.schema.size()+1];
 		int i = 0;
 		for(Attribute a : record.schema) {
 			Object value = null;
