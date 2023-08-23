@@ -9,9 +9,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,13 +16,15 @@ import rq.common.table.Schema;
 import rq.common.table.Table;
 import rq.common.latices.Lukasiewitz;
 import rq.common.operators.Join;
+import rq.common.similarities.NaiveSimilarity;
 import rq.common.table.Record;
 import rq.common.table.Attribute;
+import rq.common.onOperators.OnEquals;
+import rq.common.onOperators.OnSimilar;
+import rq.common.onOperators.OnGreaterThanOrEquals;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
-import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.SchemaNotJoinableException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 
 /**
@@ -34,25 +33,11 @@ import rq.common.exceptions.TypeSchemaMismatchException;
  */
 class JoinTest {
 	
-	Schema schema1, schema2;
-	Attribute a, b, c;
+	Schema schema1, schema2, expected;
+	Attribute a, b, c, la, ra;
 	Record r11, r12, r21, r22;
 	Table t1, t2;
-	Join j1;
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterAll
-	static void tearDownAfterClass() throws Exception {
-	}
+	Join j1, j2, j3;
 
 	/**
 	 * @throws java.lang.Exception
@@ -62,8 +47,16 @@ class JoinTest {
 		this.a = new Attribute("A", Integer.class);
 		this.b = new Attribute("B", String.class);
 		this.c = new Attribute("C", String.class);
+		this.la = new Attribute("left." + a.name, a.domain);
+		this.ra = new Attribute("right." + a.name, a.domain);
 		schema1 = Schema.factory(a, b);
 		schema2 = Schema.factory(a, c);
+		expected = Schema.factory(
+					la,
+					ra,
+					b, 
+					c);
+		
 		r11 = Record.factory(
 				schema1, 
 				Arrays.asList(
@@ -101,14 +94,22 @@ class JoinTest {
 				t1, 
 				t2,
 				Lukasiewitz.PRODUCT,
-				new Join.AttributePair(new Attribute("A", Integer.class), new Attribute("A", Integer.class)));
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterEach
-	void tearDown() throws Exception {
+				Lukasiewitz.INFIMUM,
+				new OnEquals(a, a));
+		
+		j2 = Join.factory(
+				t1, 
+				t2, 
+				Lukasiewitz.PRODUCT, 
+				Lukasiewitz.INFIMUM, 
+				new OnSimilar(a, a, NaiveSimilarity.INTEGER_SIMILARITY));
+		
+		j3 = Join.factory(
+				t1, 
+				t2, 
+				Lukasiewitz.PRODUCT, 
+				Lukasiewitz.INFIMUM, 
+				new OnGreaterThanOrEquals(a, a));
 	}
 
 	/**
@@ -123,27 +124,10 @@ class JoinTest {
 					Join.factory(
 							t1, 
 							t2,
-							Arrays.asList(new Join.AttributePair(new Attribute("G", String.class), new Attribute("H", String.class))),
-							Lukasiewitz.PRODUCT);
-				});
-		assertThrows(
-				ComparisonDomainMismatchException.class,
-				() -> {
-					Join.factory(
-							t1, 
-							t2,
-							Arrays.asList(new Join.AttributePair(new Attribute("A", Integer.class), new Attribute("C", String.class))),
-							Lukasiewitz.PRODUCT);
-				});
-		Table t = new Table(Schema.factory(new Attribute("A", String.class), c));
-		assertThrows(
-				SchemaNotJoinableException.class,
-				() -> {
-					Join.factory(
-							t1, 
-							t,
-							Arrays.asList(new Join.AttributePair(new Attribute("B", String.class), new Attribute("C", String.class))),
-							Lukasiewitz.PRODUCT);
+							Arrays.asList(
+									new OnEquals(new Attribute("G", String.class), new Attribute("H", String.class))),
+							Lukasiewitz.PRODUCT,
+							Lukasiewitz.INFIMUM);
 				});
 	}
 
@@ -159,13 +143,45 @@ class JoinTest {
 		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
 		assertEquals(1, rcrds.size());
 		assertTrue(rcrds.contains(
-				Record.factory(Schema.factory(a, b, c), 
+				Record.factory(this.expected, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 1),
+								new Record.AttributeValuePair(la, 1),
+								new Record.AttributeValuePair(ra, 1),
 								new Record.AttributeValuePair(b, "foo"),
 								new Record.AttributeValuePair(c, "baz")), 
 						0.8d)));
 		
+		rslt = j2.eval();
+		rcrds = rslt.stream().collect(Collectors.toSet());
+		assertEquals(1, rcrds.size());
+		assertTrue(rcrds.contains(
+				Record.factory(this.expected, 
+						Arrays.asList(
+								new Record.AttributeValuePair(la, 1),
+								new Record.AttributeValuePair(ra, 1),
+								new Record.AttributeValuePair(b, "foo"),
+								new Record.AttributeValuePair(c, "baz")), 
+						0.8d)));
+		
+		rslt = j3.eval();
+		rcrds = rslt.stream().collect(Collectors.toSet());
+		assertEquals(2, rcrds.size());
+		assertTrue(rcrds.contains(
+				Record.factory(this.expected, 
+						Arrays.asList(
+								new Record.AttributeValuePair(la, 1),
+								new Record.AttributeValuePair(ra, 1),
+								new Record.AttributeValuePair(b, "foo"),
+								new Record.AttributeValuePair(c, "baz")), 
+						0.8d)));
+		assertTrue(rcrds.contains(
+				Record.factory(this.expected, 
+						Arrays.asList(
+								new Record.AttributeValuePair(la, 2),
+								new Record.AttributeValuePair(ra, 1),
+								new Record.AttributeValuePair(b, "bar"),
+								new Record.AttributeValuePair(c, "baz")), 
+						0.7d)));
 	}
 
 	/**
@@ -175,7 +191,7 @@ class JoinTest {
 	@Test
 	void testSchema() throws DuplicateAttributeNameException {
 		assertEquals(
-				Schema.factory(a, b, c),
+				this.expected,
 				j1.schema());
 	}
 

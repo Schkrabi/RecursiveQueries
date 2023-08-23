@@ -5,7 +5,9 @@ import java.util.function.Function;
 import rq.files.exceptions.ClassNotInContextException;
 
 import java.util.Map;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.time.LocalDateTime;
 
 /**
  * Context for the table serialization
@@ -48,6 +50,8 @@ public class ValueSerializerContext {
 		return sFunction;
 	}
 	
+	private static final DateTimeFormatter  dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	
 	/**
 	 * Default serialization context
 	 */
@@ -57,6 +61,7 @@ public class ValueSerializerContext {
 					Integer.class, (Object o) -> o.toString(),
 					Double.class, (Object o) -> o.toString(),
 					Float.class, (Object o) -> o.toString(),
-					Boolean.class, (Object o) -> o.toString()
+					Boolean.class, (Object o) -> o.toString(),
+					LocalDateTime.class, (Object o) -> ((LocalDateTime)o).format(dateTimeFormatter)
 					));
 }

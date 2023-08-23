@@ -2,6 +2,7 @@ package main;
 
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import rq.common.table.Table;
 import rq.common.table.TabularExpression;
@@ -34,7 +35,8 @@ public class Main {
 	 * @return
 	 */
 	private TabularExpression query(Table iTable) {
-		return iTable;
+		//return iTable;
+		return Queries.electricityLoadDiagrams_repeatingPeaks("MT_124", 200.0d, Duration.ofHours(1), iTable);
 	}
 	
 	/**

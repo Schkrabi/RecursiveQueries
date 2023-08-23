@@ -6,16 +6,12 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
-import rq.common.exceptions.ComparisonDomainMismatchException;
+import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
-import rq.common.exceptions.SchemaNotJoinableException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.latices.Lukasiewitz;
 import rq.common.operators.Join;
@@ -27,6 +23,7 @@ import rq.common.table.Table;
 import rq.common.operators.Map;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
+import rq.common.onOperators.OnEquals;
 
 class RecursiveUnrestrictedTest {
 
@@ -36,14 +33,6 @@ class RecursiveUnrestrictedTest {
 	Table t1;
 	
 	RecursiveUnrestricted ru;
-	
-	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
-	}
-
-	@AfterAll
-	static void tearDownAfterClass() throws Exception {
-	}
 
 	@BeforeEach
 	void setUp() throws Exception {
@@ -97,18 +86,15 @@ class RecursiveUnrestrictedTest {
 														throw new RuntimeException(e);
 													}
 												}), 
-										Arrays.asList(new Join.AttributePair(a, a)), 
-										Lukasiewitz.PRODUCT), 
-								this.schema).eval();
-					} catch (AttributeNotInSchemaException | SchemaNotJoinableException | ComparisonDomainMismatchException
-							| NotSubschemaException e) {
+										Lukasiewitz.PRODUCT,
+										Lukasiewitz.INFIMUM,
+										new OnEquals(a, a)), 
+								new Projection.To(new Attribute("left.A", Integer.class), a),
+								new Projection.To(new Attribute("left.B", String.class), b)).eval();
+					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
 						throw new RuntimeException(e);
 					}
 		});
-	}
-
-	@AfterEach
-	void tearDown() throws Exception {
 	}
 
 	@Test

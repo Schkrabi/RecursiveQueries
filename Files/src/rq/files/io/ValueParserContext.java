@@ -1,6 +1,8 @@
 package rq.files.io;
 
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.function.Function;
 
@@ -48,6 +50,8 @@ public class ValueParserContext {
 		return pFunction;
 	}
 	
+	private static final DateTimeFormatter  dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	
 	/**
 	 * Default parsing context
 	 */
@@ -57,6 +61,15 @@ public class ValueParserContext {
 						Integer.class, (String x) -> Integer.parseInt(x),
 						Double.class, (String x) -> Double.parseDouble(x),
 						Float.class, (String x) -> Float.parseFloat(x),
-						Boolean.class, (String x) -> Boolean.parseBoolean(x)
+						Boolean.class, (String x) -> Boolean.parseBoolean(x),
+						LocalDateTime.class, (String x) -> {
+							LocalDateTime dateTime = null;
+							try {
+								dateTime = LocalDateTime.parse(x, dateTimeFormatter);
+							}catch(Exception e) {
+								throw new RuntimeException(e);
+							}
+							return dateTime;
+						}
 					));
 }

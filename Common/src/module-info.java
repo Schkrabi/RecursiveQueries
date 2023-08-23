@@ -8,4 +8,5 @@ module rq.common {
 	exports rq.common.operators;
 	exports rq.common.similarities;
 	exports rq.common.table;
+	exports rq.common.onOperators;
 }

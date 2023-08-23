@@ -7,10 +7,12 @@ import rq.common.table.TabularExpression;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
@@ -19,6 +21,7 @@ import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.SchemaNotJoinableException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.onOperators.OnOperator;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 
@@ -33,18 +36,47 @@ public class Join implements TabularExpression {
 	
 	private TabularExpression argument1;
 	private TabularExpression argument2;
-	private List<AttributePair> onClause;
-	private BiFunction<Double, Double, Double> product;
+	private List<OnOperator> onClause;
+	private BinaryOperator<Double> product;
+	private BinaryOperator<Double> infimum;
+	private java.util.Map<Attribute, Attribute> leftProjection;
+	private java.util.Map<Attribute, Attribute> rightProjection;
+	private Schema schema;
 	
 	private Join(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<AttributePair> onClause,
-			BiFunction<Double, Double, Double> product) {
+			Collection<OnOperator> onClause,
+			BinaryOperator<Double> product,
+			BinaryOperator<Double> infimum,
+			java.util.Map<Attribute, Attribute> leftProjection,
+			java.util.Map<Attribute, Attribute> rightProjection,
+			Schema schema) {
 		this.argument1 = argument1;
 		this.argument2 = argument2;
-		this.onClause = new ArrayList<AttributePair>(onClause);
+		this.onClause = new ArrayList<OnOperator>(onClause);
 		this.product = product;
+		this.infimum = infimum;
+		this.leftProjection = leftProjection;
+		this.rightProjection = rightProjection;
+		this.schema = schema;
+	}
+	
+	/**
+	 * Creates a projection of attributes to the joined table attributes
+	 * @param schema projected schema
+	 * @param intersection intersection of the attributes
+	 * @param tableAlias prefix in the joined table
+	 * @return a mapping from schema attributes to new joined table attributes
+	 */
+	private static java.util.Map<Attribute, Attribute> makeProjection(Schema schema, Set<Attribute> intersection, String tableAlias) {
+		java.util.Map<Attribute, Attribute> m = new HashMap<Attribute, Attribute>();
+		schema.stream()
+			.filter(a -> !intersection.contains(a))
+			.forEach(a -> m.put(a, a));		
+		intersection.stream()
+			.forEach(a -> m.put(a, new Attribute(tableAlias + a.name, a.domain)));
+		return m;
 	}
 	
 	/**
@@ -55,32 +87,45 @@ public class Join implements TabularExpression {
 	 * @return
 	 * @throws AttributeNotInSchemaException
 	 * @throws ComparisonDomainMismatchException 
+	 * @throws  
 	 */
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<AttributePair> onClause,
-			BiFunction<Double, Double, Double> product) 
-		throws AttributeNotInSchemaException, SchemaNotJoinableException, ComparisonDomainMismatchException {
+			Collection<OnOperator> onClause,
+			BinaryOperator<Double> product,
+			BinaryOperator<Double> infimum) 
+		throws AttributeNotInSchemaException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema();
-		for(AttributePair p : onClause) {
-			if(!schema1.contains(p.attribute1)) {
-				throw new AttributeNotInSchemaException(p.attribute1, schema1);
+		for(OnOperator p : onClause) {
+			if(!schema1.contains(p.left)) {
+				throw new AttributeNotInSchemaException(p.left, schema1);
 			}
-			if(!schema2.contains(p.attribute2)) {
-				throw new AttributeNotInSchemaException(p.attribute2, schema2);
-			}
-			if(!p.attribute1.domain.equals(p.attribute2.domain)) {
-				throw new ComparisonDomainMismatchException(p.attribute1, p.attribute2);
+			if(!schema2.contains(p.right)) {
+				throw new AttributeNotInSchemaException(p.right, schema2);
 			}
 		}
 		
-		if(!schema1.isJoinableWith(schema2)) {
-			throw new SchemaNotJoinableException(schema1, schema2);
+		Set<Attribute> intersection = new HashSet<Attribute>(schema1.attributeSet());
+		intersection.retainAll(schema2.attributeSet());
+		
+		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(schema1, intersection, "left.");
+		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(schema2, intersection, "right.");
+		
+		List<Attribute> attrs = new ArrayList<Attribute>(leftProjection.size() + rightProjection.size());
+		attrs.addAll(leftProjection.values());
+		attrs.addAll(rightProjection.values());
+		Schema schema = null;
+		
+		try {
+			schema = Schema.factory(attrs);
+		} catch (DuplicateAttributeNameException e) {
+			//Unlikely
+			throw new RuntimeException(e);
 		}
 		
-		return new Join(argument1, argument2, onClause, product);
+		return new Join(argument1, argument2, onClause, product, infimum, leftProjection, rightProjection, schema);
 	}
 	
 	/**
@@ -97,32 +142,33 @@ public class Join implements TabularExpression {
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			BiFunction<Double, Double, Double> product,
-			AttributePair ...onClauses) 
-		throws AttributeNotInSchemaException, SchemaNotJoinableException, ComparisonDomainMismatchException {
+			BinaryOperator<Double> product,
+			BinaryOperator<Double> infimum,
+			OnOperator ...onClauses) 
+		throws AttributeNotInSchemaException {
 		return Join.factory(
 				argument1, 
 				argument2, 
 				Arrays.asList(onClauses),
-				product);
+				product,
+				infimum);
 	}
 	
 	/**
-	 * Returns true if given records satisfies the on clause. Returns false otherwise
-	 * @param record1 
-	 * @param record2
-	 * @return true or false
+	 * Returns degree to which the ON clause is satisfied
+	 * @param record1 left joined record
+	 * @param record2 right joined record
+	 * @return A degree
 	 */
-	private boolean isOnClauseSatisfied(Record record1, Record record2) {
-		return this.onClause.stream()
-				.allMatch(attPair -> {
-					try {
-						return record1.get(attPair.attribute1).equals(record2.get(attPair.attribute2));
-					} catch (AttributeNotInSchemaException e) {
-						//Unlikely
-						throw new RuntimeException(e);
-					}
-				});
+	private double joinClauseSatisfyDegree(Record record1, Record record2) {
+		Optional<Double> o = this.onClause.stream()
+								.map(clause -> clause.eval(record1, record2))
+								.reduce(this.infimum);
+		//The optional will be empty if OnClause is empty, therefore it is trivially satisfied
+		if(o.isEmpty()) {
+			return 1.0d;
+		}
+		return o.get();
 	}
 	
 	/**
@@ -132,20 +178,19 @@ public class Join implements TabularExpression {
 	 * @param record2
 	 * @return Record instance
 	 */
-	private Record joinRecords(Schema schema, Record record1, Record record2) {
+	private Record joinRecords(Record record1, Record record2, Double onClauseSatisfyDegree) {
 		try {
+			Collection<Record.AttributeValuePair> vls = record1.schema.stream()
+															.map(a -> new Record.AttributeValuePair(this.leftProjection.get(a), record1.getNoThrow(a)))
+															.collect(Collectors.toList());
+			record2.schema.stream()
+				.map(a -> new Record.AttributeValuePair(this.rightProjection.get(a), record2.getNoThrow(a)))
+				.forEach(p -> vls.add(p));
+			
 			return Record.factory(
-					schema, 
-					schema.stream()
-						.map(a -> {
-							Object o = record1.getNoThrow(a);
-							if(o != null) {
-								return new Record.AttributeValuePair(a, o);
-							}
-							return new Record.AttributeValuePair(a, record2.getNoThrow(a));
-						})
-						.collect(Collectors.toList()), 
-					this.product.apply(record1.rank, record2.rank));
+					this.schema, 
+					vls, 
+					this.product.apply(record1.rank, this.product.apply(record2.rank, onClauseSatisfyDegree)));
 		} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
 			// Unlikely
 			throw new RuntimeException(e);
@@ -159,13 +204,16 @@ public class Join implements TabularExpression {
 		
 		for(Record record1 : this.argument1.eval()) {
 			for(Record record2 : this.argument2.eval()) {
-				if(this.isOnClauseSatisfied(record1, record2)) {
-					Record record = this.joinRecords(schema, record1, record2);
-					try {
-						table.insert(record);
-					} catch (TableRecordSchemaMismatch e) {
-						//Unlikely
-						throw new RuntimeException(e);
+				Double onClauseSatisfyDegree = this.joinClauseSatisfyDegree(record1, record2);
+				if(onClauseSatisfyDegree > 0.0d) {
+					Record record = this.joinRecords(record1, record2, onClauseSatisfyDegree);
+					if(record.rank > 0.0d) {
+						try {
+							table.insert(record);
+						} catch (TableRecordSchemaMismatch e) {
+							//Unlikely
+							throw new RuntimeException(e);
+						}
 					}
 				}
 			}
@@ -176,17 +224,7 @@ public class Join implements TabularExpression {
 
 	@Override
 	public Schema schema() {
-		Set<Attribute> s = new HashSet<Attribute>();
-		s.addAll(this.argument1.schema().attributeSet());
-		s.addAll(this.argument2.schema().attributeSet());
-		Schema schema = null;
-		try {
-			schema = Schema.factory(s);
-		}catch(DuplicateAttributeNameException e) {
-			//Unlikely
-			throw new RuntimeException(e);
-		}
-		return schema;
+		return this.schema;
 	}
 
 	@Override
@@ -197,7 +235,7 @@ public class Join implements TabularExpression {
 				.append(" JOIN ")
 				.append(this.argument2)
 				.append(" ON ")
-				.append(this.onClause.stream().map(p -> p.attribute1 + " = " + p.attribute2).reduce((s1, s2) -> s1 + " AND " + s2))
+				.append(this.onClause.stream().map(p -> p.toString()).reduce((s1, s2) -> s1 + " AND " + s2))
 				.append(")")
 				.toString();
 	}

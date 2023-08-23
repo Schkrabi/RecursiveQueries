@@ -9,9 +9,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,25 +27,11 @@ import rq.common.exceptions.TypeSchemaMismatchException;
  */
 class ProjectionTest {
 
-	Schema schema, subschema;
-	Attribute a, b;
+	Schema schema, subschema, schema2;
+	Attribute a, b, c, d;
 	Record r1, r2, r3;
 	Table t1;
-	Projection p1;
-	
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterAll
-	static void tearDownAfterClass() throws Exception {
-	}
+	Projection p1, p2;
 
 	/**
 	 * @throws java.lang.Exception
@@ -57,9 +40,12 @@ class ProjectionTest {
 	void setUp() throws Exception {
 		this.a = new Attribute("A", Integer.class);
 		this.b = new Attribute("B", String.class);
+		this.c = new Attribute("C", Integer.class);
 		this.schema = Schema.factory(a, b);
 		
 		this.subschema = Schema.factory(a);
+		this.schema2 = Schema.factory(c, b);
+		
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
@@ -84,14 +70,13 @@ class ProjectionTest {
 		t1.insert(r2);
 		t1.insert(r3);
 		
-		p1 = Projection.factory(t1, subschema);
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterEach
-	void tearDown() throws Exception {
+		p1 = Projection.factory(
+				t1, 
+				subschema);
+		p2 = Projection.factory(
+				t1, 
+				new Projection.To(a, c), 
+				new Projection.To(b, b));
 	}
 
 	/**
@@ -132,6 +117,28 @@ class ProjectionTest {
 				Arrays.asList(
 						new Record.AttributeValuePair(a, 3)), 
 				0.8d)));
+		
+		rslt = this.p2.eval();
+		rcrds = rslt.stream().collect(Collectors.toSet());
+		assertEquals(3, rcrds.size());
+		assertTrue(rcrds.contains(Record.factory(
+				this.schema2, 
+				Arrays.asList(
+						new Record.AttributeValuePair(c, 1), 
+						new Record.AttributeValuePair(b, "foo")), 
+				1.0d)));
+		assertTrue(rcrds.contains(Record.factory(
+				this.schema2,
+				Arrays.asList(
+						new Record.AttributeValuePair(c, 2), 
+						new Record.AttributeValuePair(b,"bar")),  
+				1.0d)));
+		assertTrue(rcrds.contains(Record.factory(
+				this.schema2, 
+				Arrays.asList(
+						new Record.AttributeValuePair(c, 3), 
+						new Record.AttributeValuePair(b,"foo")), 
+				0.8d)));
 	}
 
 	/**
@@ -140,6 +147,7 @@ class ProjectionTest {
 	@Test
 	void testSchema() {
 		assertEquals(this.subschema, this.p1.schema());
+		assertEquals(this.schema2, this.p2.schema());
 	}
 
 }
