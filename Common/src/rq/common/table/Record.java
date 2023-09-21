@@ -18,7 +18,15 @@ import rq.common.exceptions.TypeSchemaMismatchException;
  */
 public class Record {
 
-	public record AttributeValuePair(Attribute attribute, Object value) {
+	public static class AttributeValuePair {
+		public final Attribute attribute;
+		public final Object value;
+		
+		public AttributeValuePair(Attribute attribute, Object value) {
+			this.attribute = attribute;
+			this.value = value;
+			
+		}
 	}
 
 	public final Schema schema;

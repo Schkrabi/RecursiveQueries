@@ -21,7 +21,8 @@ import rq.common.operators.Restriction;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
+import rq.common.interfaces.Table;
 
 /**
  * @author Mgr. R.Skrabal
@@ -32,7 +33,7 @@ class RestrictionTest {
 	Schema schema;
 	Attribute a, b;
 	Record r1, r2, r3;
-	Table t1;
+	MemoryTable t1;
 	Restriction s1;
 	
 	/**
@@ -76,7 +77,7 @@ class RestrictionTest {
 						new Record.AttributeValuePair(b,"foo")), 
 				0.8d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		t1.insert(r3);

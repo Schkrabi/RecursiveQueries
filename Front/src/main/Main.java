@@ -1,13 +1,20 @@
 package main;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Path;
-import java.time.Duration;
 
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.interfaces.LazyExpression;
+import rq.common.interfaces.TabularExpression;
+import rq.common.table.MemoryTable;
+import rq.files.exceptions.ClassNotInContextException;
+import rq.files.io.LazyTable;
+import rq.files.io.RecordWriter;
 import rq.files.io.TableReader;
 import rq.files.io.TableWriter;
+import rq.common.interfaces.Table;
 
 /**
  * Main entry point
@@ -25,8 +32,18 @@ public class Main {
 	 */
 	private static final String USAGE = "java -jar rq.front.jar <INPUT FILE PATH>";
 	
+	private long loadTime = 0;
+	private long queryTime = 0;
+	private long outputTime = 0;
+	private long preparationTime = 0;
+	
 	private Main(Path path) {
 		this.path = path;
+	}
+	
+	private TabularExpression prepQuery(Table iTable) {
+		return iTable;
+		//return Queries.electricityLoadDiagrams_CustTresholdAndPeriod("MT_124", 200.0d, Duration.ofHours(1), iTable);
 	}
 	
 	/**
@@ -36,16 +53,24 @@ public class Main {
 	 */
 	private TabularExpression query(Table iTable) {
 		//return iTable;
-		return Queries.electricityLoadDiagrams_repeatingPeaks("MT_124", 200.0d, Duration.ofHours(1), iTable);
+		//return Queries.electricityLoadDiagrams_repeatingPeaks(iTable);
+		try {
+			return Queries.electricityLoadDiagrams_benchmark(iTable);
+		} catch (AttributeNotInSchemaException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+		
 	}
 	
 	/**
 	 * Loads data from input file
 	 * @return table instance
 	 */
-	private Table loadData() {
+	private MemoryTable loadData() {
 		TableReader reader = null;
-		Table iTable = null;
+		MemoryTable iTable = null;
 		
 		try {
 			reader = TableReader.open(this.path);
@@ -68,8 +93,10 @@ public class Main {
 		TableWriter writer = null;
 		
 		try {
+			this.outputStatistic(System.out);
+			
 			writer = TableWriter.open(output);
-			writer.write(oTable);
+			writer.write(oTable);			
 			writer.close();
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -80,11 +107,55 @@ public class Main {
 	 * Main workhorse method
 	 * @param output stream
 	 */
+	@SuppressWarnings("unused")
 	private void run(OutputStream output) {
+		long start = System.currentTimeMillis();
 		Table iTable = this.loadData();
+		long end = System.currentTimeMillis();
+		this.loadTime = end - start;
+		
+		TabularExpression prep = this.prepQuery(iTable);
+		start = System.currentTimeMillis();
+		iTable = prep.eval();
+		end = System.currentTimeMillis();
+		this.preparationTime = end - start;
+		
 		TabularExpression query = this.query(iTable);
+		start = System.currentTimeMillis();
 		Table oTable = query.eval();
+		end = System.currentTimeMillis();
+		this.queryTime = end - start;
+		
+		start = System.currentTimeMillis();
 		this.flushData(oTable, output);
+		end = System.currentTimeMillis();
+		this.outputTime = end - start;
+	}
+	
+	private void runLazy(OutputStream output) throws ClassNotInContextException, IOException {
+		LazyTable t1 = LazyTable.open(this.path);
+		LazyTable t2 = LazyTable.open(this.path);
+		
+		LazyExpression query = Queries.electricityLoadDiagrams_lazyBenchmark(t1, t2);
+		RecordWriter writer = RecordWriter.open(output);
+		long start = System.currentTimeMillis();
+		rq.common.table.Record r = query.next();
+		while(r != null) {
+			writer.writeRecord(r);
+			r = query.next();
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("Lazy query execution time(ms): " + (end - start));
+		writer.close();
+		t1.close();
+		t2.close();
+	}
+	
+	private void outputStatistic(PrintStream output) {
+		output.println("Data load time(ms): " + this.loadTime);
+		output.println("Data preparation time(ms): " + this.preparationTime);
+		output.println("Query execution time(ms): " + this.queryTime);
+		output.println("Data output time(ms): " + this.outputTime);
 	}
 
 	/**
@@ -99,7 +170,12 @@ public class Main {
 		}
 		
 		Main me = new Main(Path.of(args[0]));
-		me.run(System.out);
+		//me.run(System.out);
+		try {
+			me.runLazy(System.out);
+		} catch (ClassNotInContextException | IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

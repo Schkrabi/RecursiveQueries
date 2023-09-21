@@ -21,7 +21,8 @@ import rq.common.operators.Intersection;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
+import rq.common.interfaces.Table;
 
 /**
  * @author Mgr. R.Skrabal
@@ -32,7 +33,7 @@ class IntersectionTest {
 	Schema schema;
 	Attribute a, b;
 	Record r1, r2, r3, r4;
-	Table t1, t2, t3;
+	MemoryTable t1, t2, t3;
 	Intersection i1, i2;
 
 	/**
@@ -82,15 +83,15 @@ class IntersectionTest {
 						new Record.AttributeValuePair(b, "foo")), 
 				0.7d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		
-		t2 = new Table(this.schema);
+		t2 = new MemoryTable(this.schema);
 		t2.insert(r1);
 		t2.insert(r3);
 		
-		t3 = new Table(this.schema);
+		t3 = new MemoryTable(this.schema);
 		t3.insert(r3);
 		t3.insert(r4);
 		
@@ -114,7 +115,7 @@ class IntersectionTest {
 				SchemaNotEqualException.class,
 				() -> Intersection.factory(
 						t1, 
-						new Table(Schema.factory(a)),
+						new MemoryTable(Schema.factory(a)),
 						Lukasiewitz.INFIMUM)
 				);
 	}

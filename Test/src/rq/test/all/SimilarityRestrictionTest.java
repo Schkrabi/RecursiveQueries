@@ -21,11 +21,12 @@ import rq.common.similarities.NaiveSimilarity;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.interfaces.Table;
 
 /**
  * @author Mgr. R.Skrabal
@@ -36,7 +37,7 @@ class SimilarityRestrictionTest {
 	Schema schema;
 	Attribute a1, a2, b;
 	Record r1, r2, r3;
-	Table t1;
+	MemoryTable t1;
 	SimilarityRestriction s1;
 	
 	/**
@@ -84,7 +85,7 @@ class SimilarityRestrictionTest {
 						new Record.AttributeValuePair(b, "baz")),
 				0.8d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		t1.insert(r3);

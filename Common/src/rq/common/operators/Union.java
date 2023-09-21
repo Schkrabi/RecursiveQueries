@@ -8,9 +8,9 @@ import java.util.function.BiFunction;
 
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Schema;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 
 /**
@@ -53,8 +53,8 @@ public class Union implements TabularExpression {
 	}
 
 	@Override
-	public Table eval() {
-		Table table = new Table(this.schema());
+	public MemoryTable eval() {
+		MemoryTable table = new MemoryTable(this.schema());
 		this.argument1.eval().stream().forEach(r -> {
 			try {
 				table.insert(r);

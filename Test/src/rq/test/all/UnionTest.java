@@ -21,7 +21,7 @@ import rq.common.operators.Union;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
 
 /**
  * @author r.skrabal
@@ -32,7 +32,7 @@ class UnionTest {
 	Schema schema;
 	Attribute a, b;
 	Record r1, r2, r3, r4;
-	Table t1, t2, t3;
+	MemoryTable t1, t2, t3;
 	Union u1, u2;
 	
 	/**
@@ -82,15 +82,15 @@ class UnionTest {
 						new Record.AttributeValuePair(b, "foo")), 
 				0.7d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		
-		t2 = new Table(this.schema);
+		t2 = new MemoryTable(this.schema);
 		t2.insert(r1);
 		t2.insert(r3);
 		
-		t3 = new Table(this.schema);
+		t3 = new MemoryTable(this.schema);
 		t3.insert(r3);
 		t3.insert(r4);
 		
@@ -114,7 +114,7 @@ class UnionTest {
 				SchemaNotEqualException.class,
 				() -> Union.factory(
 						t1, 
-						new Table(Schema.factory(a)),
+						new MemoryTable(Schema.factory(a)),
 						Lukasiewitz.SUPREMUM));
 	}
 
@@ -123,7 +123,7 @@ class UnionTest {
 	 */
 	@Test
 	void testEval() {
-		Table rslt = u1.eval();
+		MemoryTable rslt = u1.eval();
 		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
 		assertEquals(3, rcrds.size());
 		assertTrue(rcrds.contains(this.r1));

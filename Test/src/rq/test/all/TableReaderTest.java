@@ -5,21 +5,20 @@ package rq.test.all;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.opencsv.exceptions.CsvValidationException;
 
 import rq.files.exceptions.ClassNotInContextException;
+import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.io.TableReader;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -57,20 +56,6 @@ class TableReaderTest {
 	/**
 	 * @throws java.lang.Exception
 	 */
-	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@AfterAll
-	static void tearDownAfterClass() throws Exception {
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
 	@BeforeEach
 	void setUp() throws Exception {
 		reader = TableReader.open(new ByteArrayInputStream(this.data.getBytes()));
@@ -91,8 +76,8 @@ class TableReaderTest {
 	}
 
 	@Test
-	void testRead() throws CsvValidationException, ClassNotFoundException, IOException, TableRecordSchemaMismatch, DuplicateAttributeNameException, ClassNotInContextException, TypeSchemaMismatchException, AttributeNotInSchemaException {
-		Table table = reader.read();
+	void testRead() throws CsvValidationException, ClassNotFoundException, IOException, TableRecordSchemaMismatch, DuplicateAttributeNameException, ClassNotInContextException, TypeSchemaMismatchException, AttributeNotInSchemaException, ColumnOrderingNotInitializedException {
+		MemoryTable table = reader.read();
 		Set<Record> rcrds = table.stream().collect(Collectors.toSet());
 		assertEquals(3, rcrds.size());
 		assertTrue(rcrds.contains(

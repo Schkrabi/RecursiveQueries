@@ -15,7 +15,7 @@ import rq.common.table.Record;
  */
 public class OnGreaterThan extends OnCompare {
 
-	private OnGreaterThan(Attribute left, Attribute right) {
+	public OnGreaterThan(Attribute left, Attribute right) {
 		super(left, right);
 	}
 	

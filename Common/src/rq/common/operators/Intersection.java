@@ -8,10 +8,11 @@ import java.util.function.BiFunction;
 
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.TabularExpression;
+import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.interfaces.Table;
 
 /**
  * @author Mgr. R.Skrabal
@@ -50,12 +51,18 @@ public class Intersection implements TabularExpression {
 		return new Intersection(argument1, argument2, infimum);
 	}
 	
-	private record RecordPair(rq.common.table.Record r1, rq.common.table.Record r2) {
+	private static class RecordPair {
+		public final Record r1, r2;
+		
+		public RecordPair(rq.common.table.Record r1, rq.common.table.Record r2) {
+			this.r1 = r1;
+			this.r2 = r2;			
+		}
 	}
 
 	@Override
 	public Table eval() {
-		Table table = new Table(this.schema());
+		Table table = new MemoryTable(this.schema());
 		Table table2 = this.argument2.eval();
 		this.argument1.eval().stream()
 			.map(r -> {

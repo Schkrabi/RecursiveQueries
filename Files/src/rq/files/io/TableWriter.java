@@ -3,18 +3,11 @@ package rq.files.io;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
-import com.opencsv.CSVWriter;
-
-import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.interfaces.Table;
 import rq.files.exceptions.ClassNotInContextException;
-import rq.files.helpers.AttributeSerializer;
-import rq.files.helpers.ValueSerializer;
+import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.common.table.Record;
-import rq.common.exceptions.AttributeNotInSchemaException;
-import rq.common.table.Attribute;
 
 /**
  * Persists the table
@@ -22,12 +15,10 @@ import rq.common.table.Attribute;
  *
  */
 public class TableWriter implements Closeable {
-	private final CSVWriter writer;
-	private final ValueSerializerContext context;
+	private final RecordWriter recordWriter;
 	
-	private TableWriter(CSVWriter writer, ValueSerializerContext context) {
-		this.writer = writer;
-		this.context = context;
+	private TableWriter(RecordWriter recordWriter) {
+		this.recordWriter = recordWriter;
 	}
 	
 	/**
@@ -36,7 +27,7 @@ public class TableWriter implements Closeable {
 	 * @return TableWritter instance
 	 */
 	public static TableWriter open(OutputStream stream) {
-		return TableWriter.open(stream, ValueSerializerContext.DEFAULT);
+		return new TableWriter(RecordWriter.open(stream));
 	}
 	
 	/**
@@ -46,76 +37,29 @@ public class TableWriter implements Closeable {
 	 * @return TableWritter instance
 	 */
 	public static TableWriter open(OutputStream stream, ValueSerializerContext context) {
-		OutputStreamWriter osWriter = new OutputStreamWriter(stream);
-		CSVWriter writer = new CSVWriter(osWriter);
-		return new TableWriter(writer, context);
+		return new TableWriter(RecordWriter.open(stream, context));
 	}
 	
 	/**
 	 * Writes the table into a file
-	 * @param table
+	 * @param oTable
 	 * @throws ClassNotInContextException 
+	 * @throws IOException 
+	 * @throws DuplicateHeaderWriteException 
 	 */
-	public void write(Table table) throws ClassNotInContextException {
-		String[] header = this.serializeHeader(table.schema);
-		this.writer.writeNext(header);
-		
-		for(Record record : table) {
-			String[] line = this.serialize(record);
-			this.writer.writeNext(line);
+	public void write(Table oTable) throws ClassNotInContextException, IOException, DuplicateHeaderWriteException {
+		this.recordWriter.writeHeader(oTable.schema());
+		for(Record record : oTable) {
+			this.recordWriter.writeRecord(record);
 		}
-	}
-	
-	/**
-	 * Makes the csv header
-	 * @param schema
-	 * @return csv header
-	 */
-	private String[] serializeHeader(Schema schema) {
-		String[] serialized = new String[schema.size()+1];
-		int i = 0;
-		for(Attribute a : schema) {
-			String s = AttributeSerializer.serialize(a);
-			serialized[i] = s;
-			i++;
-		}
-		serialized[i] = "rank";
-		
-		return serialized;
-	}
-	
-	/**
-	 * Serializes a single record
-	 * @param record
-	 * @return serialized record
-	 * @throws ClassNotInContextException
-	 */
-	private String[] serialize(Record record) throws ClassNotInContextException {
-		String[] serialized = new String[record.schema.size()+1];
-		int i = 0;
-		for(Attribute a : record.schema) {
-			Object value = null;
-			try {
-				value = record.get(a);
-			} catch (AttributeNotInSchemaException e) {
-				//Unlikely
-				throw new RuntimeException(e);
-			}
-			
-			String s = ValueSerializer.serialize(value, this.context);
-			
-			serialized[i] = s;
-			i++;
-		}
-		serialized[i] = Double.toString(record.rank);
-		
-		return serialized;
+		this.recordWriter.flush();
 	}
 
 	@Override
 	public void close() throws IOException {
-		if(this.writer != null) {
-			this.writer.close();
+		if(this.recordWriter != null) {
+			this.recordWriter.flush();
+			this.recordWriter.close();
 		}
 	}
 }

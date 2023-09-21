@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.NotSubschemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.latices.Lukasiewitz;
 import rq.common.operators.Join;
@@ -19,18 +18,19 @@ import rq.common.operators.RecursiveUnrestricted;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
 import rq.common.operators.Map;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
 import rq.common.onOperators.OnEquals;
+import rq.common.interfaces.Table;
 
 class RecursiveUnrestrictedTest {
 
 	Schema schema;
 	Attribute a, b;
 	Record r1, r2, r3, r4;
-	Table t1;
+	MemoryTable t1;
 	
 	RecursiveUnrestricted ru;
 
@@ -64,7 +64,7 @@ class RecursiveUnrestrictedTest {
 						new Record.AttributeValuePair(b,"bah")), 
 				0.8d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		t1.insert(r3);

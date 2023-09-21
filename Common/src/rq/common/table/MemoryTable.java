@@ -6,6 +6,11 @@ import java.util.stream.Stream;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.interfaces.LazyExpression;
+import rq.common.interfaces.LazyIterable;
+import rq.common.interfaces.LazyIterator;
+import rq.common.interfaces.SchemaProvider;
+import rq.common.interfaces.Table;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,14 +20,14 @@ import java.util.Optional;
 /**
  * Represents a table of records
  * 
- * @author Mgr. R.Skrabal
+ * @author Mgr. Radomir Skrabal
  *
  */
-public class Table implements Iterable<Record>, TabularExpression {
+public class MemoryTable implements Table, LazyIterable{
 	public final Schema schema;
 	private Set<Record> records = new HashSet<Record>();
 
-	public Table(Schema schema) {
+	public MemoryTable(Schema schema) {
 		this.schema = schema;
 	}
 
@@ -32,6 +37,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * @param record inserted record
 	 * @return true if successfully inserted, false otherwise
 	 */
+	@Override
 	public boolean insert(Record record) throws TableRecordSchemaMismatch {
 		// TODO What if I am inserting record with same values and different rank?
 		// Theoretically, if the rank of the new record is higher, it should overwrite
@@ -52,6 +58,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * @throws TypeSchemaMismatchException 
 	 * @throws TableRecordSchemaMismatch 
 	 */
+	@Override
 	public boolean insert(Collection<Record.AttributeValuePair> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException, TableRecordSchemaMismatch {
 		Record r = Record.factory(this.schema, values, rank);
@@ -64,6 +71,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * @param record
 	 * @return true if successfully deleted, false otherwise
 	 */
+	@Override
 	public boolean delete(Record record) throws TableRecordSchemaMismatch {
 		if (!this.schema.equals(record.schema)) {
 			throw new TableRecordSchemaMismatch(this.schema, record.schema);
@@ -106,7 +114,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	}
 
 	@Override
-	public Table eval() {
+	public MemoryTable eval() {
 		return this;
 	}
 
@@ -130,6 +138,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * @param r
 	 * @return true or false
 	 */
+	@Override
 	public boolean contains(Record r) {
 		return this.records.contains(r);
 	}
@@ -139,6 +148,7 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * @param r
 	 * @return true or false
 	 */
+	@Override
 	public boolean containsNoRank(Record r) {
 		return this.stream().anyMatch(x -> r.equalsNoRank(x));
 	}
@@ -156,7 +166,66 @@ public class Table implements Iterable<Record>, TabularExpression {
 	 * Returns true if this table is empty. Returns false otherwise.
 	 * @return true or false
 	 */
+	@Override
 	public boolean isEmpty() {
 		return this.records.isEmpty();
+	}
+
+	@Override
+	public LazyIterator lazyIterator() {
+		final MemoryTable me = this;
+		final Iterator<Record> it = this.iterator();
+		return new LazyIterator() {
+			
+			private MemoryTable iterated = me;
+			private Iterator<Record> iterator = it;
+			private Record current = null;
+
+			@Override
+			public Record next() {
+				if(this.iterator.hasNext()) {
+					this.current = this.iterator.next();
+					return current;
+				}
+				this.current = null;
+				return null;
+			}
+
+			@Override
+			public Record current() {
+				return current;
+			}
+
+			@Override
+			public void restart() {
+				this.iterator = this.iterated.iterator();				
+			}
+			
+		};
+	}
+	
+	public LazyFacade getLazyFacade() {
+		return new LazyFacade(this);
+	}
+	
+	public static class LazyFacade implements LazyExpression, SchemaProvider{
+		private final MemoryTable table;
+		private final LazyIterator it;
+
+		private LazyFacade(MemoryTable table) {
+			this.table = table;
+			this.it = table.lazyIterator();
+		}
+		
+		@Override
+		public Schema schema() {
+			return table.schema;
+		}
+
+		@Override
+		public Record next() {
+			return this.it.next();
+		}
+		
 	}
 }

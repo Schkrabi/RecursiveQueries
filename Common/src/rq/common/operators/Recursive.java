@@ -5,9 +5,10 @@ package rq.common.operators;
 
 import java.util.function.Function;
 
+import rq.common.interfaces.Table;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Schema;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.table.MemoryTable;
 
 /**
  * Represents a recursive query fixpoint operator
@@ -38,7 +39,7 @@ public abstract class Recursive implements TabularExpression {
 
 	@Override
 	public Schema schema() {
-		Schema s = this.applyExpressionOnEmptyTable().schema;
+		Schema s = this.applyExpressionOnEmptyTable().schema();
 		return s;
 	}
 	
@@ -47,7 +48,7 @@ public abstract class Recursive implements TabularExpression {
 	 * @return
 	 */
 	protected Table applyExpressionOnEmptyTable() {
-		Table table = new Table(this.initial.schema());
+		Table table = new MemoryTable(this.initial.schema());
 		Table ret = expression.apply(table);
 		return ret;
 	}

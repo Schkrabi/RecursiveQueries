@@ -16,10 +16,11 @@ import rq.common.operators.Projection;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.NotSubschemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.interfaces.Table;
 
 /**
  * @author r.skrabal
@@ -30,7 +31,7 @@ class ProjectionTest {
 	Schema schema, subschema, schema2;
 	Attribute a, b, c, d;
 	Record r1, r2, r3;
-	Table t1;
+	MemoryTable t1;
 	Projection p1, p2;
 
 	/**
@@ -65,7 +66,7 @@ class ProjectionTest {
 						new Record.AttributeValuePair(b,"foo")), 
 				0.8d);
 		
-		t1 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
 		t1.insert(r1);
 		t1.insert(r2);
 		t1.insert(r3);

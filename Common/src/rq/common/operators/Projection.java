@@ -12,11 +12,12 @@ import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Schema;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.table.MemoryTable;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
+import rq.common.interfaces.Table;
 
 /**
  * Represents a projection operator
@@ -53,7 +54,14 @@ public class Projection implements TabularExpression {
 		return new Projection(argument, schema, projection);
 	}
 	
-	public record To(Attribute from, Attribute to) {}
+	public static class To{
+		public final Attribute from, to;
+		
+		public To(Attribute from, Attribute to) {
+			this.from = from;
+			this.to = to;
+		}
+	}
 	
 	/**
 	 * Factory method
@@ -74,7 +82,7 @@ public class Projection implements TabularExpression {
 		Schema schema = Schema.factory(
 						mapping.stream()
 						.map(to -> to.to)
-						.toList());
+						.collect(Collectors.toList()));
 		
 		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
@@ -127,7 +135,7 @@ public class Projection implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table source = this.argument.eval();
-		Table dest = new Table(this.schema);
+		Table dest = new MemoryTable(this.schema);
 		
 		for(Record r : source) {
 			try {

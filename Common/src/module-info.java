@@ -9,4 +9,6 @@ module rq.common {
 	exports rq.common.similarities;
 	exports rq.common.table;
 	exports rq.common.onOperators;
+	exports rq.common.interfaces;
+	exports rq.common.types;
 }

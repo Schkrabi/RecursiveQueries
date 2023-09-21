@@ -8,11 +8,12 @@ import java.util.function.BiFunction;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Attribute;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
+import rq.common.interfaces.Table;
 
 /**
  * Represents similarity restriction operation on table
@@ -80,7 +81,7 @@ public class SimilarityRestriction implements TabularExpression{
 	 */
 	public Table eval() {
 		Table table = this.argument.eval();
-		Table ret = new Table(table.schema);
+		Table ret = new MemoryTable(table.schema());
 		table.stream()
 				.map((Record r) -> {
 					try {

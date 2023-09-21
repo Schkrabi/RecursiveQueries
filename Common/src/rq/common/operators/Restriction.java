@@ -3,10 +3,11 @@ package rq.common.operators;
 import java.util.function.Predicate;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
-import rq.common.table.TabularExpression;
+import rq.common.table.MemoryTable;
+import rq.common.interfaces.Table;
 
 /**
  * Represents crisp restriction operation on table
@@ -25,7 +26,7 @@ public class Restriction implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table table = this.argument.eval();
-		Table ret = new Table(table.schema);
+		Table ret = new MemoryTable(table.schema());
 		table.stream().filter(this.predicate).forEach(r -> {
 			try {
 				ret.insert(r);

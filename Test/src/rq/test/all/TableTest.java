@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -19,7 +21,8 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.table.Table;
+import rq.common.table.MemoryTable;
+import rq.common.interfaces.LazyExpression;
 
 /**
  * @author r.skrabal
@@ -30,7 +33,7 @@ class TableTest {
 	Schema schema;
 	Attribute a, b;
 	Record r1, r2, r3, r4;
-	Table t1, t2, t3, t4;
+	MemoryTable t1, t2, t3, t4;
 
 	/**
 	 * @throws java.lang.Exception
@@ -81,16 +84,16 @@ class TableTest {
 				1.0f);
 		
 		
-		t1 = new Table(this.schema);
-		t2 = new Table(this.schema);
+		t1 = new MemoryTable(this.schema);
+		t2 = new MemoryTable(this.schema);
 		t2.insert(r1);
 		t2.insert(r2);
 		t2.insert(r3);
 		
-		t3 = new Table(this.schema);
+		t3 = new MemoryTable(this.schema);
 		t3.insert(r1);
 		
-		t4 = new Table(this.schema);
+		t4 = new MemoryTable(this.schema);
 		t4.insert(r1);
 		t4.insert(r2);
 	}
@@ -103,7 +106,7 @@ class TableTest {
 	}
 
 	/**
-	 * Test method for {@link rq.common.table.Table#insert(rq.common.table.Record)}.
+	 * Test method for {@link rq.common.table.MemoryTable#insert(rq.common.table.Record)}.
 	 * @throws TableRecordSchemaMismatch 
 	 * @throws TypeSchemaMismatchException 
 	 */
@@ -143,7 +146,7 @@ class TableTest {
 	}
 
 	/**
-	 * Test method for {@link rq.common.table.Table#delete(rq.common.table.Record)}.
+	 * Test method for {@link rq.common.table.MemoryTable#delete(rq.common.table.Record)}.
 	 * @throws TableRecordSchemaMismatch 
 	 */
 	@Test
@@ -164,7 +167,7 @@ class TableTest {
 	}
 
 	/**
-	 * Test method for {@link rq.common.table.Table#update(rq.common.table.Record, rq.common.table.Record)}.
+	 * Test method for {@link rq.common.table.MemoryTable#update(rq.common.table.Record, rq.common.table.Record)}.
 	 * @throws TableRecordSchemaMismatch 
 	 */
 	@Test
@@ -213,5 +216,19 @@ class TableTest {
 		assertEquals(Optional.of(this.r1), this.t4.findNoRank(r1));
 		assertTrue(this.t4.findNoRank(this.r4).isEmpty());
 		assertEquals(Optional.of(this.r1), this.t4.findNoRank(this.r3));
+	}
+	
+	@Test
+	void testLazyFacade() {
+		LazyExpression facade = this.t2.getLazyFacade();
+		Set<Record> contrl = new HashSet<Record>();
+		contrl.add(this.r1);
+		contrl.add(this.r2);
+		contrl.add(this.r3);
+		
+		assertTrue(contrl.contains(facade.next()));
+		assertTrue(contrl.contains(facade.next()));
+		assertTrue(contrl.contains(facade.next()));
+		assertNull(facade.next());
 	}
 }
