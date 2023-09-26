@@ -46,5 +46,11 @@ public interface Table extends TabularExpression, Iterable<Record>{
 	Optional<rq.common.table.Record> findNoRank(rq.common.table.Record record);
 
 	boolean isEmpty();
+	
+	/**
+	 * Returns number of records in the table
+	 * @return
+	 */
+	int size();
 
 }

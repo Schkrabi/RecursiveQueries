@@ -18,10 +18,10 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
-import rq.common.table.MemoryTable;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
+import rq.common.interfaces.Table;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,7 +77,7 @@ class TableReaderTest {
 
 	@Test
 	void testRead() throws CsvValidationException, ClassNotFoundException, IOException, TableRecordSchemaMismatch, DuplicateAttributeNameException, ClassNotInContextException, TypeSchemaMismatchException, AttributeNotInSchemaException, ColumnOrderingNotInitializedException {
-		MemoryTable table = reader.read();
+		Table table = reader.read();
 		Set<Record> rcrds = table.stream().collect(Collectors.toSet());
 		assertEquals(3, rcrds.size());
 		assertTrue(rcrds.contains(

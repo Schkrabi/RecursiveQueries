@@ -21,14 +21,17 @@ import rq.common.interfaces.Table;
 public class Intersection implements TabularExpression {
 	private final TabularExpression argument1, argument2;
 	private final BiFunction<Double, Double, Double> infimum;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
 	private Intersection(
 			TabularExpression argument1, 
 			TabularExpression argument2,
-			BiFunction<Double, Double, Double> infimum) {
+			BiFunction<Double, Double, Double> infimum,
+			BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.argument1 = argument1;
 		this.argument2 = argument2;
 		this.infimum = infimum;
+		this.tableSupplier = tableSupplier;
 	}
 	
 	/**
@@ -41,14 +44,23 @@ public class Intersection implements TabularExpression {
 	public static Intersection factory(
 			TabularExpression argument1, 
 			TabularExpression argument2,
-			BiFunction<Double, Double, Double> infimum)
+			BiFunction<Double, Double, Double> infimum,
+			BiFunction<Schema, Integer, Table> tableSupplier)
 		throws SchemaNotEqualException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema(); 
 		if(!schema1.equals(schema2)) {
 			throw new SchemaNotEqualException(schema1, schema2);
 		}
-		return new Intersection(argument1, argument2, infimum);
+		return new Intersection(argument1, argument2, infimum, tableSupplier);
+	}
+	
+	public static Intersection factory(
+			TabularExpression argument1, 
+			TabularExpression argument2,
+			BiFunction<Double, Double, Double> infimum)
+		throws SchemaNotEqualException{
+		return Intersection.factory(argument1, argument2, infimum, (Schema s, Integer capacity) -> new MemoryTable(s));
 	}
 	
 	private static class RecordPair {
@@ -62,8 +74,9 @@ public class Intersection implements TabularExpression {
 
 	@Override
 	public Table eval() {
-		Table table = new MemoryTable(this.schema());
 		Table table2 = this.argument2.eval();
+		Table table = this.tableSupplier.apply(this.schema(), table2.size());
+		
 		this.argument1.eval().stream()
 			.map(r -> {
 				Optional<rq.common.table.Record> o = table2.findNoRank(r);

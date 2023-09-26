@@ -41,14 +41,9 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 			java.util.Map<Attribute, Attribute> leftProjection,
 			java.util.Map<Attribute, Attribute> rightProjection,
 			Schema schema) {
+		super(new ArrayList<OnOperator>(onClause), product, infimum, leftProjection, rightProjection, schema);
 		this.leftArg = leftArg;
 		this.rightArg = rightArg;
-		this.onClause = new ArrayList<OnOperator>(onClause);
-		this.product = product;
-		this.infimum = infimum;
-		this.leftProjection = leftProjection;
-		this.rightProjection = rightProjection;
-		this.schema = schema;
 		this.rightIterator = this.rightArg.lazyIterator();
 		this.leftCurrent = null;
 	}

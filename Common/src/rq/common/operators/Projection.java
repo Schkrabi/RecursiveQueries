@@ -5,6 +5,7 @@ package rq.common.operators;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
@@ -29,11 +30,18 @@ public class Projection implements TabularExpression {
 	private final Schema schema;
 	private final TabularExpression argument;
 	private final java.util.Map<Attribute, Attribute> projection;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
-	private Projection(TabularExpression argument, Schema schema, java.util.Map<Attribute, Attribute> projection) {
+	private Projection(TabularExpression argument, Schema schema, java.util.Map<Attribute, Attribute> projection, BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.schema = schema;
 		this.argument = argument;
 		this.projection = projection;
+		this.tableSupplier = tableSupplier;
+	}
+	
+	public static Projection factory(TabularExpression argument, Schema schema)
+			throws NotSubschemaException{
+		return Projection.factory(argument, schema, (Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
 	/**
@@ -43,7 +51,7 @@ public class Projection implements TabularExpression {
 	 * @return
 	 * @throws NotSubschemaException
 	 */
-	public static Projection factory(TabularExpression argument, Schema schema) 
+	public static Projection factory(TabularExpression argument, Schema schema, BiFunction<Schema, Integer, Table> tableSupplier) 
 		throws NotSubschemaException{
 		if(!argument.schema().isSubSchema(schema)) {
 			throw new NotSubschemaException(argument.schema(), schema);
@@ -51,7 +59,7 @@ public class Projection implements TabularExpression {
 		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
 		schema.stream().forEach(a -> projection.put(a, a));
 		
-		return new Projection(argument, schema, projection);
+		return new Projection(argument, schema, projection, tableSupplier);
 	}
 	
 	public static class To{
@@ -63,6 +71,11 @@ public class Projection implements TabularExpression {
 		}
 	}
 	
+	public static Projection factory(TabularExpression table, Collection<To> mapping)
+			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+		return Projection.factory(table, mapping, (Schema s, Integer count) -> new MemoryTable(s));
+	}
+	
 	/**
 	 * Factory method
 	 * @param table
@@ -71,7 +84,7 @@ public class Projection implements TabularExpression {
 	 * @throws AttributeNotInSchemaException
 	 * @throws DuplicateAttributeNameException
 	 */
-	public static Projection factory(TabularExpression table, Collection<To> mapping) 
+	public static Projection factory(TabularExpression table, Collection<To> mapping, BiFunction<Schema, Integer, Table> tableSupplier) 
 		throws AttributeNotInSchemaException, DuplicateAttributeNameException {
 		Schema fromSchema = table.schema();
 		for(To to : mapping) {
@@ -87,7 +100,12 @@ public class Projection implements TabularExpression {
 		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
 		
-		return new Projection(table, schema, projection);
+		return new Projection(table, schema, projection, tableSupplier);
+	}
+	
+	public static Projection factory(TabularExpression argument, To... mapping) 
+			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+		return Projection.factory(argument, Arrays.asList(mapping), (Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
 	/**
@@ -98,9 +116,9 @@ public class Projection implements TabularExpression {
 	 * @throws AttributeNotInSchemaException
 	 * @throws DuplicateAttributeNameException
 	 */
-	public static Projection factory(TabularExpression argument, To... mapping) 
+	public static Projection factory(TabularExpression argument, BiFunction<Schema, Integer, Table> tableSupplier, To... mapping) 
 			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
-		return Projection.factory(argument, Arrays.asList(mapping));
+		return Projection.factory(argument, Arrays.asList(mapping), tableSupplier);
 	}
 	
 	/**
@@ -135,7 +153,7 @@ public class Projection implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table source = this.argument.eval();
-		Table dest = new MemoryTable(this.schema);
+		Table dest = this.tableSupplier.apply(schema, source.size());
 		
 		for(Record r : source) {
 			try {

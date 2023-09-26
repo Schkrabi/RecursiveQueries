@@ -1,7 +1,10 @@
 package rq.common.interfaces;
 
+import java.io.IOException;
+
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.table.Record;
+import rq.common.table.FileMappedTable;
 import rq.common.table.MemoryTable;
 
 public interface LazyExpression extends SchemaProvider {
@@ -12,7 +15,7 @@ public interface LazyExpression extends SchemaProvider {
 	 * @param exp
 	 * @return
 	 */
-	public static MemoryTable realize(LazyExpression exp) {
+	public static MemoryTable realizeInMemory(LazyExpression exp) {
 		MemoryTable table = null;
 		Record record = exp.next();
 		while(record != null) {
@@ -25,6 +28,28 @@ public interface LazyExpression extends SchemaProvider {
 				//Unlikely
 				throw new RuntimeException(e);
 			}
+			record = exp.next();
+		}
+		return table;
+	}
+	
+	/**
+	 * Realizes lazy expression into file mapped table
+	 * @param exp expression
+	 * @param expectedCount expected count of records
+	 * @return file mapped table
+	 * @throws IOException
+	 */
+	public static FileMappedTable realizeMapped(LazyExpression exp, int expectedCount)
+			throws IOException {
+		FileMappedTable table = null;
+		Record record = exp.next();
+		while(record != null) {
+			if(table == null) {
+				table = FileMappedTable.factory(record.schema, expectedCount);
+			}
+			table.insert(record);
+			record = exp.next();
 		}
 		return table;
 	}

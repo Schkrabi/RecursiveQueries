@@ -22,6 +22,7 @@ import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
+import rq.common.interfaces.Table;
 
 /**
  * @author r.skrabal
@@ -123,7 +124,7 @@ class UnionTest {
 	 */
 	@Test
 	void testEval() {
-		MemoryTable rslt = u1.eval();
+		Table rslt = u1.eval();
 		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
 		assertEquals(3, rcrds.size());
 		assertTrue(rcrds.contains(this.r1));

@@ -70,6 +70,16 @@ public class ValueParserContext {
 								throw new RuntimeException(e);
 							}
 							return dateTime;
+						},
+						rq.common.types.Str10.class, (String x) -> rq.common.types.Str10.factory(x),
+						rq.common.types.DateTime.class, (String x) -> {
+							LocalDateTime dateTime = null;
+							try {
+								dateTime = LocalDateTime.parse(x, dateTimeFormatter);
+							}catch(Exception e) {
+								throw new RuntimeException(e);
+							}
+							return new rq.common.types.DateTime(dateTime);
 						}
 					));
 }

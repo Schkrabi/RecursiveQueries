@@ -27,18 +27,37 @@ public class SimilarityRestriction implements TabularExpression{
 	private final Attribute attribute2;
 	private final BiFunction<Double, Double, Double> product;
 	private final BiFunction<Object, Object, Double> similarity;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
 	private SimilarityRestriction(
 			TabularExpression argument, 
 			Attribute attribute1, 
 			Attribute attribute2, 
 			BiFunction<Double, Double, Double> product, 
-			BiFunction<Object, Object, Double> similarity) {
+			BiFunction<Object, Object, Double> similarity,
+			BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.argument = argument;
 		this.attribute1 = attribute1;
 		this.attribute2 = attribute2;
 		this.product = product;
 		this.similarity = similarity;
+		this.tableSupplier = tableSupplier;
+	}
+	
+	public static SimilarityRestriction factory(
+			TabularExpression argument, 
+			Attribute attribute1, 
+			Attribute attribute2, 
+			BiFunction<Double, Double, Double> product, 
+			BiFunction<Object, Object, Double> similarity)
+		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
+		return SimilarityRestriction.factory(
+				argument, 
+				attribute1, 
+				attribute2, 
+				product, 
+				similarity,
+				(Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
 	/**
@@ -56,7 +75,8 @@ public class SimilarityRestriction implements TabularExpression{
 			Attribute attribute1, 
 			Attribute attribute2, 
 			BiFunction<Double, Double, Double> product, 
-			BiFunction<Object, Object, Double> similarity)
+			BiFunction<Object, Object, Double> similarity,
+			BiFunction<Schema, Integer, Table> tableSupplier)
 		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
 		if(!attribute1.domain.equals(attribute2.domain)) {
 			throw new ComparisonDomainMismatchException(attribute1, attribute2);
@@ -72,7 +92,8 @@ public class SimilarityRestriction implements TabularExpression{
 				attribute1,
 				attribute2,
 				product,
-				similarity);
+				similarity,
+				tableSupplier);
 	}
 	
 	/**
@@ -81,7 +102,7 @@ public class SimilarityRestriction implements TabularExpression{
 	 */
 	public Table eval() {
 		Table table = this.argument.eval();
-		Table ret = new MemoryTable(table.schema());
+		Table ret = this.tableSupplier.apply(table.schema(), table.size());
 		table.stream()
 				.map((Record r) -> {
 					try {

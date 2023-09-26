@@ -1,5 +1,6 @@
 package rq.common.operators;
 
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
@@ -17,16 +18,24 @@ import rq.common.interfaces.Table;
 public class Restriction implements TabularExpression {
 	private final TabularExpression argument;
 	private final Predicate<Record> predicate;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
 	public Restriction(TabularExpression argument, Predicate<Record> predicate) {
 		this.argument = argument;
 		this.predicate = predicate;
+		this.tableSupplier = (Schema s, Integer count) -> new MemoryTable(s);
+	}
+	
+	public Restriction(TabularExpression argument, Predicate<Record> predicate, BiFunction<Schema, Integer, Table> tableSupplier) {
+		this.argument = argument;
+		this.predicate = predicate;
+		this.tableSupplier = tableSupplier;
 	}
 	
 	@Override
 	public Table eval() {
 		Table table = this.argument.eval();
-		Table ret = new MemoryTable(table.schema());
+		Table ret = this.tableSupplier.apply(table.schema(), table.size());
 		table.stream().filter(this.predicate).forEach(r -> {
 			try {
 				ret.insert(r);

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Queue;
+import java.util.function.BiFunction;
 import java.util.LinkedList;
 
 import java.io.RandomAccessFile;
@@ -34,6 +35,14 @@ import rq.common.interfaces.Table;
  *
  */
 public class FileMappedTable implements Closeable, Table {
+	
+	public static final BiFunction<Schema, Integer, Table> supplier = (Schema s, Integer count) -> {
+		try {
+			return FileMappedTable.factory(s, count);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	};
 	
 	private static final String FILE_ACCESS_MODE = "rw";
 	private static final int DEFAULT_RECORD_CAPACITY = 100;
@@ -409,5 +418,10 @@ public class FileMappedTable implements Closeable, Table {
 	@Override
 	public Optional<Record> findNoRank(Record record) {
 		return this.stream().filter(r -> record.equalsNoRank(r)).findAny();
+	}
+
+	@Override
+	public int size() {
+		return (this.mappedBuffer.position() / this.schemaByteSize) - this.vacantPositions.size();
 	}
 }

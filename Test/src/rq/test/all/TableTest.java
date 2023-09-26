@@ -7,8 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
-import java.util.HashSet;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -22,7 +20,6 @@ import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
-import rq.common.interfaces.LazyExpression;
 
 /**
  * @author r.skrabal
@@ -216,19 +213,5 @@ class TableTest {
 		assertEquals(Optional.of(this.r1), this.t4.findNoRank(r1));
 		assertTrue(this.t4.findNoRank(this.r4).isEmpty());
 		assertEquals(Optional.of(this.r1), this.t4.findNoRank(this.r3));
-	}
-	
-	@Test
-	void testLazyFacade() {
-		LazyExpression facade = this.t2.getLazyFacade();
-		Set<Record> contrl = new HashSet<Record>();
-		contrl.add(this.r1);
-		contrl.add(this.r2);
-		contrl.add(this.r3);
-		
-		assertTrue(contrl.contains(facade.next()));
-		assertTrue(contrl.contains(facade.next()));
-		assertTrue(contrl.contains(facade.next()));
-		assertNull(facade.next());
 	}
 }

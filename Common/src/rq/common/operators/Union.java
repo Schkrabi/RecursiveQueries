@@ -8,6 +8,7 @@ import java.util.function.BiFunction;
 
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
@@ -22,14 +23,17 @@ public class Union implements TabularExpression {
 	private final TabularExpression argument1;
 	private final TabularExpression argument2;
 	private final BiFunction<Double, Double, Double> supremum;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
 	private Union(
 			TabularExpression argument1, 
 			TabularExpression argument2,
-			BiFunction<Double, Double, Double> supremum) {
+			BiFunction<Double, Double, Double> supremum,
+			BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.argument1 = argument1;
 		this.argument2 = argument2;
 		this.supremum = supremum;
+		this.tableSupplier = tableSupplier;
 	}
 	
 	/**
@@ -42,20 +46,34 @@ public class Union implements TabularExpression {
 	public static Union factory(
 			TabularExpression argument1, 
 			TabularExpression argument2,
-			BiFunction<Double, Double, Double> supremum) 
+			BiFunction<Double, Double, Double> supremum,
+			BiFunction<Schema, Integer, Table> tableSupplier) 
 		throws SchemaNotEqualException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema(); 
 		if(!schema1.equals(schema2)) {
 			throw new SchemaNotEqualException(schema1, schema2);
 		}
-		return new Union(argument1, argument2, supremum);
+		return new Union(argument1, argument2, supremum, tableSupplier);
+	}
+	
+	public static Union factory(
+			TabularExpression argument1, 
+			TabularExpression argument2,
+			BiFunction<Double, Double, Double> supremum)
+		throws SchemaNotEqualException {
+		return Union.factory(
+				argument1, 
+				argument2, 
+				supremum,
+				(Schema s, Integer count) -> new MemoryTable(s));
 	}
 
 	@Override
-	public MemoryTable eval() {
-		MemoryTable table = new MemoryTable(this.schema());
-		this.argument1.eval().stream().forEach(r -> {
+	public Table eval() {
+		Table arg = this.argument1.eval(); 
+		Table table = this.tableSupplier.apply(this.schema(), arg.size());
+		arg.stream().forEach(r -> {
 			try {
 				table.insert(r);
 			} catch (TableRecordSchemaMismatch e) {

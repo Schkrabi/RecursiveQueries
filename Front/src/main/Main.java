@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.time.Duration;
 
-import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.TabularExpression;
-import rq.common.table.MemoryTable;
+import rq.common.types.Str10;
 import rq.files.exceptions.ClassNotInContextException;
 import rq.files.io.LazyTable;
 import rq.files.io.RecordWriter;
@@ -41,6 +41,7 @@ public class Main {
 		this.path = path;
 	}
 	
+	@SuppressWarnings("unused")
 	private TabularExpression prepQuery(Table iTable) {
 		return iTable;
 		//return Queries.electricityLoadDiagrams_CustTresholdAndPeriod("MT_124", 200.0d, Duration.ofHours(1), iTable);
@@ -53,14 +54,14 @@ public class Main {
 	 */
 	private TabularExpression query(Table iTable) {
 		//return iTable;
-		//return Queries.electricityLoadDiagrams_repeatingPeaks(iTable);
-		try {
-			return Queries.electricityLoadDiagrams_benchmark(iTable);
-		} catch (AttributeNotInSchemaException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+		return Queries.electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(iTable);
+//		try {
+//			return Queries.electricityLoadDiagrams_benchmark(iTable);
+//		} catch (AttributeNotInSchemaException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return null;
 		
 	}
 	
@@ -68,9 +69,10 @@ public class Main {
 	 * Loads data from input file
 	 * @return table instance
 	 */
-	private MemoryTable loadData() {
+	@SuppressWarnings("unused")
+	private Table loadData() {
 		TableReader reader = null;
-		MemoryTable iTable = null;
+		Table iTable = null;
 		
 		try {
 			reader = TableReader.open(this.path);
@@ -106,21 +108,20 @@ public class Main {
 	/**
 	 * Main workhorse method
 	 * @param output stream
+	 * @throws IOException 
 	 */
-	@SuppressWarnings("unused")
-	private void run(OutputStream output) {
-		long start = System.currentTimeMillis();
-		Table iTable = this.loadData();
-		long end = System.currentTimeMillis();
-		this.loadTime = end - start;
+	private void run(OutputStream output) throws IOException {
 		
-		TabularExpression prep = this.prepQuery(iTable);
-		start = System.currentTimeMillis();
-		iTable = prep.eval();
-		end = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
+		
+		LazyTable iTable = LazyTable.open(this.path);
+		LazyExpression prep = Queries.electricityLoadDiagrams_CustTresholdAndPeriodLazy(Str10.factory("MT_131"), 100.0d, Duration.ofHours(1), iTable);
+		Table prepped = LazyExpression.realizeMapped(prep, 100_000);
+		
+		long end = System.currentTimeMillis();
 		this.preparationTime = end - start;
 		
-		TabularExpression query = this.query(iTable);
+		TabularExpression query = this.query(prepped);
 		start = System.currentTimeMillis();
 		Table oTable = query.eval();
 		end = System.currentTimeMillis();
@@ -132,6 +133,7 @@ public class Main {
 		this.outputTime = end - start;
 	}
 	
+	@SuppressWarnings("unused")
 	private void runLazy(OutputStream output) throws ClassNotInContextException, IOException {
 		LazyTable t1 = LazyTable.open(this.path);
 		LazyTable t2 = LazyTable.open(this.path);
@@ -161,8 +163,9 @@ public class Main {
 	/**
 	 * Main entry point
 	 * @param args program arguments
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		if(!(args.length == 1
 				&& (args[0] instanceof String))){
 			System.out.println(USAGE);
@@ -170,12 +173,12 @@ public class Main {
 		}
 		
 		Main me = new Main(Path.of(args[0]));
-		//me.run(System.out);
-		try {
-			me.runLazy(System.out);
-		} catch (ClassNotInContextException | IOException e) {
-			e.printStackTrace();
-		}
+		me.run(System.out);
+//		try {
+//			me.runLazy(System.out);
+//		} catch (ClassNotInContextException | IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 }

@@ -6,16 +6,19 @@ import java.io.Closeable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Function;
 
 import com.opencsv.exceptions.CsvValidationException;
 
 import rq.common.table.Schema;
+import rq.common.table.FileMappedTable;
 import rq.common.table.MemoryTable;
 import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.table.Record;
+import rq.common.interfaces.Table;
 
 /**
  * Class for reading table from a file
@@ -24,9 +27,11 @@ import rq.common.table.Record;
  */
 public class TableReader implements Closeable{	
 	private RecordReader recordReader;
+	private final Function<Schema, Table> tableSupplier;
 	
-	private TableReader(RecordReader recordReader) {
+	private TableReader(RecordReader recordReader, Function<Schema, Table> schemaSupplier) {
 		this.recordReader = recordReader;
+		this.tableSupplier = schemaSupplier;
 	}
 	
 	public static TableReader open(Path path)
@@ -43,12 +48,29 @@ public class TableReader implements Closeable{
 	public static TableReader open(InputStream stream, ValueParserContext context) 
 		throws IOException {		
 		RecordReader recordReader = RecordReader.open(stream, context);
-		return new TableReader(recordReader);
+		return new TableReader(recordReader, (Schema s) -> new MemoryTable(s));
 	}
 	
 	public static TableReader open(InputStream stream)
 		throws IOException {
 		return TableReader.open(stream, ValueParserContext.DEFAULT);
+	}
+	
+	public static TableReader openMappedToFile(InputStream stream, ValueParserContext context, int capacity)
+		throws IOException {
+		RecordReader recordReader = RecordReader.open(stream, context);
+		return new TableReader(recordReader, (Schema s) -> {
+			try {
+				return FileMappedTable.factory(s, capacity);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		});
+	}
+	
+	public static TableReader openMappedToFile(InputStream stream, int capacity)
+		throws IOException {
+		return TableReader.openMappedToFile(stream, ValueParserContext.DEFAULT, capacity);
 	}
 	
 	public static TableReader open(String path)
@@ -68,10 +90,10 @@ public class TableReader implements Closeable{
 	 * @throws ColumnOrderingNotInitializedException 
 	 * @throws ClassNotInContextException
 	 */
-	public MemoryTable read() throws CsvValidationException, ClassNotFoundException, DuplicateAttributeNameException,
+	public Table read() throws CsvValidationException, ClassNotFoundException, DuplicateAttributeNameException,
 			IOException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch {
 		Schema schema = this.recordReader.schema();
-		MemoryTable table = new MemoryTable(schema);
+		Table table = this.tableSupplier.apply(schema);
 
 		Record record = this.recordReader.next();
 		while (record != null) {

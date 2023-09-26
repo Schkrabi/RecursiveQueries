@@ -6,10 +6,8 @@ import java.util.stream.Stream;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
-import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.LazyIterable;
 import rq.common.interfaces.LazyIterator;
-import rq.common.interfaces.SchemaProvider;
 import rq.common.interfaces.Table;
 
 import java.util.Collection;
@@ -203,29 +201,9 @@ public class MemoryTable implements Table, LazyIterable{
 			
 		};
 	}
-	
-	public LazyFacade getLazyFacade() {
-		return new LazyFacade(this);
-	}
-	
-	public static class LazyFacade implements LazyExpression, SchemaProvider{
-		private final MemoryTable table;
-		private final LazyIterator it;
 
-		private LazyFacade(MemoryTable table) {
-			this.table = table;
-			this.it = table.lazyIterator();
-		}
-		
-		@Override
-		public Schema schema() {
-			return table.schema;
-		}
-
-		@Override
-		public Record next() {
-			return this.it.next();
-		}
-		
+	@Override
+	public int size() {
+		return this.records.size();
 	}
 }

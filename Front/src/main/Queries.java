@@ -1,5 +1,6 @@
 package main;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -16,28 +17,62 @@ import rq.common.onOperators.OnGreaterThan;
 import rq.common.onOperators.OnSimilar;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
+import rq.common.operators.LazyProjection;
+import rq.common.operators.LazyRecursiveUnrestricted;
+import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.RecursiveUnrestricted;
 import rq.common.operators.Restriction;
 import rq.common.similarities.NaiveSimilarity;
 import rq.common.table.Attribute;
+import rq.common.table.FileMappedTable;
+import rq.common.table.LazyFacade;
 import rq.common.table.Schema;
+import rq.common.types.Str10;
 import rq.common.table.MemoryTable;
 import rq.files.io.LazyTable;
+import rq.common.types.DateTime;
 
 public class Queries {
 	
-	private static final Attribute customer = new Attribute("CUSTOMER", String.class);
-	private static final Attribute time = new Attribute("TIME", LocalDateTime.class);
+	private static final Attribute customer = new Attribute("CUSTOMER", Str10.class);
+	private static final Attribute time = new Attribute("TIME", DateTime.class);
 	private static final Attribute value = new Attribute("VALUE", Double.class);
 	
-	private static final Attribute rCustomer = new Attribute("right.CUSTOMER", String.class);
-	private static final Attribute rTime = new Attribute("right.TIME", LocalDateTime.class);
+	private static final Attribute rCustomer = new Attribute("right.CUSTOMER", Str10.class);
+	private static final Attribute rTime = new Attribute("right.TIME", DateTime.class);
 	
-	private static final Attribute aTime = new Attribute("addedTime", LocalDateTime.class);
-	private static final Attribute raTime = new Attribute("right.addedTime", LocalDateTime.class);
+	private static final Attribute aTime = new Attribute("addedTime", DateTime.class);
+	private static final Attribute raTime = new Attribute("right.addedTime", DateTime.class);
 
 	private static final Attribute rValue = new Attribute("right.VALUE", Double.class);
+	
+	public static LazyExpression electricityLoadDiagrams_CustTresholdAndPeriodLazy(Str10 cust, Double threshold, Duration period, LazyTable iTable) {
+		Schema intermediate;
+		try {
+			intermediate = Schema.factory(customer, time, value, aTime);
+		} catch (DuplicateAttributeNameException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return rq.common.operators.LazyMapping.factory(
+				LazyRestriction.factory(iTable, r -> r.getNoThrow("CUSTOMER").equals(cust) && ((Double)r.getNoThrow("VALUE")) >= threshold ? 1.0d : 0.0d), 
+				r -> {
+					try {
+						return rq.common.table.Record.factory(
+								intermediate, 
+								Arrays.asList(
+										new rq.common.table.Record.AttributeValuePair(customer, r.getNoThrow(customer)),
+										new rq.common.table.Record.AttributeValuePair(time, r.getNoThrow(time)),
+										new rq.common.table.Record.AttributeValuePair(value, r.getNoThrow(value)),
+										new rq.common.table.Record.AttributeValuePair(aTime, new DateTime(((DateTime)r.getNoThrow(time)).getInner().plus(period)))), 
+								r.rank);
+					} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
+						throw new RuntimeException(e);
+					}
+				}, 
+				s -> intermediate);
+	}
 	
 	/**
 	 * Filters the table on customer and value threshold and adds a new attribute with period added to the time
@@ -64,7 +99,7 @@ public class Queries {
 										new rq.common.table.Record.AttributeValuePair(customer, r.getNoThrow(customer)),
 										new rq.common.table.Record.AttributeValuePair(time, r.getNoThrow(time)),
 										new rq.common.table.Record.AttributeValuePair(value, r.getNoThrow(value)),
-										new rq.common.table.Record.AttributeValuePair(aTime, ((LocalDateTime)r.getNoThrow(time)).plus(period))), 
+										new rq.common.table.Record.AttributeValuePair(aTime, new DateTime(((DateTime)r.getNoThrow(time)).getInner().plus(period)))),
 								r.rank);
 					} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
 						throw new RuntimeException(e);
@@ -73,7 +108,7 @@ public class Queries {
 				s -> intermediate);
 	}
 
-	public static TabularExpression electricityLoadDiagrams_repeatingPeaks(MemoryTable iTable) {
+	public static TabularExpression electricityLoadDiagrams_repeatingPeaks(Table iTable) {
 		return RecursiveUnrestricted.factory(
 				iTable,
 				(Table t) -> 
@@ -87,7 +122,7 @@ public class Queries {
 											Lukasiewitz.INFIMUM, 
 											new OnEquals(customer, customer),
 											new OnGreaterThan(time, time),
-											new OnSimilar(aTime, time, NaiveSimilarity.DATETIME_SIMILARITY)),
+											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY)),
 									new Projection.To(rCustomer, customer),
 									new Projection.To(rTime, time),
 									new Projection.To(rValue, value),
@@ -97,6 +132,72 @@ public class Queries {
 							throw new RuntimeException(e);
 						}
 					});
+	}
+	
+	public static TabularExpression electricityLoadDiagrams_repeatingPeaksMapped(Table iTable) {
+		return RecursiveUnrestricted.factory(
+				iTable,
+				(Table t) -> 
+					{
+						try {
+							return Projection.factory(
+									Join.factory(
+											t,
+											iTable, 
+											Lukasiewitz.PRODUCT, 
+											Lukasiewitz.INFIMUM, 
+											new OnEquals(customer, customer),
+											new OnGreaterThan(time, time),
+											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY)),
+									new Projection.To(rCustomer, customer),
+									new Projection.To(rTime, time),
+									new Projection.To(rValue, value),
+									new Projection.To(raTime, aTime))
+							.eval();
+						} catch (DuplicateAttributeNameException | AttributeNotInSchemaException e) {
+							throw new RuntimeException(e);
+						}
+					},
+				FileMappedTable.supplier);
+	}
+	
+	public static TabularExpression electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(Table iTable) {
+		return LazyRecursiveUnrestricted.factory(
+				new LazyFacade(iTable), 
+				(Table table) -> {
+					try {
+						return LazyProjection.factory(
+								LazyJoin.factory(
+										new LazyFacade(table), 
+										new LazyFacade(iTable), 
+										Lukasiewitz.PRODUCT, 
+										Lukasiewitz.INFIMUM, 
+										new OnEquals(customer, customer),
+										new OnGreaterThan(time, time),
+										new OnSimilar(aTime, time, NaiveSimilarity.DATETIME_SIMILARITY)), 
+								new Projection.To(rCustomer, customer),
+								new Projection.To(rTime, time),
+								new Projection.To(rValue, value),
+								new Projection.To(raTime, aTime));
+					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+						// Unlikely
+						throw new RuntimeException(e);
+					}
+				},
+				(Schema s) -> {
+					try {
+						return FileMappedTable.factory(s, 100_000);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				},
+				(Schema s) -> {
+					try {
+						return FileMappedTable.factory(s, 10_000);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				});
 	}
 	
 	public static TabularExpression electricityLoadDiagrams_benchmark(Table iTable) 

@@ -2,6 +2,9 @@ package rq.common.similarities;
 
 import java.time.Duration;
 import java.util.function.BiFunction;
+
+import rq.common.types.DateTime;
+
 import java.time.LocalDateTime;
 
 /**
@@ -21,7 +24,10 @@ public class NaiveSimilarity {
 	public static final BiFunction<Object, Object, Double> DOUBLE_SIMILARITY =
 			(Object d1, Object d2) -> Math.max((-K * Math.abs((Double)d1 - (Double)d2)) + 1.0d, 0.0d);
 			
-	public static final BiFunction<Object, Object, Double> DATETIME_SIMILARITY =
+	public static final BiFunction<Object, Object, Double> LOCALDATETIME_SIMILARITY =
 			(Object t1, Object t2) -> Math.max((-K * Duration.between((LocalDateTime)t1, (LocalDateTime)t2).toMinutes()) , 0.0d);
+			
+			public static final BiFunction<Object, Object, Double> DATETIME_SIMILARITY =
+					(Object t1, Object t2) -> Math.max((-K * Duration.between(((DateTime)t1).getInner(), ((DateTime)t2).getInner()).toMinutes()) , 0.0d);
 			
 }

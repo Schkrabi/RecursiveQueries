@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.HashSet;
 
@@ -16,6 +17,7 @@ import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.SchemaNotJoinableException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.onOperators.OnOperator;
 import rq.common.table.Attribute;
@@ -39,8 +41,10 @@ public class Join extends AbstractJoin implements TabularExpression {
 		
 	}
 	
-	private TabularExpression argument1;
-	private TabularExpression argument2;
+	private final TabularExpression argument1;
+	private final TabularExpression argument2;
+	private final BiFunction<Schema, Integer, Table> tableSupplier;
+	
 	private Join(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
@@ -49,15 +53,12 @@ public class Join extends AbstractJoin implements TabularExpression {
 			BinaryOperator<Double> infimum,
 			java.util.Map<Attribute, Attribute> leftProjection,
 			java.util.Map<Attribute, Attribute> rightProjection,
-			Schema schema) {
+			Schema schema,
+			BiFunction<Schema, Integer, Table> tableSupplier) {
+		super(new ArrayList<OnOperator>(onClause), product, infimum, leftProjection, rightProjection, schema);
 		this.argument1 = argument1;
 		this.argument2 = argument2;
-		this.onClause = new ArrayList<OnOperator>(onClause);
-		this.product = product;
-		this.infimum = infimum;
-		this.leftProjection = leftProjection;
-		this.rightProjection = rightProjection;
-		this.schema = schema;
+		this.tableSupplier = tableSupplier;
 	}
 	
 	/**
@@ -75,7 +76,8 @@ public class Join extends AbstractJoin implements TabularExpression {
 			TabularExpression argument2, 
 			Collection<OnOperator> onClause,
 			BinaryOperator<Double> product,
-			BinaryOperator<Double> infimum) 
+			BinaryOperator<Double> infimum,
+			BiFunction<Schema, Integer, Table> tableSupplier) 
 		throws AttributeNotInSchemaException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema();
@@ -106,7 +108,17 @@ public class Join extends AbstractJoin implements TabularExpression {
 			throw new RuntimeException(e);
 		}
 		
-		return new Join(argument1, argument2, onClause, product, infimum, leftProjection, rightProjection, schema);
+		return new Join(argument1, argument2, onClause, product, infimum, leftProjection, rightProjection, schema, tableSupplier);
+	}
+	
+	public static Join factory(
+			TabularExpression argument1, 
+			TabularExpression argument2, 
+			Collection<OnOperator> onClause,
+			BinaryOperator<Double> product,
+			BinaryOperator<Double> infimum) 
+		throws AttributeNotInSchemaException {
+		return Join.factory(argument1, argument2, onClause, product, infimum, (Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
 	/**
@@ -136,12 +148,15 @@ public class Join extends AbstractJoin implements TabularExpression {
 	}
 	
 	@Override
-	public MemoryTable eval() {
+	public Table eval() {
 		Schema schema = this.schema();
-		MemoryTable table = new MemoryTable(schema);
 		
-		for(Record record1 : this.argument1.eval()) {
-			for(Record record2 : this.argument2.eval()) {
+		Table t1 = this.argument1.eval();
+		Table t2 = this.argument2.eval();
+		Table table = this.tableSupplier.apply(schema, t1.size() * t2.size());
+		
+		for(Record record1 : t1) {
+			for(Record record2 : t2) {
 				Double onClauseSatisfyDegree = this.joinClauseSatisfyDegree(record1, record2);
 				if(onClauseSatisfyDegree > 0.0d) {
 					double rank = this.recordRank(record1.rank, record2.rank, onClauseSatisfyDegree);

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,9 +24,11 @@ import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.table.Attribute;
+import rq.common.table.LazyFacade;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.files.io.LazyTable;
+import rq.common.interfaces.Table;
 
 class LazyRecursiveUnrestrictedTest {
 	
@@ -73,15 +77,17 @@ class LazyRecursiveUnrestrictedTest {
 						new Record.AttributeValuePair(b,"bah")), 
 				0.8d);
 		
+		Table t = LazyExpression.realizeInMemory(this.t1);
+		
 		this.lru = LazyRecursiveUnrestricted.factory(
-				LazyRestriction.factory(this.t1, r -> r.getNoThrow(a).equals(1) ? 1.0d : 0.0d), 
-				(LazyExpression table) -> {
+				LazyRestriction.factory(new LazyFacade(t), r -> r.getNoThrow(a).equals(1) ? 1.0d : 0.0d), 
+				(Table table) -> {
 					try {
 						return 
 							LazyProjection.factory(
 									LazyJoin.factory(
 											LazyMapping.factory(
-													table, 
+													new LazyFacade(table), 
 													r -> {
 														try {
 															return r.set(a, ((int) r.get(a)) + 1);
@@ -89,12 +95,12 @@ class LazyRecursiveUnrestrictedTest {
 															throw new RuntimeException(e);
 														}
 													}), 
-											this.t1, 
+											new LazyFacade(t), 
 											Lukasiewitz.PRODUCT, 
 											Lukasiewitz.INFIMUM, 
 											new OnEquals(a, a)), 
-									new Projection.To(new Attribute("left.A", Integer.class), a),
-									new Projection.To(new Attribute("left.B", String.class), b));
+									new Projection.To(new Attribute("right.A", Integer.class), a),
+									new Projection.To(new Attribute("right.B", String.class), b));
 					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
 						throw new RuntimeException(e);
 					}
@@ -110,14 +116,13 @@ class LazyRecursiveUnrestrictedTest {
 
 	@Test
 	void testEval() {
-		//Does not wokr, side effect issue
-//		Table rslt = this.lru.eval();
-//		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
-//		assertEquals(3, rcrds.size());
-//		assertTrue(rcrds.contains(this.r1));
-//		assertTrue(rcrds.contains(this.r2));
-//		assertTrue(rcrds.contains(this.r3));
-//		assertFalse(rcrds.contains(this.r4));
+		Table rslt = this.lru.eval();
+		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
+		assertEquals(3, rcrds.size());
+		assertTrue(rcrds.contains(this.r1));
+		assertTrue(rcrds.contains(this.r2));
+		assertTrue(rcrds.contains(this.r3));
+		assertFalse(rcrds.contains(this.r4));
 	}
 
 	@Test

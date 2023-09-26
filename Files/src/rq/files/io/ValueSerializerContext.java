@@ -62,6 +62,8 @@ public class ValueSerializerContext {
 					Double.class, (Object o) -> o.toString(),
 					Float.class, (Object o) -> o.toString(),
 					Boolean.class, (Object o) -> o.toString(),
-					LocalDateTime.class, (Object o) -> ((LocalDateTime)o).format(dateTimeFormatter)
+					LocalDateTime.class, (Object o) -> ((LocalDateTime)o).format(dateTimeFormatter),
+					rq.common.types.Str10.class, (Object o) -> o.toString(),
+					rq.common.types.DateTime.class, (Object o) -> ((rq.common.types.DateTime)o).getInner().format(dateTimeFormatter)
 					));
 }

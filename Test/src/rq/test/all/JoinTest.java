@@ -27,6 +27,8 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 
+import rq.common.interfaces.Table;
+
 /**
  * @author r.skrabal
  *
@@ -139,7 +141,7 @@ class JoinTest {
 	 */
 	@Test
 	void testEval() throws TypeSchemaMismatchException, AttributeNotInSchemaException, DuplicateAttributeNameException {
-		MemoryTable rslt = j1.eval();
+		Table rslt = j1.eval();
 		Set<Record> rcrds = rslt.stream().collect(Collectors.toSet());
 		assertEquals(1, rcrds.size());
 		assertTrue(rcrds.contains(

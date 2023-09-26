@@ -35,12 +35,26 @@ public class AbstractJoin {
 		return m;
 	}
 
-	protected List<OnOperator> onClause;
-	protected BinaryOperator<Double> product;
-	protected BinaryOperator<Double> infimum;
-	protected java.util.Map<Attribute, Attribute> leftProjection;
-	protected java.util.Map<Attribute, Attribute> rightProjection;
-	protected Schema schema;
+	protected final List<OnOperator> onClause;
+	protected final BinaryOperator<Double> product;
+	protected final BinaryOperator<Double> infimum;
+	protected final java.util.Map<Attribute, Attribute> leftProjection;
+	protected final java.util.Map<Attribute, Attribute> rightProjection;
+	protected final Schema schema;
+	
+	protected AbstractJoin(List<OnOperator> onClause,
+			BinaryOperator<Double> product,
+			BinaryOperator<Double> infimum,
+			java.util.Map<Attribute, Attribute> leftProjection,
+			java.util.Map<Attribute, Attribute> rightProjection,
+			Schema schema) {
+		this.onClause = onClause;
+		this.product = product;
+		this.infimum = infimum;
+		this.leftProjection = leftProjection;
+		this.rightProjection = rightProjection;
+		this.schema = schema;
+	}
 
 	/**
 	 * Returns degree to which the ON clause is satisfied
