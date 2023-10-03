@@ -25,7 +25,7 @@ import rq.common.table.MemoryTable;
  * @author r.skrabal
  *
  */
-class TableTest {
+class MemoryTableTest {
 	
 	Schema schema;
 	Attribute a, b;

@@ -4,8 +4,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Comparator;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
@@ -17,6 +19,27 @@ import rq.common.exceptions.TypeSchemaMismatchException;
  *
  */
 public class Record {
+	
+	/**
+	 * Rank comparator for records
+	 */
+	public static final Comparator<Record> RANK_COMPARATOR_ASC = new Comparator<Record>() {
+
+		@Override
+		public int compare(Record o1, Record o2) {
+			return Double.compare(o1.rank, o2.rank);
+		}
+		
+	};
+	
+	public static final Comparator<Record> RANK_COMPARATOR_DSC = new Comparator<Record>() {
+
+		@Override
+		public int compare(Record o1, Record o2) {
+			return -Double.compare(o1.rank, o2.rank);
+		}
+		
+	};
 
 	public static class AttributeValuePair {
 		public final Attribute attribute;
@@ -195,8 +218,11 @@ public class Record {
 
 	@Override
 	public int hashCode() {
-		return new StringBuilder().append(this.schema)
-				.append(Arrays.stream(this.values).map(x -> x.toString()).reduce((x, y) -> x + y)).append(this.rank)
+		return new StringBuilder()
+				.append(this.schema)
+				.append(Stream.of(values).map(o -> Integer.toString(o.hashCode()))
+						.reduce(new StringBuilder(), (x, y) -> x.append(y), (x, y) -> x.append(y.toString())).toString())
+				.append(this.rank)
 				.toString().hashCode();
 	}
 	
@@ -239,5 +265,9 @@ public class Record {
 		Object[] vls = Arrays.copyOf(this.values, this.values.length);
 		vls[schema.attributeIndex(attribute).get()] = value;
 		return new Record(this.schema, vls, this.rank);		
+	}
+	
+	public static Record empty(Schema schema) {
+		return new Record(schema, schema.stream().map(a -> "").toArray(), 1.0d);
 	}
 }

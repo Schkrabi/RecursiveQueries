@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Month;
 
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.TabularExpression;
@@ -52,9 +54,10 @@ public class Main {
 	 * @param iTable
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private TabularExpression query(Table iTable) {
-		//return iTable;
-		return Queries.electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(iTable);
+		return iTable;
+		//return Queries.electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(iTable);
 //		try {
 //			return Queries.electricityLoadDiagrams_benchmark(iTable);
 //		} catch (AttributeNotInSchemaException e) {
@@ -115,13 +118,20 @@ public class Main {
 		long start = System.currentTimeMillis();
 		
 		LazyTable iTable = LazyTable.open(this.path);
-		LazyExpression prep = Queries.electricityLoadDiagrams_CustTresholdAndPeriodLazy(Str10.factory("MT_131"), 100.0d, Duration.ofHours(1), iTable);
-		Table prepped = LazyExpression.realizeMapped(prep, 100_000);
+		LazyExpression prep = Queries.electricityLoadDiagrams_CustTresholdAndPeriodLazy(
+				Str10.factory("MT_131"), 
+				650.0d, 
+				Duration.ofHours(1), 
+				iTable);
+		Table prepped = LazyExpression.realizeMapped(prep, 1_000_000);
 		
 		long end = System.currentTimeMillis();
 		this.preparationTime = end - start;
 		
-		TabularExpression query = this.query(prepped);
+		TabularExpression query = 
+				Queries.electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(
+						prepped, 
+						LocalDateTime.of(2011, Month.JANUARY, 1, 1, 0, 0));
 		start = System.currentTimeMillis();
 		Table oTable = query.eval();
 		end = System.currentTimeMillis();

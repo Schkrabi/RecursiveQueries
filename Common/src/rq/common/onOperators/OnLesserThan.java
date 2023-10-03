@@ -13,10 +13,9 @@ import rq.common.table.Record;
  *
  */
 public class OnLesserThan extends OnCompare {
-
-	private  OnLesserThan(Attribute left, Attribute right) {
+	
+	private OnLesserThan(Attribute left, Attribute right) {
 		super(left, right);
-		// TODO Auto-generated constructor stub
 	}
 	
 	public static OnLesserThan factory(Attribute left, Attribute right) 

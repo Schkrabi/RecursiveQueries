@@ -3,7 +3,6 @@ package rq.common.operators;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
@@ -63,14 +62,13 @@ public class AbstractJoin {
 	 * @return A degree
 	 */
 	protected double joinClauseSatisfyDegree(Record record1, Record record2) {
-		Optional<Double> o = this.onClause.stream()
-								.map(clause -> clause.eval(record1, record2))
-								.reduce(this.infimum);
-		//The optional will be empty if OnClause is empty, therefore it is trivially satisfied
-		if(o.isEmpty()) {
-			return 1.0d;
+		double rank = 1.0d;
+		
+		for(OnOperator clause : this.onClause) {
+			double clauseRank = clause.eval(record1, record2);
+			rank = this.infimum.apply(rank, clauseRank);
 		}
-		return o.get();
+		return rank;
 	}
 	
 	/**

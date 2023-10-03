@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.exceptions.ComparableDomainMismatchException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.NotComparableException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
@@ -14,6 +16,7 @@ import rq.common.interfaces.TabularExpression;
 import rq.common.latices.Lukasiewitz;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnGreaterThan;
+import rq.common.onOperators.OnLesserThan;
 import rq.common.onOperators.OnSimilar;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
@@ -23,6 +26,7 @@ import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.RecursiveUnrestricted;
 import rq.common.operators.Restriction;
+import rq.common.similarities.LinearSimilarity;
 import rq.common.similarities.NaiveSimilarity;
 import rq.common.table.Attribute;
 import rq.common.table.FileMappedTable;
@@ -56,7 +60,10 @@ public class Queries {
 		}
 		
 		return rq.common.operators.LazyMapping.factory(
-				LazyRestriction.factory(iTable, r -> r.getNoThrow("CUSTOMER").equals(cust) && ((Double)r.getNoThrow("VALUE")) >= threshold ? 1.0d : 0.0d), 
+				LazyRestriction.factory(
+						iTable, 
+						r -> /*r.getNoThrow("CUSTOMER").equals(cust) 
+						&&*/ ((Double)r.getNoThrow("VALUE")) >= threshold ? 1.0d : 0.0d), 
 				r -> {
 					try {
 						return rq.common.table.Record.factory(
@@ -122,7 +129,7 @@ public class Queries {
 											Lukasiewitz.INFIMUM, 
 											new OnEquals(customer, customer),
 											new OnGreaterThan(time, time),
-											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY)),
+											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY_MINUTES)),
 									new Projection.To(rCustomer, customer),
 									new Projection.To(rTime, time),
 									new Projection.To(rValue, value),
@@ -148,7 +155,7 @@ public class Queries {
 											Lukasiewitz.INFIMUM, 
 											new OnEquals(customer, customer),
 											new OnGreaterThan(time, time),
-											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY)),
+											new OnSimilar(aTime, time, NaiveSimilarity.LOCALDATETIME_SIMILARITY_MINUTES)),
 									new Projection.To(rCustomer, customer),
 									new Projection.To(rTime, time),
 									new Projection.To(rValue, value),
@@ -161,24 +168,31 @@ public class Queries {
 				FileMappedTable.supplier);
 	}
 	
-	public static TabularExpression electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(Table iTable) {
+	public static TabularExpression electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(Table iTable, LocalDateTime initialUntil) {
 		return LazyRecursiveUnrestricted.factory(
-				new LazyFacade(iTable), 
+				LazyRestriction.factory(
+						new LazyFacade(iTable),
+						r -> ((DateTime)(r.getNoThrow(time))).getInner().compareTo(initialUntil) <= 0 ? 1.0d : 0.0d), 
 				(Table table) -> {
 					try {
-						return LazyProjection.factory(
-								LazyJoin.factory(
-										new LazyFacade(table), 
-										new LazyFacade(iTable), 
-										Lukasiewitz.PRODUCT, 
-										Lukasiewitz.INFIMUM, 
-										new OnEquals(customer, customer),
-										new OnGreaterThan(time, time),
-										new OnSimilar(aTime, time, NaiveSimilarity.DATETIME_SIMILARITY)), 
-								new Projection.To(rCustomer, customer),
-								new Projection.To(rTime, time),
-								new Projection.To(rValue, value),
-								new Projection.To(raTime, aTime));
+						try {
+							return LazyProjection.factory(
+									LazyJoin.factory(
+											new LazyFacade(table), 
+											new LazyFacade(iTable), 
+											Lukasiewitz.PRODUCT, 
+											Lukasiewitz.INFIMUM, 
+											new OnEquals(customer, customer),
+											OnLesserThan.factory(time, time),
+											new OnSimilar(aTime, time, LinearSimilarity.dateTimeSimilarityUntil(3600))), 
+									new Projection.To(rCustomer, customer),
+									new Projection.To(rTime, time),
+									new Projection.To(rValue, value),
+									new Projection.To(raTime, aTime));
+						} catch (NotComparableException | ComparableDomainMismatchException e) {
+							// Unlikely
+							throw new RuntimeException(e);
+						}
 					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
 						// Unlikely
 						throw new RuntimeException(e);
@@ -186,14 +200,14 @@ public class Queries {
 				},
 				(Schema s) -> {
 					try {
-						return FileMappedTable.factory(s, 100_000);
+						return FileMappedTable.factory(s, 1_000_000);
 					} catch (IOException e) {
 						throw new RuntimeException(e);
 					}
 				},
 				(Schema s) -> {
 					try {
-						return FileMappedTable.factory(s, 10_000);
+						return FileMappedTable.factory(s, 100_000);
 					} catch (IOException e) {
 						throw new RuntimeException(e);
 					}

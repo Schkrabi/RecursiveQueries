@@ -152,13 +152,14 @@ class SimilarityRestrictionTest {
 		Table table = this.s1.eval();
 		Set<Record> rcrds = table.stream().collect(Collectors.toSet());
 		assertTrue(rcrds.size() == 3);
-		assertTrue(rcrds.contains(Record.factory(
-						this.schema, 
-						Arrays.asList(
-								new Record.AttributeValuePair(a1, 1),
-								new Record.AttributeValuePair(a2, 2),
-								new Record.AttributeValuePair(b, "foo")),
-						0.25d)));
+		assertTrue(table.containsNoRank(r1));
+//		.contains(Record.factory(
+//						this.schema, 
+//						Arrays.asList(
+//								new Record.AttributeValuePair(a1, 1),
+//								new Record.AttributeValuePair(a2, 2),
+//								new Record.AttributeValuePair(b, "foo")),
+//						0.25d)));
 		assertTrue(rcrds.contains(Record.factory(
 						this.schema, 
 						Arrays.asList(

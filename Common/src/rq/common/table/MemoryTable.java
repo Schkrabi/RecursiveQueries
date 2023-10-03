@@ -24,9 +24,20 @@ import java.util.Optional;
 public class MemoryTable implements Table, LazyIterable{
 	public final Schema schema;
 	private Set<Record> records = new HashSet<Record>();
-
+	
 	public MemoryTable(Schema schema) {
 		this.schema = schema;
+	}
+	
+	public static MemoryTable of(Record record) {
+		MemoryTable t = new MemoryTable(record.schema);
+		try {
+			t.insert(record);
+		} catch (TableRecordSchemaMismatch e) {
+			//Unlikely
+			throw new RuntimeException(e);
+		}
+		return t;
 	}
 
 	/**
