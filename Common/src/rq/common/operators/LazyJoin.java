@@ -8,11 +8,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 
-import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.LazyIterator;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.OnOperator;
 import rq.common.table.Attribute;
 import rq.common.table.CachedExpression;
@@ -55,23 +56,20 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 				Collection<OnOperator> onClause,
 				BinaryOperator<Double> product,
 				BinaryOperator<Double> infimum)
-		throws AttributeNotInSchemaException {
+		throws OnOperatornNotApplicableToSchemaException {
 		Schema leftSchema = ((SchemaProvider)leftArg).schema();
 		Schema rightSchema = ((SchemaProvider)rightArg).schema();
 		for(OnOperator p : onClause) {
-			if(!leftSchema.contains(p.left)) {
-				throw new AttributeNotInSchemaException(p.left, leftSchema);
-			}
-			if(!rightSchema.contains(p.right)) {
-				throw new AttributeNotInSchemaException(p.right, rightSchema);
+			if(!p.isApplicableToSchema(leftSchema, rightSchema)) {
+				throw new OnOperatornNotApplicableToSchemaException(p, leftSchema, rightSchema);
 			}
 		}
 		
 		Set<Attribute> intersection = new HashSet<Attribute>(leftSchema.attributeSet());
 		intersection.retainAll(rightSchema.attributeSet());
 		
-		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(leftSchema, intersection, "left.");
-		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(rightSchema, intersection, "right.");
+		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(leftSchema, intersection, LEFT);
+		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(rightSchema, intersection, RIGHT);
 		
 		List<Attribute> attrs = new ArrayList<Attribute>(leftProjection.size() + rightProjection.size());
 		attrs.addAll(leftProjection.values());
@@ -97,22 +95,49 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	}
 	
 	public static <T extends LazyExpression & SchemaProvider, U extends LazyExpression & SchemaProvider>
+	LazyJoin factory(
+			T leftArg,
+			U rightArg,
+			Collection<OnOperator> onClause)
+	throws OnOperatornNotApplicableToSchemaException {
+		return LazyJoin.factory(
+				leftArg, 
+				rightArg, 
+				onClause,
+				LaticeFactory.instance().getProduct(),
+				LaticeFactory.instance().getInfimum());
+	}
+	
+	public static <T extends LazyExpression & SchemaProvider, U extends LazyExpression & SchemaProvider>
 		LazyJoin factory(
 				T leftArg,
 				U rightArg,
 				BinaryOperator<Double> product,
 				BinaryOperator<Double> infimum,
 				OnOperator... ons) 
-			throws AttributeNotInSchemaException {
+			throws OnOperatornNotApplicableToSchemaException {
 		return LazyJoin.factory(
 				leftArg,
 				rightArg,
 				Arrays.asList(ons),
 				product,
 				infimum);
-		
 	}
-
+	
+	public static <T extends LazyExpression & SchemaProvider, U extends LazyExpression & SchemaProvider>
+	LazyJoin factory(
+			T leftArg,
+			U rightArg,
+			OnOperator... ons) 
+		throws OnOperatornNotApplicableToSchemaException {
+		return LazyJoin.factory(
+				leftArg, 
+				rightArg, 
+				Arrays.asList(ons),
+				LaticeFactory.instance().getProduct(),
+				LaticeFactory.instance().getInfimum());
+	}
+	
 	@Override
 	public Schema schema() {
 		return this.schema;

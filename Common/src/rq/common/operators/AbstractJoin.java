@@ -16,6 +16,30 @@ import rq.common.table.Record.AttributeValuePair;
 import rq.common.table.Schema;
 
 public class AbstractJoin {
+	
+	private static Attribute aliasAttribute(String prefix, Attribute a) {
+		return new Attribute(prefix + a.name, a.domain);
+	}
+	
+	protected final static String LEFT = "left.";
+	protected final static String RIGHT = "right.";
+	
+	/**
+	 * Aliases the attribute as left part of a join
+	 * @param a
+	 * @return
+	 */
+	public static Attribute left(Attribute a) {
+		return aliasAttribute(LEFT, a);
+	}
+	/**
+	 * Aliases the attribute as right part of the join
+	 * @param a
+	 * @return
+	 */
+	public static Attribute right(Attribute a) {
+		return aliasAttribute(RIGHT, a);
+	}
 
 	/**
 	 * Creates a projection of attributes to the joined table attributes

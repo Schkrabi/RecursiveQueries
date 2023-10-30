@@ -50,7 +50,7 @@ public class ValueParserContext {
 		return pFunction;
 	}
 	
-	private static final DateTimeFormatter  dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	private static final DateTimeFormatter  dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	
 	/**
 	 * Default parsing context

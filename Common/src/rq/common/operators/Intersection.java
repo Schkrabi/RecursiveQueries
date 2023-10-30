@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.LaticeFactory;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -61,6 +62,13 @@ public class Intersection implements TabularExpression {
 			BiFunction<Double, Double, Double> infimum)
 		throws SchemaNotEqualException{
 		return Intersection.factory(argument1, argument2, infimum, (Schema s, Integer capacity) -> new MemoryTable(s));
+	}
+	
+	public static Intersection factory(
+			TabularExpression argument1,
+			TabularExpression argument2)
+		throws SchemaNotEqualException {
+			return Intersection.factory(argument1, argument2, LaticeFactory.instance().getInfimum());
 	}
 	
 	private static class RecordPair {

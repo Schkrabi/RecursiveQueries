@@ -24,8 +24,8 @@ public class OnSimilar extends OnOperator {
 
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Object leftValue = leftRecord.getNoThrow(this.left);
-		Object rightValue = rightRecord.getNoThrow(this.right);
+		Object leftValue = this.left.value(leftRecord);
+		Object rightValue = this.right.value(rightRecord);
 		return similarity.apply(leftValue, rightValue);
 	}
 

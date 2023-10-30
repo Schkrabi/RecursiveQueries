@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.latices.Lukasiewitz;
 import rq.common.onOperators.OnEquals;
@@ -132,7 +133,7 @@ class LazyJoinTest {
 	@Test
 	void testFactory() {
 		assertThrows(
-				AttributeNotInSchemaException.class,
+				OnOperatornNotApplicableToSchemaException.class,
 				() -> {
 					LazyJoin.factory(
 							t1, 

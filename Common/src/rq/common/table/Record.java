@@ -55,6 +55,9 @@ public class Record {
 	public final Schema schema;
 	private final Object[] values;
 	public final Double rank;
+	
+	private boolean isHashCached = false;
+	private int cachedHash = 0;
 
 	private Record(Schema schema, Object[] values, Double rank) {
 		this.schema = schema;
@@ -218,12 +221,18 @@ public class Record {
 
 	@Override
 	public int hashCode() {
-		return new StringBuilder()
-				.append(this.schema)
-				.append(Stream.of(values).map(o -> Integer.toString(o.hashCode()))
-						.reduce(new StringBuilder(), (x, y) -> x.append(y), (x, y) -> x.append(y.toString())).toString())
-				.append(this.rank)
-				.toString().hashCode();
+		if(!this.isHashCached) {
+			this.cachedHash =
+					new StringBuilder()
+					.append(this.schema)
+					.append(Stream.of(values).map(o -> Integer.toString(o.hashCode()))
+							.reduce(new StringBuilder(), (x, y) -> x.append(y), (x, y) -> x.append(y.toString())).toString())
+					.append(this.rank)
+					.toString().hashCode();
+			this.isHashCached = true;
+		}
+		
+		return this.cachedHash;
 	}
 	
 	/**

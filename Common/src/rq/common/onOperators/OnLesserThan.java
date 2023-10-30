@@ -14,7 +14,7 @@ import rq.common.table.Record;
  */
 public class OnLesserThan extends OnCompare {
 	
-	private OnLesserThan(Attribute left, Attribute right) {
+	public OnLesserThan(Attribute left, Attribute right) {
 		super(left, right);
 	}
 	
@@ -28,9 +28,9 @@ public class OnLesserThan extends OnCompare {
 	@SuppressWarnings("unchecked")
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Comparable<Object> leftValue = (Comparable<Object>)leftRecord.getNoThrow(this.left);
-		Comparable<Object> rightValue = (Comparable<Object>)rightRecord.getNoThrow(this.right);
-		return leftValue.compareTo(rightValue) == -1 ? 1.0d : 0.0d; 
+		Comparable<Object> leftValue = (Comparable<Object>)this.left.value(leftRecord);
+		Comparable<Object> rightValue = (Comparable<Object>)this.right.value(rightRecord);
+		return leftValue.compareTo(rightValue) <= -1 ? 1.0d : 0.0d; 
 	}
 
 	@Override

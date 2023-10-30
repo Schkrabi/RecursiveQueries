@@ -3,8 +3,8 @@
  */
 package rq.common.onOperators;
 
-import rq.common.table.Attribute;
 import rq.common.table.Record;
+import rq.common.table.Schema;
 
 /**
  * Abstract class for operators of ON clauses
@@ -12,10 +12,10 @@ import rq.common.table.Record;
  *
  */
 public abstract class OnOperator {
-	public final Attribute left;
-	public final Attribute right;
+	public final RecordValue left;
+	public final RecordValue right;
 	
-	protected OnOperator(Attribute left, Attribute right) {
+	protected OnOperator(RecordValue left, RecordValue right) {
 		this.left = left;
 		this.right = right;
 	}
@@ -27,4 +27,9 @@ public abstract class OnOperator {
 	 * @return true if this on clause operator is fulfilled, false otherwise
 	 */
 	public abstract double eval(Record leftRecord, Record rightRecord);
+	
+	public boolean isApplicableToSchema(Schema leftSchema, Schema rightSchema) {
+		return this.left.isApplicableToSchema(leftSchema)
+				&& this.right.isApplicableToSchema(rightSchema);
+	}
 }

@@ -15,10 +15,12 @@ import java.util.HashSet;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.SchemaNotJoinableException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.OnOperator;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
@@ -68,6 +70,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	 * @param onClause
 	 * @return
 	 * @throws AttributeNotInSchemaException
+	 * @throws OnOperatornNotApplicableToSchemaException 
 	 * @throws ComparisonDomainMismatchException 
 	 * @throws  
 	 */
@@ -78,23 +81,20 @@ public class Join extends AbstractJoin implements TabularExpression {
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
 			BiFunction<Schema, Integer, Table> tableSupplier) 
-		throws AttributeNotInSchemaException {
+		throws OnOperatornNotApplicableToSchemaException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema();
 		for(OnOperator p : onClause) {
-			if(!schema1.contains(p.left)) {
-				throw new AttributeNotInSchemaException(p.left, schema1);
-			}
-			if(!schema2.contains(p.right)) {
-				throw new AttributeNotInSchemaException(p.right, schema2);
+			if(!p.isApplicableToSchema(schema1, schema2)) {
+				throw new OnOperatornNotApplicableToSchemaException(p, schema1, schema2);
 			}
 		}
 		
 		Set<Attribute> intersection = new HashSet<Attribute>(schema1.attributeSet());
 		intersection.retainAll(schema2.attributeSet());
 		
-		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(schema1, intersection, "left.");
-		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(schema2, intersection, "right.");
+		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(schema1, intersection, LEFT);
+		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(schema2, intersection, RIGHT);
 		
 		List<Attribute> attrs = new ArrayList<Attribute>(leftProjection.size() + rightProjection.size());
 		attrs.addAll(leftProjection.values());
@@ -117,8 +117,21 @@ public class Join extends AbstractJoin implements TabularExpression {
 			Collection<OnOperator> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum) 
-		throws AttributeNotInSchemaException {
+		throws OnOperatornNotApplicableToSchemaException {
 		return Join.factory(argument1, argument2, onClause, product, infimum, (Schema s, Integer count) -> new MemoryTable(s));
+	}
+	
+	public static Join factory(
+			TabularExpression argument1, 
+			TabularExpression argument2, 
+			Collection<OnOperator> onClause)
+		throws OnOperatornNotApplicableToSchemaException {
+		return Join.factory(
+				argument1, 
+				argument2, 
+				onClause, 
+				LaticeFactory.instance().getProduct(), 
+				LaticeFactory.instance().getInfimum());
 	}
 	
 	/**
@@ -129,6 +142,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	 * @param onClauses
 	 * @return
 	 * @throws AttributeNotInSchemaException
+	 * @throws OnOperatornNotApplicableToSchemaException 
 	 * @throws SchemaNotJoinableException
 	 * @throws ComparisonDomainMismatchException 
 	 */
@@ -138,13 +152,26 @@ public class Join extends AbstractJoin implements TabularExpression {
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
 			OnOperator ...onClauses) 
-		throws AttributeNotInSchemaException {
+		throws OnOperatornNotApplicableToSchemaException {
 		return Join.factory(
 				argument1, 
 				argument2, 
 				Arrays.asList(onClauses),
 				product,
 				infimum);
+	}
+	
+	public static Join factory(
+			TabularExpression argument1, 
+			TabularExpression argument2,
+			OnOperator ...onClauses)
+		throws OnOperatornNotApplicableToSchemaException {
+		return Join.factory(
+				argument1, 
+				argument2, 
+				Arrays.asList(onClauses),
+				LaticeFactory.instance().getProduct(),
+				LaticeFactory.instance().getInfimum());
 	}
 	
 	@Override

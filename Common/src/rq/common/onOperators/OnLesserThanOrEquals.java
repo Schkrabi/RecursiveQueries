@@ -28,8 +28,8 @@ public class OnLesserThanOrEquals extends OnCompare {
 	@SuppressWarnings("unchecked")
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Comparable<Object> leftValue = (Comparable<Object>)leftRecord.getNoThrow(this.left);
-		Comparable<Object> rightValue = (Comparable<Object>)rightRecord.getNoThrow(this.right);
+		Comparable<Object> leftValue = (Comparable<Object>)this.left.value(leftRecord);
+		Comparable<Object> rightValue = (Comparable<Object>)this.right.value(rightRecord);
 		
 		int cmp = leftValue.compareTo(rightValue); 
 		

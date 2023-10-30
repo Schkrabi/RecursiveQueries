@@ -11,9 +11,11 @@ import java.util.stream.Collectors;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.TabularExpression;
+import rq.common.onOperators.RecordValue;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 import rq.common.table.Attribute;
@@ -29,10 +31,10 @@ public class Projection implements TabularExpression {
 	
 	private final Schema schema;
 	private final TabularExpression argument;
-	private final java.util.Map<Attribute, Attribute> projection;
+	private final java.util.Map<Attribute, RecordValue> projection;
 	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
-	private Projection(TabularExpression argument, Schema schema, java.util.Map<Attribute, Attribute> projection, BiFunction<Schema, Integer, Table> tableSupplier) {
+	private Projection(TabularExpression argument, Schema schema, java.util.Map<Attribute, RecordValue> projection, BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.schema = schema;
 		this.argument = argument;
 		this.projection = projection;
@@ -56,23 +58,24 @@ public class Projection implements TabularExpression {
 		if(!argument.schema().isSubSchema(schema)) {
 			throw new NotSubschemaException(argument.schema(), schema);
 		}
-		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
+		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		schema.stream().forEach(a -> projection.put(a, a));
 		
 		return new Projection(argument, schema, projection, tableSupplier);
 	}
 	
 	public static class To{
-		public final Attribute from, to;
+		public final RecordValue from;
+		public final Attribute to;
 		
-		public To(Attribute from, Attribute to) {
+		public To(RecordValue from, Attribute to) {
 			this.from = from;
 			this.to = to;
 		}
 	}
 	
 	public static Projection factory(TabularExpression table, Collection<To> mapping)
-			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		return Projection.factory(table, mapping, (Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
@@ -81,15 +84,15 @@ public class Projection implements TabularExpression {
 	 * @param table
 	 * @param mapping
 	 * @return
-	 * @throws AttributeNotInSchemaException
 	 * @throws DuplicateAttributeNameException
+	 * @throws RecordValueNotApplicableOnSchemaException 
 	 */
 	public static Projection factory(TabularExpression table, Collection<To> mapping, BiFunction<Schema, Integer, Table> tableSupplier) 
-		throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+		throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		Schema fromSchema = table.schema();
 		for(To to : mapping) {
-			if(!fromSchema.contains(to.from)) {
-				throw new AttributeNotInSchemaException(to.from, fromSchema);
+			if(!to.from.isApplicableToSchema(fromSchema)) {
+				throw new RecordValueNotApplicableOnSchemaException(to.from, fromSchema);
 			}
 		}
 		Schema schema = Schema.factory(
@@ -97,14 +100,14 @@ public class Projection implements TabularExpression {
 						.map(to -> to.to)
 						.collect(Collectors.toList()));
 		
-		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
+		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
 		
 		return new Projection(table, schema, projection, tableSupplier);
 	}
 	
 	public static Projection factory(TabularExpression argument, To... mapping) 
-			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		return Projection.factory(argument, Arrays.asList(mapping), (Schema s, Integer count) -> new MemoryTable(s));
 	}
 	
@@ -115,9 +118,10 @@ public class Projection implements TabularExpression {
 	 * @return
 	 * @throws AttributeNotInSchemaException
 	 * @throws DuplicateAttributeNameException
+	 * @throws RecordValueNotApplicableOnSchemaException 
 	 */
 	public static Projection factory(TabularExpression argument, BiFunction<Schema, Integer, Table> tableSupplier, To... mapping) 
-			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		return Projection.factory(argument, Arrays.asList(mapping), tableSupplier);
 	}
 	
@@ -132,16 +136,11 @@ public class Projection implements TabularExpression {
 			return 
 				Record.factory(
 						this.schema,
-						this.schema.stream()
-							.map(a -> {
-								try {
-									return new Record.AttributeValuePair(
-											a, 
-											record.get(this.projection.get(a)));
-								} catch (AttributeNotInSchemaException e) {
-									// Unlikely
-									throw new RuntimeException(e);
-								}
+						this.projection.entrySet().stream()
+							.map(e -> {
+								return new Record.AttributeValuePair(
+										e.getKey(), 
+										e.getValue().value(record));
 							}).collect(Collectors.toList()),
 						record.rank);
 		} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {

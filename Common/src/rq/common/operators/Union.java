@@ -10,6 +10,7 @@ import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.LaticeFactory;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
@@ -67,6 +68,16 @@ public class Union implements TabularExpression {
 				argument2, 
 				supremum,
 				(Schema s, Integer count) -> new MemoryTable(s));
+	}
+	
+	public static Union factory(
+			TabularExpression argument1, 
+			TabularExpression argument2)
+		throws SchemaNotEqualException {
+		return Union.factory(
+				argument1, 
+				argument2,
+				LaticeFactory.instance().getSupremum());
 	}
 
 	@Override

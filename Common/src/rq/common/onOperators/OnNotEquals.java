@@ -19,8 +19,8 @@ public class OnNotEquals extends OnOperator {
 
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Object leftValue = leftRecord.getNoThrow(this.left);
-		Object rightValue = rightRecord.getNoThrow(this.right);
+		Object leftValue = this.left.value(leftRecord);
+		Object rightValue = this.right.value(rightRecord);
 		return leftValue.equals(rightValue) ? 0.0d : 1.0d;
 	}
 

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.latices.Lukasiewitz;
 import rq.common.operators.Join;
@@ -91,7 +93,7 @@ class RecursiveUnrestrictedTest {
 										new OnEquals(a, a)), 
 								new Projection.To(new Attribute("left.A", Integer.class), a),
 								new Projection.To(new Attribute("left.B", String.class), b)).eval();
-					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}
 		});

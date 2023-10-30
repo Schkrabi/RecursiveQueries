@@ -10,9 +10,11 @@ import java.util.stream.Collectors;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.onOperators.RecordValue;
 import rq.common.operators.Projection.To;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
@@ -27,9 +29,9 @@ import rq.common.table.Schema;
 public class LazyProjection implements LazyExpression, SchemaProvider {
 	
 	private final Schema schema;
-	private final java.util.Map<Attribute, Attribute> projection;
+	private final java.util.Map<Attribute, RecordValue> projection;
 	private final LazyExpression argExp;
-	private LazyProjection(Schema schema, java.util.Map<Attribute, Attribute> projection, LazyExpression argExp, SchemaProvider argSch) {
+	private LazyProjection(Schema schema, java.util.Map<Attribute, RecordValue> projection, LazyExpression argExp, SchemaProvider argSch) {
 		this.schema = schema;
 		this.projection = projection;
 		this.argExp = argExp;
@@ -50,7 +52,7 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 			throw new NotSubschemaException(argSch.schema(), schema);
 		}
 
-		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
+		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		schema.stream().forEach(a -> projection.put(a, a));
 
 		return new LazyProjection(schema, projection, argument, argument);
@@ -64,13 +66,14 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 	 * @return
 	 * @throws AttributeNotInSchemaException
 	 * @throws DuplicateAttributeNameException
+	 * @throws RecordValueNotApplicableOnSchemaException 
 	 */
 	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, Collection<To> mapping) 
-			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		Schema fromSchema = ((SchemaProvider)argument).schema();
 		for(To to : mapping) {
-			if(!fromSchema.contains(to.from)) {
-				throw new AttributeNotInSchemaException(to.from, fromSchema);
+			if(!to.from.isApplicableToSchema(fromSchema)) {
+				throw new RecordValueNotApplicableOnSchemaException(to.from, fromSchema);
 			}
 		}
 		
@@ -79,14 +82,14 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 				.map(to -> to.to)
 				.collect(Collectors.toList()));
 		
-		java.util.Map<Attribute, Attribute> projection = new java.util.HashMap<Attribute, Attribute>();
+		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
 		
 		return new LazyProjection(schema, projection, argument, argument);
 	}
 	
 	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To... tos)
-			throws AttributeNotInSchemaException, DuplicateAttributeNameException {
+			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		return LazyProjection.factory(argument, Arrays.asList(tos));
 	}
 
@@ -103,20 +106,15 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 		}
 		try {
 			return 
-				Record.factory(
-						this.schema,
-						this.schema.stream()
-							.map(a -> {
-								try {
+					Record.factory(
+							this.schema,
+							this.projection.entrySet().stream()
+								.map(e -> {
 									return new Record.AttributeValuePair(
-											a, 
-											record.get(this.projection.get(a)));
-								} catch (AttributeNotInSchemaException e) {
-									// Unlikely
-									throw new RuntimeException(e);
-								}
-							}).collect(Collectors.toList()),
-						record.rank);
+											e.getKey(), 
+											e.getValue().value(record));
+								}).collect(Collectors.toList()),
+							record.rank);
 		} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
 			// Unlikely
 			throw new RuntimeException(e);

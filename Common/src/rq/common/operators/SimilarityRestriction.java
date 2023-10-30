@@ -9,6 +9,7 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.LaticeFactory;
 import rq.common.table.Attribute;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
@@ -42,6 +43,20 @@ public class SimilarityRestriction implements TabularExpression{
 		this.product = product;
 		this.similarity = similarity;
 		this.tableSupplier = tableSupplier;
+	}
+	
+	public static SimilarityRestriction factory(
+			TabularExpression argument, 
+			Attribute attribute1, 
+			Attribute attribute2, 
+			BiFunction<Object, Object, Double> similarity)
+		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
+		return SimilarityRestriction.factory(
+				argument,
+				attribute1,
+				attribute2,
+				LaticeFactory.instance().getProduct(),
+				similarity);
 	}
 	
 	public static SimilarityRestriction factory(

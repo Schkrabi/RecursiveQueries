@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
@@ -99,7 +101,7 @@ class LazyRecursiveTopKTest {
 											new OnEquals(a, a)), 
 									new Projection.To(new Attribute("right.A", Integer.class), a),
 									new Projection.To(new Attribute("right.B", String.class), b));
-					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}
 				},

@@ -118,20 +118,26 @@ public class Main {
 		long start = System.currentTimeMillis();
 		
 		LazyTable iTable = LazyTable.open(this.path);
-		LazyExpression prep = Queries.electricityLoadDiagrams_CustTresholdAndPeriodLazy(
-				Str10.factory("MT_131"), 
-				650.0d, 
-				Duration.ofHours(1), 
-				iTable);
+		LazyExpression prep = 
+				Queries_Electricity.instance()
+					.caseWeekPrepare(iTable);
+					//.caseNoCustPrepare(iTable);
+				//Queries_Toloker.instance().prepare(iTable);
 		Table prepped = LazyExpression.realizeMapped(prep, 1_000_000);
 		
 		long end = System.currentTimeMillis();
 		this.preparationTime = end - start;
 		
 		TabularExpression query = 
-				Queries.electricityLoadDiagrams_repeatingPeaks_Mapped_Lazy(
-						prepped, 
-						LocalDateTime.of(2011, Month.JANUARY, 1, 1, 0, 0));
+				Queries_Electricity.instance()
+					.caseWeekUnrestricted(prepped);
+					//.caseWeekTopK(prepped);
+					//.caseWeekTransformed(prepped);
+					//.caseNoCustUnrestricted(prepped);
+					//.caseNoCustTopK(prepped);
+					//.caseNoCustTransformed(prepped);
+				//Queries_Toloker.instance()
+				//	.unrestricted(prepped);
 		start = System.currentTimeMillis();
 		Table oTable = query.eval();
 		end = System.currentTimeMillis();
@@ -141,26 +147,6 @@ public class Main {
 		this.flushData(oTable, output);
 		end = System.currentTimeMillis();
 		this.outputTime = end - start;
-	}
-	
-	@SuppressWarnings("unused")
-	private void runLazy(OutputStream output) throws ClassNotInContextException, IOException {
-		LazyTable t1 = LazyTable.open(this.path);
-		LazyTable t2 = LazyTable.open(this.path);
-		
-		LazyExpression query = Queries.electricityLoadDiagrams_lazyBenchmark(t1, t2);
-		RecordWriter writer = RecordWriter.open(output);
-		long start = System.currentTimeMillis();
-		rq.common.table.Record r = query.next();
-		while(r != null) {
-			writer.writeRecord(r);
-			r = query.next();
-		}
-		long end = System.currentTimeMillis();
-		System.out.println("Lazy query execution time(ms): " + (end - start));
-		writer.close();
-		t1.close();
-		t2.close();
 	}
 	
 	private void outputStatistic(PrintStream output) {

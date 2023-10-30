@@ -1,13 +1,18 @@
 package rq.common.table;
 
+import rq.common.onOperators.RecordValue;
+
 /**
  * Represents a column identifier
  * @author Mgr. R.Skrabal
  *
  */
-public class Attribute implements Comparable<Attribute>{
+public class Attribute implements Comparable<Attribute>, RecordValue{
 	public final String name;
 	public final Class<?> domain;
+	
+	private boolean isHashCached = false;
+	private int cachedHash = 0;
 	
 	public Attribute(String name, Class<?> domain) {
 		this.name = name;
@@ -44,11 +49,17 @@ public class Attribute implements Comparable<Attribute>{
 	
 	@Override
 	public int hashCode() {
-		return new StringBuilder()
-				.append(this.name)
-				.append(this.domain.toString())
-				.toString()
-				.hashCode();
+		if(!this.isHashCached) {
+			this.cachedHash =
+					new StringBuilder()
+					.append(this.name)
+					.append(this.domain.toString())
+					.toString()
+					.hashCode();
+			this.isHashCached = true;
+		}
+		
+		return this.cachedHash;
 	}
 
 	@Override
@@ -58,5 +69,20 @@ public class Attribute implements Comparable<Attribute>{
 			return cmp;
 		}
 		return this.domain.getName().compareTo(o.domain.getName());
+	}
+
+	@Override
+	public Object value(Record record) {
+		return record.getNoThrow(this);
+	}
+
+	@Override
+	public boolean isApplicableToSchema(Schema schema) {
+		return schema.contains(this);
+	}
+
+	@Override
+	public Class<?> domain() {
+		return this.domain;
 	}
 }

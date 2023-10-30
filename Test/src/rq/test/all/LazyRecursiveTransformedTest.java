@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
@@ -116,7 +118,7 @@ class LazyRecursiveTransformedTest {
 											new OnEquals(a, a)), 
 									new Projection.To(new Attribute("right.A", Integer.class), a),
 									new Projection.To(new Attribute("right.B", String.class), b));
-					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}
 				}, 
@@ -124,7 +126,7 @@ class LazyRecursiveTransformedTest {
 				(Record r) -> {
 					try {
 						return LazyProjection.factory(new LazyFacade(MemoryTable.of(r)), new Projection.To(b, b));
-					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+					} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 						// Unlikely
 						throw new RuntimeException(e);
 					}

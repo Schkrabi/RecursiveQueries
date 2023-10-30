@@ -9,6 +9,8 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.ComparableDomainMismatchException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotComparableException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
+import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
@@ -135,7 +137,7 @@ public class Queries {
 									new Projection.To(rValue, value),
 									new Projection.To(raTime, aTime))
 							.eval();
-						} catch (DuplicateAttributeNameException | AttributeNotInSchemaException e) {
+						} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 							throw new RuntimeException(e);
 						}
 					});
@@ -161,7 +163,7 @@ public class Queries {
 									new Projection.To(rValue, value),
 									new Projection.To(raTime, aTime))
 							.eval();
-						} catch (DuplicateAttributeNameException | AttributeNotInSchemaException e) {
+						} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 							throw new RuntimeException(e);
 						}
 					},
@@ -189,11 +191,11 @@ public class Queries {
 									new Projection.To(rTime, time),
 									new Projection.To(rValue, value),
 									new Projection.To(raTime, aTime));
-						} catch (NotComparableException | ComparableDomainMismatchException e) {
+						} catch (NotComparableException | ComparableDomainMismatchException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 							// Unlikely
 							throw new RuntimeException(e);
 						}
-					} catch (AttributeNotInSchemaException | DuplicateAttributeNameException e) {
+					} catch (DuplicateAttributeNameException e) {
 						// Unlikely
 						throw new RuntimeException(e);
 					}
@@ -215,7 +217,7 @@ public class Queries {
 	}
 	
 	public static TabularExpression electricityLoadDiagrams_benchmark(Table iTable) 
-			throws AttributeNotInSchemaException {
+			throws AttributeNotInSchemaException, OnOperatornNotApplicableToSchemaException {
 		Attribute cust = new Attribute("CUSTOMER", String.class);
 		Attribute time = new Attribute("TIME", LocalDateTime.class);
 		return Join.factory(
@@ -237,7 +239,7 @@ public class Queries {
 						new OnEquals(customer, customer),
 						new OnEquals(time, time)
 					);
-		} catch (AttributeNotInSchemaException e) {
+		} catch (OnOperatornNotApplicableToSchemaException e) {
 			//Unlikely
 			throw new RuntimeException(e);
 		}

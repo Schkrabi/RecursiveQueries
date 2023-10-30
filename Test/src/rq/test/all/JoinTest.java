@@ -25,6 +25,7 @@ import rq.common.onOperators.OnGreaterThanOrEquals;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
+import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 
 import rq.common.interfaces.Table;
@@ -121,7 +122,7 @@ class JoinTest {
 	@Test
 	void testFactoryTabularExpressionTabularExpressionCollectionOfAttributePairBiFunctionOfDoubleDoubleDouble() throws DuplicateAttributeNameException {
 		assertThrows(
-				AttributeNotInSchemaException.class,
+				OnOperatornNotApplicableToSchemaException.class,
 				() -> {
 					Join.factory(
 							t1, 
