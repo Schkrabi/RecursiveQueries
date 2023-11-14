@@ -1,6 +1,7 @@
 package rq.common.operators;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
@@ -17,16 +18,16 @@ import rq.common.interfaces.Table;
  */
 public class Restriction implements TabularExpression {
 	private final TabularExpression argument;
-	private final Predicate<Record> predicate;
+	private final Function<Record, Double> predicate;
 	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
-	public Restriction(TabularExpression argument, Predicate<Record> predicate) {
+	public Restriction(TabularExpression argument, Function<Record, Double> predicate) {
 		this.argument = argument;
 		this.predicate = predicate;
 		this.tableSupplier = (Schema s, Integer count) -> new MemoryTable(s);
 	}
 	
-	public Restriction(TabularExpression argument, Predicate<Record> predicate, BiFunction<Schema, Integer, Table> tableSupplier) {
+	public Restriction(TabularExpression argument, Function<Record, Double> predicate, BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.argument = argument;
 		this.predicate = predicate;
 		this.tableSupplier = tableSupplier;
@@ -35,15 +36,20 @@ public class Restriction implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table table = this.argument.eval();
-		Table ret = this.tableSupplier.apply(table.schema(), table.size());
-		table.stream().filter(this.predicate).forEach(r -> {
-			try {
-				ret.insert(r);
-			} catch (TableRecordSchemaMismatch e) {
-				// Unlikely
-				throw new RuntimeException(e);
+		Table ret = this.tableSupplier.apply(table.schema(), table.size());		
+		
+		for(Record r : table) {
+			Double rank = this.predicate.apply(r);
+			if(rank > 0.0d) {
+				try {
+					ret.insert(new Record(r, rank));
+				} catch (TableRecordSchemaMismatch e) {
+					// Unlikely
+					throw new RuntimeException(e);
+				}
 			}
-		});
+		}
+		
 		return ret;
 	}
 

@@ -73,7 +73,7 @@ class RecursiveUnrestrictedTest {
 		t1.insert(r4);
 		
 		ru = RecursiveUnrestricted.factory(
-				new Restriction(this.t1, r -> r.getNoThrow(a).equals(1)), 
+				new Restriction(this.t1, r -> r.getNoThrow(a).equals(1) ? r.rank : 0.0d), 
 				(Table table) -> {
 					try {
 						return Projection.factory(

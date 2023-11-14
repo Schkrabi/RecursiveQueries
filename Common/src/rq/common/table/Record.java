@@ -27,7 +27,12 @@ public class Record {
 
 		@Override
 		public int compare(Record o1, Record o2) {
-			return Double.compare(o1.rank, o2.rank);
+			//Implementation is disregarding NaN
+			if(o1.rank < o2.rank)
+				return -1;
+			if(o1.rank > o2.rank)
+				return 1;
+			return 0;
 		}
 		
 	};
@@ -36,7 +41,12 @@ public class Record {
 
 		@Override
 		public int compare(Record o1, Record o2) {
-			return -Double.compare(o1.rank, o2.rank);
+			//Implementation is disregarding NaN
+			if(o1.rank < o2.rank)
+				return 1;
+			if(o1.rank > o2.rank)
+				return -1;
+			return 0;
 		}
 		
 	};

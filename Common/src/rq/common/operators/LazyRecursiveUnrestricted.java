@@ -11,6 +11,7 @@ import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.table.Record;
 import rq.common.table.Schema;
+import rq.common.tools.Counter;
 import rq.common.table.MemoryTable;
 
 /**
@@ -26,18 +27,41 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 			LazyExpression arg, 
 			Function<Table, LazyExpression> fun,
 			Function<Schema, Table> returnTableProvider,
-			Function<Schema, Table> intermediateTableProvider) {
-		super(arg, fun);
+			Function<Schema, Table> intermediateTableProvider,
+			Counter recordCounter) {
+		super(arg, fun, recordCounter);
 		this.returnTableProvider = returnTableProvider;
 		this.intermediateTableProvider = intermediateTableProvider;
 	}
 
 	public static LazyRecursiveUnrestricted factory(LazyExpression arg, Function<Table, LazyExpression> fun) {
+		return LazyRecursiveUnrestricted.factory(arg, fun, null);
+	}
+	
+	public static LazyRecursiveUnrestricted factory(
+			LazyExpression arg, 
+			Function<Table, LazyExpression> fun,
+			Counter recordCounter) {
 		return LazyRecursiveUnrestricted.factory(
 				arg, 
 				fun,
 				(Schema s) -> new MemoryTable(s),
-				(Schema s) -> new MemoryTable(s));
+				(Schema s) -> new MemoryTable(s),
+				recordCounter);
+	}
+	
+	public static LazyRecursiveUnrestricted factory(
+			LazyExpression arg, 
+			Function<Table, LazyExpression> fun,
+			Function<Schema, Table> returnTableProvider,
+			Function<Schema, Table> intermediateTableProvider,
+			Counter recordCounter) {
+		return new LazyRecursiveUnrestricted(
+				arg,
+				fun,
+				returnTableProvider,
+				intermediateTableProvider,
+				recordCounter);
 	}
 	
 	public static LazyRecursiveUnrestricted factory(
@@ -45,11 +69,12 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 			Function<Table, LazyExpression> fun,
 			Function<Schema, Table> returnTableProvider,
 			Function<Schema, Table> intermediateTableProvider) {
-		return new LazyRecursiveUnrestricted(
-				arg,
+		return LazyRecursiveUnrestricted.factory(
+				arg, 
 				fun,
 				returnTableProvider,
-				intermediateTableProvider);
+				intermediateTableProvider,
+				null);
 	}
 
 	@Override
@@ -59,15 +84,17 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 		Table n = this.intermediateTableProvider.apply(this.argExp.schema());
 
 		Record record = w.next();
-		while (record != null) {
+		while (record != null) {			
 			Optional<Record> o = r.findNoRank(record);
 			if (o.isEmpty() || o.get().rank < record.rank) {
 				try {
 					n.insert(record);
+					this.incrementCounter();
 					if (o.isPresent()) {
 						r.delete(o.get());
 					}
 					r.insert(record);
+					this.incrementCounter();
 				} catch (TableRecordSchemaMismatch e) {
 					// Unlikely
 					throw new RuntimeException(e);

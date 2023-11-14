@@ -1,4 +1,4 @@
-package main;
+package queries;
 
 import java.util.function.BiFunction;
 
@@ -18,11 +18,22 @@ import rq.common.operators.Projection;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.Attribute;
 import rq.common.table.LazyFacade;
+import rq.common.tools.Counter;
 import rq.common.types.Str10;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnSimilar;
 
-public class Queries_Toloker {
+@CallingArg("toloker")
+public class Queries_Toloker extends Queries{
+	
+	public Queries_Toloker(Algorithm algorithm, Counter counter) {
+		super(algorithm, counter);
+	}
+	
+	public static Queries factory(Algorithm algorithm, Counter counter) {
+		return new Queries_Toloker(algorithm, counter);
+	}
+
 	private final double RATE_SIMILARITY = 0.15d;
 	private final int INIT_IS_BANNED = 0;
 	private final double INIT_APPROVED_RATE_BELOW = 0.0d;
@@ -112,14 +123,26 @@ public class Queries_Toloker {
 	private final Attribute targetEnglishProfile = new Attribute("target_english_profile", Integer.class);
 	private final Attribute targetEnglishTested = new Attribute("target_english_tested", Integer.class);
 	private final Attribute targetBanned = new Attribute("target_banned", Integer.class);
-	
-	private Queries_Toloker() {}
-	
-	public LazyExpression prepare(LazyExpression iTable) {
+
+	@Override
+	protected LazyExpression prepareUnrestricted(LazyExpression iTable) {
 		return iTable;
 	}
-	
-	public TabularExpression unrestricted(Table iTable) {
+
+	@Override
+	protected LazyExpression prepareTopK(LazyExpression iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected LazyExpression prepareTransformed(LazyExpression iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected TabularExpression queryUnterstricted(Table iTable) {
 		TabularExpression exp = 
 				LazyRecursiveUnrestricted.factory(
 						LazyRestriction.factory(
@@ -161,17 +184,44 @@ public class Queries_Toloker {
 								} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 									throw new RuntimeException(e);
 								}
-							});
+							},
+							this.recordCounter);
 		
 		return exp;
 	}
-	
-	private static Queries_Toloker singleton = null;
-	
-	public static Queries_Toloker instance() {
-		if(singleton == null) {
-			singleton = new Queries_Toloker();
-		}
-		return singleton;
+
+	@Override
+	protected TabularExpression queryTopK(Table iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected TabularExpression queryTransformed(Table iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected TabularExpression postprocessUnrestricted(Table iTable) {
+		return iTable;
+	}
+
+	@Override
+	protected TabularExpression postprocessTopK(Table iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected TabularExpression postprocessTransformed(Table iTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected String algIdentificator() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

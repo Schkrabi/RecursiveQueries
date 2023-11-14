@@ -11,4 +11,5 @@ module rq.common {
 	exports rq.common.onOperators;
 	exports rq.common.interfaces;
 	exports rq.common.types;
+	exports rq.common.tools;
 }

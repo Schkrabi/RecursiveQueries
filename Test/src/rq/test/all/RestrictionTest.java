@@ -82,13 +82,7 @@ class RestrictionTest {
 		t1.insert(r2);
 		t1.insert(r3);
 		
-		s1 = new Restriction(this.t1, r -> {
-			try {
-				return ((Integer)r.get("A")) < 3;
-			} catch (AttributeNotInSchemaException e) {
-				throw new RuntimeException(e);
-			}
-		});
+		s1 = new Restriction(this.t1, r -> (Integer)r.getNoThrow(a) < 3 ? r.rank : 0.0d);
 	}
 
 	/**

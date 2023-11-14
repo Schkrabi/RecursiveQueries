@@ -3,10 +3,12 @@
  */
 package rq.common.table;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.stream.Stream;
 import java.util.List;
 import java.util.LinkedList;
@@ -25,11 +27,12 @@ public class TopKTable implements Table {
 	
 	private final int k;
 	private final Schema schema;
-	private final PriorityQueue<Record> records = new PriorityQueue<Record>(Record.RANK_COMPARATOR_ASC);
+	private final PriorityQueue<Record> records;
 	
 	private TopKTable(Schema schema, int k) {
 		this.k = k;
 		this.schema = schema;
+		this.records = new PriorityQueue<Record>(k, Record.RANK_COMPARATOR_DSC);
 	}
 	
 	public static TopKTable factory(Schema schema, int k) {

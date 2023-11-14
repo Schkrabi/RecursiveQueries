@@ -10,6 +10,7 @@ import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.TopKTable;
+import rq.common.tools.Counter;
 
 public class LazyRecursiveTopK extends LazyRecursive {
 	
@@ -20,8 +21,9 @@ public class LazyRecursiveTopK extends LazyRecursive {
 			LazyExpression argExp, 
 			Function<Table, LazyExpression> funExp,
 			Function<Schema, Table> intermediateTableProvider,
-			int k) {
-		super(argExp, funExp);
+			int k,
+			Counter recordCounter) {
+		super(argExp, funExp, recordCounter);
 		this.intermediateTableProvider = intermediateTableProvider;
 		this.k = k;
 	}
@@ -30,9 +32,32 @@ public class LazyRecursiveTopK extends LazyRecursive {
 			LazyExpression argExp,
 			Function<Table, LazyExpression> funExp,
 			int k,
-			Function<Schema, Table> intermediateTableProvider) {
+			Function<Schema, Table> intermediateTableProvider,
+			Counter recordCounter) {
 		return new LazyRecursiveTopK(
-				argExp, funExp, intermediateTableProvider, k);
+				argExp, funExp, intermediateTableProvider, k, recordCounter);
+	}
+	
+	public static LazyRecursiveTopK factory(
+			LazyExpression argExp,
+			Function<Table, LazyExpression> funExp,
+			int k,
+			Function<Schema, Table> intermediateTableProvider) {
+		return LazyRecursiveTopK.factory(
+				argExp, funExp, k, intermediateTableProvider, null);
+	}
+	
+	public static LazyRecursiveTopK factory(
+			LazyExpression argExp,
+			Function<Table, LazyExpression> funExp,
+			int k,
+			Counter recordCounter) {
+		return LazyRecursiveTopK.factory(
+				argExp, 
+				funExp,
+				k,
+				(Schema s) -> new MemoryTable(s),
+				recordCounter);
 	}
 	
 	public static LazyRecursiveTopK factory(
@@ -43,7 +68,8 @@ public class LazyRecursiveTopK extends LazyRecursive {
 				argExp, 
 				funExp,
 				k,
-				(Schema s) -> new MemoryTable(s));
+				(Schema s) -> new MemoryTable(s),
+				null);
 	}
 
 	@Override
@@ -53,16 +79,19 @@ public class LazyRecursiveTopK extends LazyRecursive {
 		Table n = this.intermediateTableProvider.apply(this.argExp.schema());
 		
 		Record record = w.next();
-		while (record != null) {			
+		while (record != null) {
+			
 			Optional<Record> o = r.findNoRank(record);
 			if (	(o.isEmpty() || o.get().rank < record.rank) 
 				&&	(r.size() <= this.k || record.rank >= r.minRank())) {
 				try {
 					n.insert(record);
+					this.incrementCounter();
 					if (o.isPresent()) {
 						r.delete(o.get());
 					}
 					r.insert(record);
+					this.incrementCounter();
 				} catch (TableRecordSchemaMismatch e) {
 					// Unlikely
 					throw new RuntimeException(e);

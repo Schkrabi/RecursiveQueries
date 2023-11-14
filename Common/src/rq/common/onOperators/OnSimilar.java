@@ -5,7 +5,6 @@ package rq.common.onOperators;
 
 import java.util.function.BiFunction;
 
-import rq.common.table.Attribute;
 import rq.common.table.Record;
 
 /**
@@ -17,7 +16,7 @@ public class OnSimilar extends OnOperator {
 	
 	public final BiFunction<Object, Object, Double> similarity;
 
-	public OnSimilar(Attribute left, Attribute right, BiFunction<Object, Object, Double> similarity) {
+	public OnSimilar(RecordValue left, RecordValue right, BiFunction<Object, Object, Double> similarity) {
 		super(left, right);
 		this.similarity = similarity;
 	}
