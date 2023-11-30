@@ -26,6 +26,7 @@ import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnSimilar;
 import rq.common.onOperators.PlusDateTime;
 import rq.common.onOperators.PlusInteger;
+import rq.common.onOperators.OnLesserThan;
 
 @CallingArg("electricity_week_unrtopk")
 public class Queries_Electricity_Week_UnrTopK extends Queries {
@@ -33,7 +34,7 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 	private final Duration SIMILARITY_SCALE = Duration.ofDays(20);
 	private final Double PEAK_MULTIPLIER = 1.2d;
 	private final Double PEAK_MULTIPLIER_AFTER_FIRST = 1.1d;
-	private final int K = 1000;
+	private final int K = 8000;
 	private final int SEARCHED_NUMBER_OF_PEAKS = 10;
 
 	public Queries_Electricity_Week_UnrTopK(Algorithm algorithm, Counter counter) {
@@ -107,6 +108,7 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 													new LazyFacade(iTable), 
 													r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
 											new OnEquals(Electricity.customer, Electricity.customer),
+											new OnLesserThan(Electricity.toTime, Electricity.time),
 											new OnSimilar(
 													new PlusDateTime(Electricity.toTime, TIME_STEP), 
 													Electricity.time, 
@@ -152,6 +154,7 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 												new LazyFacade(iTable), 
 												r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
 										new OnEquals(Electricity.customer, Electricity.customer),
+										new OnLesserThan(Electricity.toTime, Electricity.time),
 										new OnSimilar(
 												new PlusDateTime(Electricity.toTime, TIME_STEP), 
 												Electricity.time, 

@@ -3,6 +3,9 @@ package rq.test.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.AfterEach;
@@ -13,22 +16,33 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
+import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
+import rq.common.interfaces.TabularExpression;
 import rq.common.latices.Lukasiewitz;
 import rq.common.onOperators.OnEquals;
+import rq.common.onOperators.OnNotEquals;
+import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyMapping;
 import rq.common.operators.LazyProjection;
 import rq.common.operators.LazyRecursiveTopK;
+import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
+import rq.common.operators.Restriction;
 import rq.common.table.Attribute;
 import rq.common.table.LazyFacade;
+import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
+import rq.common.table.TopKTable;
+import rq.files.exceptions.ClassNotInContextException;
+import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.LazyTable;
+import rq.files.io.TableWriter;
 
 class LazyRecursiveTopKTest {
 	
@@ -39,8 +53,18 @@ class LazyRecursiveTopKTest {
 		+	"3, \"baz\", 0.9\n"
 		+	"5, \"bah\", 1.0";
 	
+	String data2 = 
+				"A:java.lang.Integer,F:java.lang.Integer,rank\n"
+			+	"1,1,1.0d\n"
+			+	"2,1,0.45d\n"
+			+	"3,1,0.45d\n"
+			+	"4,1,0.45d\n"
+			+	"5,1,0.45d\n"
+			+	"6,1,0.45d\n"
+			+	"7,1,0.45d\n";
+	
 	Schema schema;
-	Attribute a, b;
+	Attribute a, b, f;
 	Record r1, r2, r3, r4;
 	LazyTable t1;
 	
@@ -51,6 +75,7 @@ class LazyRecursiveTopKTest {
 		this.t1 = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
 		this.a = new Attribute("A", Integer.class);
 		this.b = new Attribute("B", String.class);
+		this.f = new Attribute("F", Integer.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
@@ -128,5 +153,79 @@ class LazyRecursiveTopKTest {
 	@Test
 	void testSchema() {
 		assertEquals(this.schema, this.lrt.schema());
+	}
+	
+	@Test
+	void testInconsistency() throws TypeSchemaMismatchException, AttributeNotInSchemaException, DuplicateAttributeNameException, IOException, TableRecordSchemaMismatch, ClassNotInContextException, DuplicateHeaderWriteException {
+		this.schema = Schema.factory(a, f);
+		this.r1 = Record.factory(
+				this.schema, 
+				Arrays.asList(
+						new Record.AttributeValuePair(a, 1),
+						new Record.AttributeValuePair(f, 1)), 
+				1.0f);
+		this.r2 = Record.factory(
+				this.schema, 
+				Arrays.asList(
+						new Record.AttributeValuePair(a, 2),
+						new Record.AttributeValuePair(f, 1)), 
+				0.65d);
+		this.r3 = Record.factory(
+				this.schema, 
+				Arrays.asList(
+						new Record.AttributeValuePair(a, 3),
+						new Record.AttributeValuePair(f, 1)), 
+				0.45d);
+		
+		Table t = LazyExpression.realizeInMemory(LazyTable.open(new ByteArrayInputStream(this.data2.getBytes())));
+		
+		this.lrt = LazyRecursiveTopK.factory(
+				new LazyFacade(MemoryTable.of(r1)), 
+				(Table table) ->
+					{
+						try {
+							return LazyProjection.factory(
+									LazyJoin.factory(
+											new LazyFacade(table), 
+											new LazyFacade(t), 
+											new OnNotEquals(a, a),
+											new OnEquals(f, f)),
+									new Projection.To(Join.right(a), a),
+									new Projection.To(Join.left(f), f));
+						} catch (OnOperatornNotApplicableToSchemaException | DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
+							throw new RuntimeException(e);
+						}
+					}, 
+				2);
+		
+		Table top = this.lrt.eval();
+		
+		assertEquals(7, top.size());
+		
+		TabularExpression lru = LazyRecursiveUnrestricted.factory(
+				new LazyFacade(MemoryTable.of(r1)), 
+				(Table table) ->
+				{
+					try {
+						return LazyProjection.factory(
+								LazyJoin.factory(
+										new LazyFacade(table), 
+										new LazyFacade(t), 
+										new OnNotEquals(a, a),
+										new OnEquals(f, f)),
+								new Projection.To(Join.right(a), a),
+								new Projection.To(Join.left(f), f));
+					} catch (OnOperatornNotApplicableToSchemaException | DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
+						throw new RuntimeException(e);
+					}
+				});
+		
+		TabularExpression res = new Restriction(
+						lru,
+						(Record r) -> r.rank,
+						(Schema s, Integer k) -> TopKTable.factory(s, 2));
+		
+		Table unr = res.eval();
+		assertEquals(7, unr.size());
 	}
 }

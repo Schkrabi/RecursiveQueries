@@ -16,7 +16,10 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.latices.Lukasiewitz;
+import rq.common.onOperators.Constant;
 import rq.common.onOperators.OnEquals;
+import rq.common.onOperators.PlusInteger;
+import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyMapping;
 import rq.common.operators.LazyProjection;
@@ -103,21 +106,11 @@ class LazyRecursiveTransformedTest {
 						return 
 							LazyProjection.factory(
 									LazyJoin.factory(
-											LazyMapping.factory(
-													new LazyFacade(table), 
-													r -> {
-														try {
-															return r.set(a, ((int) r.get(a)) + 1);
-														} catch (AttributeNotInSchemaException | TypeSchemaMismatchException e) {
-															throw new RuntimeException(e);
-														}
-													}), 
-											new LazyFacade(t), 
-											Lukasiewitz.PRODUCT, 
-											Lukasiewitz.INFIMUM, 
-											new OnEquals(a, a)), 
-									new Projection.To(new Attribute("right.A", Integer.class), a),
-									new Projection.To(new Attribute("right.B", String.class), b));
+											new LazyFacade(table), 
+											new LazyFacade(t),  
+											new OnEquals(new PlusInteger(a, new Constant<Integer>(1)), a)), 
+									new Projection.To(Join.right(a), a),
+									new Projection.To(Join.right(b), b));
 					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}

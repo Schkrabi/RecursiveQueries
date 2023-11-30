@@ -44,7 +44,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 	private final Duration SIMILARITY_SCALE = Duration.ofDays(20);
 	private final Double PEAK_MULTIPLIER = 1.2d;
 	private final Double PEAK_MULTIPLIER_AFTER_FIRST = 1.1d;
-	private final int K = 1000;
+	private final int K = 8000;
 	private final int SEARCHED_NUMBER_OF_PEAKS = 10;
 
 	@Override

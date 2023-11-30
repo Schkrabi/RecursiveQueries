@@ -13,7 +13,7 @@ import rq.common.table.Record;
  */
 public class OnEquals extends OnOperator {
 
-	public OnEquals(Attribute left, Attribute right) {
+	public OnEquals(RecordValue left, RecordValue right) {
 		super(left, right);
 	}
 

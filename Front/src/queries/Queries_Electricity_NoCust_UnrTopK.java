@@ -1,16 +1,19 @@
 package queries;
 
 import java.time.Duration;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import data.Electricity;
-import queries.Queries.Algorithm;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.Goguen;
 import rq.common.onOperators.Constant;
+import rq.common.onOperators.OnLesserThan;
 import rq.common.onOperators.OnSimilar;
 import rq.common.onOperators.PlusDateTime;
 import rq.common.onOperators.PlusInteger;
@@ -29,12 +32,27 @@ import rq.common.tools.Counter;
 @CallingArg("electricity_noCust_unrtopk")
 public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 	
-	private final Duration TIME_STEP = Duration.ofHours(24);
-	private final Duration SIMILARITY_SCALE = Duration.ofHours(6);
-	private Double PEAK_MULTIPLIER = 1.3d;
-	private Double PEAK_MULTIPLIER_AFTER_FIRST = 1.15d;
-	private final int K = 100;
+	//Trying to find large peaks (~over 1.45 moving average) with period of a year
 	
+	private final Duration TIME_STEP = Duration.ofDays(365);
+	private final Duration SIMILARITY_SCALE = Duration.ofDays(30);
+	private Double PEAK_MULTIPLIER = 1.45d;
+	private Double PEAK_SIMILARITY = 0.2d; // I am still somewhat interested in peaks of 1.3 of moving avg
+	private final int K = 1000;
+	
+	private final BiFunction<Object, Object, Double> peakSimilarity = 
+			LinearSimilarity.doubleSimilarityUntil(PEAK_SIMILARITY);
+	private final Function<rq.common.table.Record, Double> peakRanker =
+			(rq.common.table.Record r) -> {
+				double value = (double)r.getNoThrow(Electricity.value);
+				double moving_avg = (double)r.getNoThrow(Electricity.movingAvg);
+				double div = value/moving_avg;
+				if(div >= PEAK_MULTIPLIER) {
+					return r.rank;
+				}
+				return Goguen.PRODUCT.apply(r.rank, peakSimilarity.apply(PEAK_SIMILARITY, div));
+			};
+			
 	public Queries_Electricity_NoCust_UnrTopK(Algorithm algorithm, Counter counter) {
 		super(algorithm, counter);
 	}
@@ -45,13 +63,13 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 	@Override
 	protected String algIdentificator() {
 		return new StringBuilder()
-				.append("Electricity")
+				.append("electricity")
 				.append("NoCust")
 				.append("unrXTopK")
 				.append("_timeStep=").append(TIME_STEP.toString())
 				.append("_similarityScale=").append(SIMILARITY_SCALE.toString())
 				.append("_peakMultiplier=").append(PEAK_MULTIPLIER)
-				.append("_peakMultiplierAfterFirst=").append(PEAK_MULTIPLIER_AFTER_FIRST)
+				.append("_peakSimilarity=").append(PEAK_SIMILARITY)
 				.append("_K=").append(K)
 				.toString();
 	}
@@ -60,7 +78,7 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 		LazyExpression le =
 				LazyRestriction.factory(
 						iTable, 
-						r -> (Double)r.getNoThrow(Electricity.value) > (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d);
+						peakRanker);
 		
 		return le;
 	}
@@ -87,9 +105,7 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 		try {
 			exp = LazyRecursiveUnrestricted.factory(
 					LazyProjection.factory(
-							LazyRestriction.factory(
-									new LazyFacade(iTable), 
-									r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+							new LazyFacade(iTable),  
 							new Projection.To(Electricity.time, Electricity.fromTime),
 							new Projection.To(Electricity.time, Electricity.toTime),
 							new Projection.To(new Constant<Integer>(1), Electricity.peaks)), 
@@ -98,9 +114,8 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 							return LazyProjection.factory(
 									LazyJoin.factory(
 											new LazyFacade(t), 
-											LazyRestriction.factory(
-													new LazyFacade(iTable), 
-													r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+											new LazyFacade(iTable),
+											new OnLesserThan(Electricity.toTime, Electricity.time),
 											new OnSimilar(
 													new PlusDateTime(Electricity.toTime, TIME_STEP), 
 													Electricity.time, 
@@ -127,9 +142,7 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 		try {
 			exp = LazyRecursiveTopK.factory(
 					LazyProjection.factory(
-							LazyRestriction.factory(
-									new LazyFacade(iTable), 
-									r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+							new LazyFacade(iTable), 
 							new Projection.To(Electricity.time, Electricity.fromTime),
 							new Projection.To(Electricity.time, Electricity.toTime),
 							new Projection.To(new Constant<Integer>(1), Electricity.peaks)), 
@@ -138,9 +151,8 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 							return LazyProjection.factory(
 									LazyJoin.factory(
 											new LazyFacade(t), 
-											LazyRestriction.factory(
-													new LazyFacade(iTable), 
-													r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+											new LazyFacade(iTable),
+											new OnLesserThan(Electricity.toTime, Electricity.time),
 											new OnSimilar(
 													new PlusDateTime(Electricity.toTime, TIME_STEP), 
 													Electricity.time, 

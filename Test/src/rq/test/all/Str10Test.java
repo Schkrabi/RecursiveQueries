@@ -82,7 +82,7 @@ class Str10Test {
 	 */
 	@Test
 	void testByteArraySize() {
-		assertEquals(32, Str10.factory(str).byteArraySize());
+		assertEquals(40, Str10.factory(str).byteArraySize());
 	}
 
 }

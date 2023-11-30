@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.table.Attribute;
@@ -192,6 +193,22 @@ class TopKTableTest {
 		t.insert(r2);
 		
 		assertEquals(2, t.size());
+	}
+	
+	@Test
+	void testOverflow() throws TableRecordSchemaMismatch, DuplicateAttributeNameException, TypeSchemaMismatchException, AttributeNotInSchemaException {
+		Schema localSchema = Schema.factory(a);
+		this.t = TopKTable.factory(localSchema, 2);
+		
+		for(int i = 0; i < 5; i++) {
+			Record r = Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, i)), i < 3 ? 1.0d : 0.5d);
+			this.t.insert(r);
+		}
+		
+		assertEquals(3, this.t.size());
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 0)), 1.0d)));
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 1)), 1.0d)));
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 2)), 1.0d)));
 	}
 
 }

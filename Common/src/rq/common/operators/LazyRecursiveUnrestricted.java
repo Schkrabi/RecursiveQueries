@@ -3,6 +3,7 @@
  */
 package rq.common.operators;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -12,6 +13,7 @@ import rq.common.interfaces.Table;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.tools.Counter;
+import rq.common.types.DateTime;
 import rq.common.table.MemoryTable;
 
 /**
@@ -85,16 +87,16 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 
 		Record record = w.next();
 		while (record != null) {			
+			this.incrementCounter();
 			Optional<Record> o = r.findNoRank(record);
 			if (o.isEmpty() || o.get().rank < record.rank) {
 				try {
 					n.insert(record);
-					this.incrementCounter();
-					if (o.isPresent()) {
+					if(o.isPresent()) {
 						r.delete(o.get());
 					}
+					
 					r.insert(record);
-					this.incrementCounter();
 				} catch (TableRecordSchemaMismatch e) {
 					// Unlikely
 					throw new RuntimeException(e);

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import rq.files.exceptions.ClassNotInContextException;
+import rq.files.helpers.DateTimeFormatterProvider;
 
 /**
  * Context for parsing values
@@ -50,8 +51,6 @@ public class ValueParserContext {
 		return pFunction;
 	}
 	
-	private static final DateTimeFormatter  dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-	
 	/**
 	 * Default parsing context
 	 */
@@ -65,17 +64,18 @@ public class ValueParserContext {
 						LocalDateTime.class, (String x) -> {
 							LocalDateTime dateTime = null;
 							try {
-								dateTime = LocalDateTime.parse(x, dateTimeFormatter);
+								dateTime = LocalDateTime.parse(x, DateTimeFormatterProvider.formatter());
 							}catch(Exception e) {
 								throw new RuntimeException(e);
 							}
 							return dateTime;
 						},
 						rq.common.types.Str10.class, (String x) -> rq.common.types.Str10.factory(x),
+						rq.common.types.Str50.class, (String x) -> rq.common.types.Str50.factory(x),
 						rq.common.types.DateTime.class, (String x) -> {
 							LocalDateTime dateTime = null;
 							try {
-								dateTime = LocalDateTime.parse(x, dateTimeFormatter);
+								dateTime = LocalDateTime.parse(x, DateTimeFormatterProvider.formatter());
 							}catch(Exception e) {
 								throw new RuntimeException(e);
 							}

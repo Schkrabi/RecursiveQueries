@@ -3,15 +3,13 @@
  */
 package rq.common.table;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.stream.Stream;
-import java.util.List;
-import java.util.LinkedList;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
@@ -32,7 +30,7 @@ public class TopKTable implements Table {
 	private TopKTable(Schema schema, int k) {
 		this.k = k;
 		this.schema = schema;
-		this.records = new PriorityQueue<Record>(k, Record.RANK_COMPARATOR_DSC);
+		this.records = new PriorityQueue<Record>(k, Record.RANK_COMPARATOR_ASC);
 	}
 	
 	public static TopKTable factory(Schema schema, int k) {
@@ -73,16 +71,17 @@ public class TopKTable implements Table {
 		}
 		
 		double minRank = this.minRank();
-		List<Record> excluded = new LinkedList<Record>();
+		int numberOfPolls = 0;
+		List<Record> polled = new LinkedList<Record>();
 		while(this.minRank() == minRank) {
-			excluded.add(this.records.poll());
+			polled.add(this.records.poll());
 		}
 		
-		if(this.size() <= k) {
-			return true;
+		if(this.size() - numberOfPolls < this.k) {
+			for(Record r : polled) {
+				this.records.add(r);
+			}
 		}
-		
-		this.records.addAll(excluded);
 		
 		return true;
 	}
@@ -127,6 +126,19 @@ public class TopKTable implements Table {
 	@Override
 	public int size() {
 		return this.records.size();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		//sb.append(this.schema.toString());
+		for(Record r : this.records) {
+			sb.append(r.toString());
+			sb.append("\n");
+		}
+		
+		return sb.toString();
 	}
 
 }

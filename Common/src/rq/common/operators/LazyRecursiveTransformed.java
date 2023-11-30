@@ -99,17 +99,18 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 		Table n = this.intermediateTableProvider.apply(this.argExp.schema());
 		
 		Record record = w.next();
-		while (record != null) {			
+		while (record != null) {	
+			this.incrementCounter();
 			Optional<Record> o = ri.findNoRank(record);
-			if(o.isEmpty() || o.get().rank < record.rank) {
+			if((o.isEmpty() || o.get().rank < record.rank)
+					&& (record.rank >= r.minRank() || r.size() < this.k)) {
 				try {
 					n.insert(record);
-					this.incrementCounter();
+					
 					if(o.isPresent()) {
 						ri.delete(o.get());
 					}
 					ri.insert(record);
-					this.incrementCounter();
 					if(r.size() <= this.k || record.rank >= r.minRank()) {
 						LazyExpression le = this.transformation.apply(record);
 						Record transformedRecord = le.next();
@@ -120,7 +121,6 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 									r.delete(to.get());
 								}
 								r.insert(transformedRecord);
-								this.incrementCounter();
 							}						
 							transformedRecord = le.next();
 						}

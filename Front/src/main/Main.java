@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,7 +22,10 @@ import queries.Queries_Electricity_NoCust_UnrTopK;
 import queries.Queries_Electricity_NoCust_UnrTra;
 import queries.Queries_Electricity_Week_UnrTopK;
 import queries.Queries_Electricity_Week_UnrTra;
-import queries.Queries_Toloker;
+import queries.Queries_Retail_UnrTopK;
+import queries.Queries_Retail_UnrTra;
+import queries.Queries_Toloker_UnrTopK;
+import queries.Queries_Toloker_UnrTra;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.TabularExpression;
 import rq.common.tools.Counter;
@@ -51,7 +55,10 @@ public class Main {
 			Queries_Electricity_NoCust_UnrTra.class,
 			Queries_Electricity_Week_UnrTopK.class,
 			Queries_Electricity_Week_UnrTra.class,
-			Queries_Toloker.class);
+			Queries_Retail_UnrTopK.class,
+			Queries_Retail_UnrTra.class,
+			Queries_Toloker_UnrTopK.class,
+			Queries_Toloker_UnrTra.class);
 	
 	private static Map<String, BiFunction<Queries.Algorithm, Counter, Queries>> queryMap = new HashMap<String, BiFunction<Queries.Algorithm, Counter, Queries>>();
 	
@@ -240,7 +247,13 @@ public class Main {
 		output.println("Data preparation time(ms): " + this.preparationTime);
 		output.println("Query execution time(ms): " + this.queryTime);
 		output.println("Postprocess time(ms): " + this.outputTime);
-		output.println("Tuples inserted: " + this.recordCounter.count());
+		output.println("Tuples generated: " + this.recordCounter.count());
+	}
+	
+	private static boolean validateArgs(String[] args) {
+		return Main.queryMap.keySet().contains(args[0])
+				&& Main.ALGORITHMS.contains(args[1])
+				&& Files.exists(Path.of(args[2]));
 	}
 
 	/**
@@ -249,12 +262,13 @@ public class Main {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
+		Main.qlist.forEach(c -> Main.addQueryFromQueriesClass(c));
+		
 		if(!(args.length == 3
-				&& (args[0] instanceof String))){
+				&& validateArgs(args))){
 			System.out.println(usage());
 			return;
-		}
-		Main.qlist.forEach(c -> Main.addQueryFromQueriesClass(c));
+		}		
 		
 		Main me = parseArgs(args);
 		me.run();
