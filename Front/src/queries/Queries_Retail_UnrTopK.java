@@ -3,7 +3,10 @@ package queries;
 import java.time.Duration;
 import java.util.function.BiFunction;
 
+import annotations.CallingArg;
 import data.Retail;
+import rq.common.algorithms.LazyRecursiveTopK;
+import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
@@ -14,12 +17,11 @@ import rq.common.onOperators.Constant;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveTopK;
-import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
 import rq.common.similarities.LinearSimilarity;
+import rq.common.tools.AlgorithmMonitor;
 import rq.common.tools.Counter;
 import rq.common.table.LazyFacade;
 import rq.common.table.Record;
@@ -38,12 +40,12 @@ public class Queries_Retail_UnrTopK extends Queries {
 	
 	private final int K = 50_000;
 
-	public Queries_Retail_UnrTopK(Algorithm algorithm, Counter counter) {
-		super(algorithm, counter);
+	public Queries_Retail_UnrTopK(Algorithm algorithm, AlgorithmMonitor monitor) {
+		super(algorithm, monitor);
 	}
 	
-	public static Queries factory(Algorithm algorithm, Counter counter) {
-		return new Queries_Retail_UnrTopK(algorithm, counter);
+	public static Queries factory(Algorithm algorithm, AlgorithmMonitor monitor) {
+		return new Queries_Retail_UnrTopK(algorithm, monitor);
 	}
 
 	@Override
@@ -130,7 +132,7 @@ public class Queries_Retail_UnrTopK extends Queries {
 							throw new RuntimeException(e);
 						}
 					},
-					this.recordCounter);
+					this.monitor);
 		} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 			throw new RuntimeException(e);
 		}
@@ -172,7 +174,7 @@ TabularExpression exp = null;
 						}
 					},
 					K,
-					this.recordCounter);
+					this.monitor);
 		} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 			throw new RuntimeException(e);
 		}

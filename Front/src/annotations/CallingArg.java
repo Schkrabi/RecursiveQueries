@@ -1,4 +1,4 @@
-package queries;
+package annotations;
 
 import static java.lang.annotation.ElementType.TYPE;
 

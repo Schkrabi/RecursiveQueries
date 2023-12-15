@@ -2,7 +2,10 @@ package queries;
 
 import java.time.Duration;
 
+import annotations.CallingArg;
 import data.Electricity;
+import rq.common.algorithms.LazyRecursiveTopK;
+import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
@@ -12,14 +15,13 @@ import rq.common.interfaces.TabularExpression;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveTopK;
-import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.table.TopKTable;
+import rq.common.tools.AlgorithmMonitor;
 import rq.common.tools.Counter;
 import rq.common.onOperators.Constant;
 import rq.common.onOperators.OnEquals;
@@ -34,14 +36,14 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 	private final Duration SIMILARITY_SCALE = Duration.ofDays(20);
 	private final Double PEAK_MULTIPLIER = 1.2d;
 	private final Double PEAK_MULTIPLIER_AFTER_FIRST = 1.1d;
-	private final int K = 8000;
+	private final int K = 100;//8000;
 	private final int SEARCHED_NUMBER_OF_PEAKS = 10;
 
-	public Queries_Electricity_Week_UnrTopK(Algorithm algorithm, Counter counter) {
-		super(algorithm, counter);
+	public Queries_Electricity_Week_UnrTopK(Algorithm algorithm, AlgorithmMonitor monitor) {
+		super(algorithm, monitor);
 	}
-	public static Queries factory(Algorithm algorithm, Counter counter) {
-		return new Queries_Electricity_Week_UnrTopK(algorithm, counter);
+	public static Queries factory(Algorithm algorithm, AlgorithmMonitor monitor) {
+		return new Queries_Electricity_Week_UnrTopK(algorithm, monitor);
 	}
 	
 	@Override
@@ -122,7 +124,7 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 							throw new RuntimeException(e);
 						}
 					},
-					this.recordCounter);
+					this.monitor);
 		}catch(RecordValueNotApplicableOnSchemaException | DuplicateAttributeNameException e) {
 			throw new RuntimeException(e);
 		}
@@ -169,7 +171,7 @@ public class Queries_Electricity_Week_UnrTopK extends Queries {
 					}
 				}, 
 				K,
-				recordCounter);
+				this.monitor);
 		}catch(RecordValueNotApplicableOnSchemaException | DuplicateAttributeNameException e) {
 			throw new RuntimeException(e);
 		}

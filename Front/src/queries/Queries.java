@@ -1,10 +1,10 @@
 package queries;
 
+import annotations.CallingArg;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
-
-import rq.common.tools.Counter;
+import rq.common.tools.AlgorithmMonitor;
 
 /**
  * Abstract class for defining queries of the experiments
@@ -26,11 +26,11 @@ public abstract class Queries {
 	/**
 	 * Counter used in the measurement
 	 */
-	protected final Counter recordCounter;
+	protected final AlgorithmMonitor monitor;
 	
-	protected Queries(Algorithm algorithm, Counter counter) {
+	protected Queries(Algorithm algorithm, AlgorithmMonitor monitor) {
 		this.algorithm = algorithm;
-		this.recordCounter = counter;
+		this.monitor = monitor;
 	}
 	
 	/**

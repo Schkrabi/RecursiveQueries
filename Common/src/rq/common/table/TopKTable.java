@@ -14,7 +14,9 @@ import java.util.stream.Stream;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
+import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
+import rq.common.interfaces.TabularExpression;
 import rq.common.table.Record.AttributeValuePair;
 
 /**
@@ -139,6 +141,53 @@ public class TopKTable implements Table {
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * Realizes lazy expression into a top K table
+	 * @param exp realized expression
+	 * @param k number of elements in the table
+	 * @return TopKTable instance
+	 */
+	public static TopKTable realize(LazyExpression exp, int k) {
+		TopKTable table = TopKTable.factory(exp.schema(), k);
+		Record r = exp.next();
+		while(r != null) {
+			try {
+				table.insert(r);
+			} catch (TableRecordSchemaMismatch e) {
+				// unlikely
+				throw new RuntimeException(e);
+			}
+			r = exp.next();
+		}
+		return table;
+	}
+	
+	/**
+	 * Creates an expression that realizes exp into top k table upon evaluation
+	 * @param exp lazy expression to be realuzed
+	 * @param k number of elements in resulting table
+	 * @return a TabularExpression instance
+	 */
+	public static TabularExpression realizer(LazyExpression exp, int k) {
+		TabularExpression te = null;
+		
+		te = new TabularExpression() {
+
+			@Override
+			public Table eval() {
+				return TopKTable.realize(exp, k);
+			}
+
+			@Override
+			public Schema schema() {
+				return exp.schema();
+			}
+			
+		};
+		
+		return te;
 	}
 
 }

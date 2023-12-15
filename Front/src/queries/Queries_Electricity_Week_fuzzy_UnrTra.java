@@ -1,6 +1,8 @@
 package queries;
 
 import java.time.Duration;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import annotations.CallingArg;
 import data.Electricity;
@@ -32,33 +34,47 @@ import rq.common.table.TopKTable;
 import rq.common.tools.AlgorithmMonitor;
 import rq.common.tools.Counter;
 
-@CallingArg("electricity_week_unrtra")
-public class Queries_Electricity_Week_UnrTra extends Queries {
+@CallingArg("electricity_week_fuzzy_unrtra")
+public class Queries_Electricity_Week_fuzzy_UnrTra extends Queries {
 	
-	public Queries_Electricity_Week_UnrTra(Algorithm algorithm, AlgorithmMonitor monitor) {
+	public Queries_Electricity_Week_fuzzy_UnrTra(Algorithm algorithm, AlgorithmMonitor monitor) {
 		super(algorithm, monitor);
 	}
 	public static Queries factory(Algorithm algorithm, AlgorithmMonitor monitor) {
-		return new Queries_Electricity_Week_UnrTra(algorithm, monitor);
+		return new Queries_Electricity_Week_fuzzy_UnrTra(algorithm, monitor);
 	}
 
 	private final Duration TIME_STEP = Duration.ofDays(60);
 	private final Duration SIMILARITY_SCALE = Duration.ofDays(20);
 	private final Double PEAK_MULTIPLIER = 1.2d;
-	private final Double PEAK_MULTIPLIER_AFTER_FIRST = 1.1d;
-	private final int K = 100;//8000;
+	private Double PEAK_SIMILARITY = 0.2d;
+	private final int K = 8000;
 	private final int SEARCHED_NUMBER_OF_PEAKS = 10;
+	
+	private final BiFunction<Object, Object, Double> peakSimilarity = 
+			LinearSimilarity.doubleSimilarityUntil(PEAK_SIMILARITY);
+	private final Function<rq.common.table.Record, Double> peakRanker =
+			(rq.common.table.Record r) -> {
+				double value = (double)r.getNoThrow(Electricity.value);
+				double moving_avg = (double)r.getNoThrow(Electricity.movingAvg);
+				double div = value/moving_avg;
+				if(div >= PEAK_MULTIPLIER) {
+					return r.rank;
+				}
+				return Goguen.PRODUCT.apply(r.rank, peakSimilarity.apply(PEAK_SIMILARITY, div));
+			};
 
 	@Override
 	protected String algIdentificator() {
 		return new StringBuilder()
 				.append("electricity")
 				.append("Week")
+				.append("fuzzy")
 				.append("unrXtra")
 				.append("_timeStep=").append(TIME_STEP.toString())
 				.append("_similarityScale=").append(SIMILARITY_SCALE.toString())
 				.append("_peakMultiplier=").append(PEAK_MULTIPLIER)
-				.append("_peakMultiplierAfterFirst=").append(PEAK_MULTIPLIER_AFTER_FIRST)
+				.append("_peakSimilarity=").append(PEAK_SIMILARITY)
 				.append("_K=").append(K)
 				.append("_numberOfPeaks=").append(SEARCHED_NUMBER_OF_PEAKS)
 				.toString();
@@ -69,7 +85,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 		LazyExpression le = 
 				LazyRestriction.factory(
 						iTable, 
-						r -> (Double)r.getNoThrow(Electricity.value) > (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d);
+						peakRanker);
 
 		return le;
 	}
@@ -96,9 +112,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 		try {
 		exp = LazyRecursiveUnrestricted.factory(				
 				LazyProjection.factory(
-						LazyRestriction.factory(
-								new LazyFacade(iTable), 
-								r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+						new LazyFacade(iTable),  
 						new Projection.To(Electricity.customer, Electricity.customer),
 						new Projection.To(Electricity.time, Electricity.fromTime),
 						new Projection.To(Electricity.time, Electricity.toTime),
@@ -109,9 +123,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 							return LazyProjection.factory(
 									LazyJoin.factory(
 											new LazyFacade(t), 
-											LazyRestriction.factory(
-													new LazyFacade(iTable), 
-													r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+											new LazyFacade(iTable),  
 											new OnEquals(Electricity.customer, Electricity.customer),
 											new OnSimilar(
 													new PlusDateTime(Electricity.toTime, TIME_STEP), 
@@ -146,9 +158,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 		try {
 		exp = LazyRecursiveTransformed.factory(
 				LazyProjection.factory(
-						LazyRestriction.factory(
-								new LazyFacade(iTable), 
-								r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+						new LazyFacade(iTable),  
 						new Projection.To(Electricity.customer, Electricity.customer),
 						new Projection.To(Electricity.time, Electricity.fromTime),
 						new Projection.To(Electricity.time, Electricity.toTime),
@@ -159,9 +169,7 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 							return LazyProjection.factory(
 									LazyJoin.factory(
 											new LazyFacade(t), 
-											LazyRestriction.factory(
-													new LazyFacade(iTable), 
-													r -> (Double)r.getNoThrow(Electricity.value) > PEAK_MULTIPLIER_AFTER_FIRST * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
+											new LazyFacade(iTable),  
 											new OnEquals(Electricity.customer, Electricity.customer),
 											new OnSimilar(
 													new PlusDateTime(Electricity.toTime, TIME_STEP), 
@@ -182,12 +190,12 @@ public class Queries_Electricity_Week_UnrTra extends Queries {
 							re -> {
 								int numOfPeaks = (Integer)re.getNoThrow(Electricity.peaks);
 								if(numOfPeaks >= SEARCHED_NUMBER_OF_PEAKS) {
-									return re.rank;
+									return r.rank;
 								}
 								if(numOfPeaks == 1) {
 									return 0.0d;
 								}
-								return Goguen.PRODUCT.apply(re.rank, (double)numOfPeaks / (double)SEARCHED_NUMBER_OF_PEAKS);
+								return Goguen.PRODUCT.apply(r.rank, (double)numOfPeaks / (double)SEARCHED_NUMBER_OF_PEAKS);
 							}),
 				this.monitor);
 		

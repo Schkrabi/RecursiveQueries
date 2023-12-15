@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.table.Record;
+import rq.common.table.Schema;
 import rq.common.table.FileMappedTable;
 import rq.common.table.MemoryTable;
 
@@ -33,6 +34,22 @@ public interface LazyExpression extends SchemaProvider {
 		return table;
 	}
 	
+	public static TabularExpression inMemoryRealizer(LazyExpression exp) {
+		return new TabularExpression() {
+
+			@Override
+			public Table eval() {
+				return LazyExpression.realizeInMemory(exp);
+			}
+
+			@Override
+			public Schema schema() {
+				return exp.schema();
+			}
+			
+		};
+	}
+	
 	/**
 	 * Realizes lazy expression into file mapped table
 	 * @param exp expression
@@ -52,5 +69,25 @@ public interface LazyExpression extends SchemaProvider {
 			record = exp.next();
 		}
 		return table;
+	}
+	
+	public static TabularExpression mappedRealizer(LazyExpression exp, int expectedCount) {
+		return new TabularExpression() {
+
+			@Override
+			public Table eval() {
+				try {
+					return LazyExpression.realizeMapped(exp, expectedCount);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+			@Override
+			public Schema schema() {
+				return exp.schema();
+			}
+			
+		};
 	}
 }

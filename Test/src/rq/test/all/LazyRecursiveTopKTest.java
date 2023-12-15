@@ -3,15 +3,15 @@ package rq.test.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import rq.common.algorithms.LazyRecursiveTopK;
+import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
@@ -28,8 +28,6 @@ import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyMapping;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveTopK;
-import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
@@ -42,7 +40,6 @@ import rq.common.table.TopKTable;
 import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.LazyTable;
-import rq.files.io.TableWriter;
 
 class LazyRecursiveTopKTest {
 	
@@ -130,7 +127,8 @@ class LazyRecursiveTopKTest {
 						throw new RuntimeException(e);
 					}
 				},
-				2);
+				2,
+				new rq.common.tools.AlgorithmMonitor());
 	}
 	
 	@AfterEach
@@ -196,7 +194,8 @@ class LazyRecursiveTopKTest {
 							throw new RuntimeException(e);
 						}
 					}, 
-				2);
+				2,
+				new rq.common.tools.AlgorithmMonitor());
 		
 		Table top = this.lrt.eval();
 		
@@ -218,7 +217,8 @@ class LazyRecursiveTopKTest {
 					} catch (OnOperatornNotApplicableToSchemaException | DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}
-				});
+				},
+				new rq.common.tools.AlgorithmMonitor());
 		
 		TabularExpression res = new Restriction(
 						lru,

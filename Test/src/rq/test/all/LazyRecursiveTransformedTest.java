@@ -8,22 +8,18 @@ import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.algorithms.LazyRecursiveTransformed;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
-import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
-import rq.common.latices.Lukasiewitz;
 import rq.common.onOperators.Constant;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.PlusInteger;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
-import rq.common.operators.LazyMapping;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveTransformed;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.table.Attribute;
@@ -123,7 +119,8 @@ class LazyRecursiveTransformedTest {
 						// Unlikely
 						throw new RuntimeException(e);
 					}
-				});
+				},
+				new rq.common.tools.AlgorithmMonitor());
 	}
 
 	@Test

@@ -81,4 +81,22 @@ public class Toloker {
 	public static final Attribute englishProfile = new Attribute("english_profile", Integer.class);
 	public static final Attribute englishTested = new Attribute("english_tested", Integer.class);
 	public static final Attribute banned = new Attribute("banned", Integer.class);
+	
+	public static final Attribute sourceApprovedRate = new Attribute("source_approved_rate", Double.class);
+	public static final Attribute sourceSkippedRate = new Attribute("source_skipped_rate", Double.class);
+	public static final Attribute sourceExpiredRate = new Attribute("source_expired_rate", Double.class);
+	public static final Attribute sourceRejectedRate = new Attribute("source_rejected_rate", Double.class);
+	public static final Attribute sourceEductation = new Attribute("source_education", Str10.class);
+	public static final Attribute sourceEnglishProfile = new Attribute("source_english_profile", Integer.class);
+	public static final Attribute sourceEnglishTested = new Attribute("source_english_tested", Integer.class);
+	public static final Attribute sourceBanned = new Attribute("source_banned", Integer.class);
+	
+	public static final Attribute targetApprovedRate = new Attribute("target_approved_rate", Double.class);
+	public static final Attribute targetSkippedRate = new Attribute("target_skipped_rate", Double.class);
+	public static final Attribute targetExpiredRate = new Attribute("target_expired_rate", Double.class);
+	public static final Attribute targetRejectedRate = new Attribute("target_rejected_rate", Double.class);
+	public static final Attribute targetEductation = new Attribute("target_education", Str10.class);
+	public static final Attribute targetEnglishProfile = new Attribute("target_english_profile", Integer.class);
+	public static final Attribute targetEnglishTested = new Attribute("target_english_tested", Integer.class);
+	public static final Attribute targetBanned = new Attribute("target_banned", Integer.class);
 }

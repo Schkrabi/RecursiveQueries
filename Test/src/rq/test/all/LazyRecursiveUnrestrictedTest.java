@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
@@ -22,13 +23,13 @@ import rq.common.onOperators.OnEquals;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyMapping;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.table.Attribute;
 import rq.common.table.LazyFacade;
 import rq.common.table.Record;
 import rq.common.table.Schema;
+import rq.common.tools.AlgorithmMonitor;
 import rq.files.io.LazyTable;
 import rq.common.interfaces.Table;
 
@@ -106,7 +107,8 @@ class LazyRecursiveUnrestrictedTest {
 					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}
-				});
+				},
+				new AlgorithmMonitor());
 	}
 
 	@AfterEach

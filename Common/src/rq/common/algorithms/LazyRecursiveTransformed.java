@@ -1,11 +1,12 @@
 /**
  * 
  */
-package rq.common.operators;
+package rq.common.algorithms;
 
 import java.util.Optional;
 import java.util.function.Function;
 
+import rq.common.annotations.Algorithm;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
@@ -13,12 +14,13 @@ import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.TopKTable;
-import rq.common.tools.Counter;
+import rq.common.tools.AlgorithmMonitor;
 
 /**
  * @author r.skrabal
  *
  */
+@Algorithm("transformed")
 public class LazyRecursiveTransformed extends LazyRecursive {
 	
 	private final int k;
@@ -31,8 +33,8 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 			int k,
 			Function<Schema, Table> intermediateTableProvider,
 			Function<Record, LazyExpression> transformation,
-			Counter recordCounter) {
-		super(argExp, funExp, recordCounter);
+			AlgorithmMonitor monitor) {
+		super(argExp, funExp, monitor);
 		this.k = k;
 		this.intermediateTableProvider = intermediateTableProvider;
 		this.transformation = transformation;
@@ -44,23 +46,8 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 			int k,
 			Function<Schema, Table> intermediateTableProvider,
 			Function<Record, LazyExpression> transformation,
-			Counter recordCounter) {
-		return new LazyRecursiveTransformed(argExp, funExp, k, intermediateTableProvider, transformation, recordCounter);
-	}
-	
-	public static LazyRecursiveTransformed factory(
-			LazyExpression argExp, 
-			Function<Table, LazyExpression> funExp,
-			int k,
-			Function<Schema, Table> intermediateTableProvider,
-			Function<Record, LazyExpression> transformation) {
-		return LazyRecursiveTransformed.factory(
-				argExp, 
-				funExp, 
-				k, 
-				intermediateTableProvider,
-				transformation,
-				null);
+			AlgorithmMonitor monitor) {
+		return new LazyRecursiveTransformed(argExp, funExp, k, intermediateTableProvider, transformation, monitor);
 	}
 	
 	public static LazyRecursiveTransformed factory(
@@ -68,27 +55,14 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 			Function<Table, LazyExpression> funExp,
 			int k,
 			Function<Record, LazyExpression> transformation,
-			Counter recordCounter) {
+			AlgorithmMonitor monitor) {
 		return LazyRecursiveTransformed.factory(
 				argExp, 
 				funExp, 
 				k, 
 				(Schema s) -> new MemoryTable(s), 
 				transformation,
-				recordCounter);
-	}
-	
-	public static LazyRecursiveTransformed factory(
-			LazyExpression argExp, 
-			Function<Table, LazyExpression> funExp,
-			int k,
-			Function<Record, LazyExpression> transformation) {
-		return LazyRecursiveTransformed.factory(
-				argExp,
-				funExp,
-				k,
-				transformation,
-				null);
+				monitor);
 	}
 
 	@Override
@@ -100,10 +74,9 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 		
 		Record record = w.next();
 		while (record != null) {	
-			this.incrementCounter();
+			this.monitor.generatedTuples.increment();
 			Optional<Record> o = ri.findNoRank(record);
-			if((o.isEmpty() || o.get().rank < record.rank)
-					&& (record.rank >= r.minRank() || r.size() < this.k)) {
+			if(o.isEmpty() || o.get().rank < record.rank) {
 				try {
 					n.insert(record);
 					
@@ -117,6 +90,7 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 						while(transformedRecord != null) {
 							Optional<Record> to = r.findNoRank(transformedRecord);
 							if(to.isEmpty() || to.get().rank < transformedRecord.rank) {
+								this.monitor.resultCandidates.increment();
 								if(to.isPresent()) {
 									r.delete(to.get());
 								}

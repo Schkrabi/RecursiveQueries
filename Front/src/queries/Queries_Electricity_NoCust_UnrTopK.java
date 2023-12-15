@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import annotations.CallingArg;
 import data.Electricity;
+import rq.common.algorithms.LazyRecursiveTopK;
+import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
 import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
@@ -19,14 +22,13 @@ import rq.common.onOperators.PlusDateTime;
 import rq.common.onOperators.PlusInteger;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRecursiveTopK;
-import rq.common.operators.LazyRecursiveUnrestricted;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.table.TopKTable;
+import rq.common.tools.AlgorithmMonitor;
 import rq.common.tools.Counter;
 
 @CallingArg("electricity_noCust_unrtopk")
@@ -53,11 +55,11 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 				return Goguen.PRODUCT.apply(r.rank, peakSimilarity.apply(PEAK_SIMILARITY, div));
 			};
 			
-	public Queries_Electricity_NoCust_UnrTopK(Algorithm algorithm, Counter counter) {
-		super(algorithm, counter);
+	public Queries_Electricity_NoCust_UnrTopK(Algorithm algorithm, AlgorithmMonitor monitor) {
+		super(algorithm, monitor);
 	}
-	public static Queries factory(Algorithm algorithm, Counter counter) {
-		return new Queries_Electricity_NoCust_UnrTopK(algorithm, counter);
+	public static Queries factory(Algorithm algorithm, AlgorithmMonitor monitor) {
+		return new Queries_Electricity_NoCust_UnrTopK(algorithm, monitor);
 	}
 	
 	@Override
@@ -128,7 +130,7 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 							throw new RuntimeException(e);
 						}
 					},
-					recordCounter);
+					this.monitor);
 		} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 			throw new RuntimeException(e);
 		}
@@ -166,7 +168,7 @@ public class Queries_Electricity_NoCust_UnrTopK extends Queries {
 						}
 					}, 
 					K,
-					recordCounter);
+					this.monitor);
 		} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
 			throw new RuntimeException(e);
 		} 

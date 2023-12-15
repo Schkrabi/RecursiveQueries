@@ -1,25 +1,25 @@
 /**
  * 
  */
-package rq.common.operators;
+package rq.common.algorithms;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Function;
 
+import rq.common.annotations.Algorithm;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.common.tools.Counter;
-import rq.common.types.DateTime;
+import rq.common.tools.AlgorithmMonitor;
 import rq.common.table.MemoryTable;
 
 /**
  * @author Mgr, Radomir Skrabal
  *
  */
+@Algorithm("unrestricted")
 public class LazyRecursiveUnrestricted extends LazyRecursive {
 	
 	private final Function<Schema, Table> returnTableProvider;
@@ -30,26 +30,22 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 			Function<Table, LazyExpression> fun,
 			Function<Schema, Table> returnTableProvider,
 			Function<Schema, Table> intermediateTableProvider,
-			Counter recordCounter) {
-		super(arg, fun, recordCounter);
+			AlgorithmMonitor monitor) {
+		super(arg, fun, monitor);
 		this.returnTableProvider = returnTableProvider;
 		this.intermediateTableProvider = intermediateTableProvider;
-	}
-
-	public static LazyRecursiveUnrestricted factory(LazyExpression arg, Function<Table, LazyExpression> fun) {
-		return LazyRecursiveUnrestricted.factory(arg, fun, null);
 	}
 	
 	public static LazyRecursiveUnrestricted factory(
 			LazyExpression arg, 
 			Function<Table, LazyExpression> fun,
-			Counter recordCounter) {
+			AlgorithmMonitor monitor) {
 		return LazyRecursiveUnrestricted.factory(
 				arg, 
 				fun,
 				(Schema s) -> new MemoryTable(s),
 				(Schema s) -> new MemoryTable(s),
-				recordCounter);
+				monitor);
 	}
 	
 	public static LazyRecursiveUnrestricted factory(
@@ -57,26 +53,13 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 			Function<Table, LazyExpression> fun,
 			Function<Schema, Table> returnTableProvider,
 			Function<Schema, Table> intermediateTableProvider,
-			Counter recordCounter) {
+			AlgorithmMonitor monitor) {
 		return new LazyRecursiveUnrestricted(
 				arg,
 				fun,
 				returnTableProvider,
 				intermediateTableProvider,
-				recordCounter);
-	}
-	
-	public static LazyRecursiveUnrestricted factory(
-			LazyExpression arg, 
-			Function<Table, LazyExpression> fun,
-			Function<Schema, Table> returnTableProvider,
-			Function<Schema, Table> intermediateTableProvider) {
-		return LazyRecursiveUnrestricted.factory(
-				arg, 
-				fun,
-				returnTableProvider,
-				intermediateTableProvider,
-				null);
+				monitor);
 	}
 
 	@Override
@@ -87,7 +70,7 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 
 		Record record = w.next();
 		while (record != null) {			
-			this.incrementCounter();
+			this.monitor.generatedTuples.increment();
 			Optional<Record> o = r.findNoRank(record);
 			if (o.isEmpty() || o.get().rank < record.rank) {
 				try {
@@ -96,6 +79,7 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 						r.delete(o.get());
 					}
 					
+					this.monitor.resultCandidates.increment();
 					r.insert(record);
 				} catch (TableRecordSchemaMismatch e) {
 					// Unlikely
