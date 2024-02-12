@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
@@ -66,6 +67,16 @@ public class Restriction implements TabularExpression {
 				.append(" WHERE ")
 				.append(this.predicate.toString())
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

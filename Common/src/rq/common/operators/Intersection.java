@@ -10,6 +10,7 @@ import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
 import rq.common.latices.LaticeFactory;
+import rq.common.statistic.Statistics;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -121,6 +122,16 @@ public class Intersection implements TabularExpression {
 				.append(this.argument2.toString())
 				.append(")")
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

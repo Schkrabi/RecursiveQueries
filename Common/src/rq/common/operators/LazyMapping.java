@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 
@@ -42,6 +43,16 @@ public class LazyMapping implements LazyExpression, SchemaProvider {
 			return null;
 		}
 		return this.fun.apply(record);
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

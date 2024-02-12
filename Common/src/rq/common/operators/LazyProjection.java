@@ -16,6 +16,7 @@ import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
 import rq.common.onOperators.RecordValue;
 import rq.common.operators.Projection.To;
+import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -119,6 +120,16 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 			// Unlikely
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

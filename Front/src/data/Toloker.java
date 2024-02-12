@@ -1,5 +1,6 @@
 package data;
 
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import rq.common.table.Attribute;
@@ -70,6 +71,13 @@ public class Toloker {
 		default: throw new RuntimeException(s1.getInner() + " is not a valid education value");
 		}
 	};
+	
+	public static final Set<Object> educations = Set.of(
+			Str10.factory(EDU_NONE), 
+			Str10.factory(EDU_BASIC), 
+			Str10.factory(EDU_MIDDLE), 
+			Str10.factory(EDU_HIGH));
+	
 	//File coluns 
 	public static final Attribute source = new Attribute("source", Integer.class);
 	public static final Attribute target = new Attribute("target", Integer.class);

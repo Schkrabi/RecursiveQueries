@@ -11,6 +11,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.latices.LaticeFactory;
+import rq.common.statistic.Statistics;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
@@ -125,6 +126,16 @@ public class Union implements TabularExpression {
 				.append(this.argument2.toString())
 				.append(")")
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

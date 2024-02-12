@@ -10,6 +10,7 @@ import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.LazyIterable;
 import rq.common.interfaces.LazyIterator;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.statistic.Statistics;
 
 /**
  * @author Mgr. Radomir Skrabal
@@ -82,5 +83,15 @@ public class CachedExpression implements LazyIterable, SchemaProvider, LazyExpre
 	@Override
 	public Schema schema() {
 		return this.argSch.schema();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

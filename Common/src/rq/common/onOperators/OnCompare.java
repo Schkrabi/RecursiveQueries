@@ -13,19 +13,19 @@ import rq.common.table.Attribute;
  */
 public abstract class OnCompare extends OnOperator {
 
-	protected OnCompare(Attribute left, Attribute right) {
+	protected OnCompare(RecordValue left, RecordValue right) {
 		super(left, right);
 	}
 
-	protected static boolean validateComparable(Attribute left, Attribute right)
+	protected static boolean validateComparable(RecordValue left, RecordValue right)
 			throws NotComparableException, ComparableDomainMismatchException {
-		if (!Comparable.class.isAssignableFrom(left.domain)) {
+		if (!Comparable.class.isAssignableFrom(left.domain())) {
 			throw new NotComparableException(left, OnGreaterThan.class);
 		}
-		if (!Comparable.class.isAssignableFrom(right.domain)) {
+		if (!Comparable.class.isAssignableFrom(right.domain())) {
 			throw new NotComparableException(right, OnGreaterThan.class);
 		}
-		if (!left.domain.equals(right.domain)) {
+		if (!left.domain().equals(right.domain())) {
 			throw new ComparableDomainMismatchException(left, right);
 		}
 

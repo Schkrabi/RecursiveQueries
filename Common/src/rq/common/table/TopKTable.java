@@ -17,6 +17,7 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record.AttributeValuePair;
 
 /**
@@ -24,6 +25,8 @@ import rq.common.table.Record.AttributeValuePair;
  *
  */
 public class TopKTable implements Table {
+	
+	public final Statistics statistics = new Statistics(this);
 	
 	private final int k;
 	private final Schema schema;
@@ -184,10 +187,30 @@ public class TopKTable implements Table {
 			public Schema schema() {
 				return exp.schema();
 			}
+
+			@Override
+			public Statistics getStatistics() {
+				return null;
+			}
+
+			@Override
+			public boolean hasStatistics() {
+				return false;
+			}
 			
 		};
 		
 		return te;
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return this.statistics;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return true;
 	}
 
 }

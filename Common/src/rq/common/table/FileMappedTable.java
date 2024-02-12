@@ -28,6 +28,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.ByteArraySerializable;
 import rq.common.interfaces.Table;
+import rq.common.statistic.Statistics;
 
 /**
  * Table mapped to a file
@@ -43,6 +44,8 @@ public class FileMappedTable implements Closeable, Table {
 			throw new RuntimeException(e);
 		}
 	};
+	
+	public final Statistics statistics = new Statistics(this);
 	
 	private static final String FILE_ACCESS_MODE = "rw";
 	private static final int DEFAULT_RECORD_CAPACITY = 100;
@@ -423,5 +426,15 @@ public class FileMappedTable implements Closeable, Table {
 	@Override
 	public int size() {
 		return (this.mappedBuffer.position() / this.schemaByteSize) - this.vacantPositions.size();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return this.statistics;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return true;
 	}
 }

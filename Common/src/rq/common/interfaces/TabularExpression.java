@@ -8,5 +8,5 @@ package rq.common.interfaces;
  * @author Mgr. R.Skrabal
  *
  */
-public interface TabularExpression extends EagerExpression, SchemaProvider{
+public interface TabularExpression extends EagerExpression, SchemaProvider, StatisticsProvider{
 }

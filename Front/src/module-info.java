@@ -6,7 +6,9 @@
  *
  */
 module rq.front {
-	requires rq.common;
+	requires transitive rq.common;
 	requires rq.files;
 	requires com.opencsv;
+	
+	exports data;
 }

@@ -16,6 +16,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.TabularExpression;
 import rq.common.onOperators.RecordValue;
+import rq.common.statistic.Statistics;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 import rq.common.table.Attribute;
@@ -180,5 +181,15 @@ public class Projection implements TabularExpression {
 				.append(" TO ")
 				.append(this.schema.toString())
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

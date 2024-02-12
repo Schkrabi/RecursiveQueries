@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import rq.common.table.Schema;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 
 /**
@@ -57,5 +58,15 @@ public class LazyTable implements Closeable, SchemaProvider, LazyExpression {
 		}catch(Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

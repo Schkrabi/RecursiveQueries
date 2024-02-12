@@ -3,12 +3,13 @@ package rq.common.interfaces;
 import java.io.IOException;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.FileMappedTable;
 import rq.common.table.MemoryTable;
 
-public interface LazyExpression extends SchemaProvider {
+public interface LazyExpression extends SchemaProvider, StatisticsProvider {
 	public abstract Record next();
 	
 	/**
@@ -45,6 +46,16 @@ public interface LazyExpression extends SchemaProvider {
 			@Override
 			public Schema schema() {
 				return exp.schema();
+			}
+
+			@Override
+			public Statistics getStatistics() {
+				return null;
+			}
+
+			@Override
+			public boolean hasStatistics() {
+				return false;
 			}
 			
 		};
@@ -86,6 +97,16 @@ public interface LazyExpression extends SchemaProvider {
 			@Override
 			public Schema schema() {
 				return exp.schema();
+			}
+
+			@Override
+			public Statistics getStatistics() {
+				return null;
+			}
+
+			@Override
+			public boolean hasStatistics() {
+				return false;
 			}
 			
 		};

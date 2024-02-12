@@ -9,6 +9,7 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyIterable;
 import rq.common.interfaces.LazyIterator;
 import rq.common.interfaces.Table;
+import rq.common.statistic.Statistics;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,6 +25,8 @@ import java.util.Optional;
 public class MemoryTable implements Table, LazyIterable{
 	public final Schema schema;
 	private Set<Record> records = new HashSet<Record>();
+	
+	public final Statistics statistics = new Statistics(this);
 	
 	public MemoryTable(Schema schema) {
 		this.schema = schema;
@@ -216,5 +219,15 @@ public class MemoryTable implements Table, LazyIterable{
 	@Override
 	public int size() {
 		return this.records.size();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return this.statistics;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return true;
 	}
 }

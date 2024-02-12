@@ -1,4 +1,4 @@
-package main;
+package rq.front.main;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

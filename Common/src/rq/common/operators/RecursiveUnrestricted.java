@@ -10,6 +10,7 @@ import java.util.function.Function;
 import rq.common.table.MemoryTable;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.interfaces.Table;
 import rq.common.table.Schema;
@@ -74,6 +75,16 @@ public class RecursiveUnrestricted extends Recursive {
 				.append(" UNION ALL ")
 				.append(this.expression.toString())
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

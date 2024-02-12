@@ -3,7 +3,7 @@
  */
 package rq.common.exceptions;
 
-import rq.common.table.Attribute;
+import rq.common.onOperators.RecordValue;
 
 /**
  * Exception thrown if <, <=, >, >= are used with attributes without comparable domains
@@ -15,19 +15,19 @@ public class NotComparableException extends Exception{
 	 * 
 	 */
 	private static final long serialVersionUID = -5866038504535603707L;
-	public final Attribute attribute;
+	public final RecordValue recordValue;
 	public final Class<?> operator;
 	
-	public NotComparableException(Attribute attribute, Class<?> operator) {
+	public NotComparableException(RecordValue recordValue, Class<?> operator) {
 		super(new StringBuilder()
 				.append("Not comparable domain ")
-				.append(attribute.domain.getName())
+				.append(recordValue.domain().getName())
 				.append(" of attribute ")
-				.append(attribute.toString())
+				.append(recordValue.toString())
 				.append(" used in ")
 				.append(operator.getName())
 				.toString());
-		this.attribute = attribute;
+		this.recordValue = recordValue;
 		this.operator = operator;		
 	}
 }

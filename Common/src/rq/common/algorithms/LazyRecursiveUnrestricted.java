@@ -10,6 +10,7 @@ import rq.common.annotations.Algorithm;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.tools.AlgorithmMonitor;
@@ -96,5 +97,15 @@ public class LazyRecursiveUnrestricted extends LazyRecursive {
 		}
 
 		return r;
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

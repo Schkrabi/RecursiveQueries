@@ -10,6 +10,7 @@ import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.interfaces.Table;
 
@@ -82,5 +83,15 @@ public class Map implements TabularExpression {
 				.append(this.argument.toString())
 				.append(")")
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

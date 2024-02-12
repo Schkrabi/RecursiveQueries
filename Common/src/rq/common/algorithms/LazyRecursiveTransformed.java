@@ -10,6 +10,7 @@ import rq.common.annotations.Algorithm;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
+import rq.common.statistic.Statistics;
 import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -120,5 +121,15 @@ public class LazyRecursiveTransformed extends LazyRecursive {
 	@Override
 	public Schema schema() {
 		return this.transformation.apply(Record.empty(this.argExp.schema())).schema();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

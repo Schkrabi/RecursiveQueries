@@ -5,7 +5,6 @@ package rq.common.onOperators;
 
 import rq.common.exceptions.ComparableDomainMismatchException;
 import rq.common.exceptions.NotComparableException;
-import rq.common.table.Attribute;
 import rq.common.table.Record;
 
 /**
@@ -15,11 +14,11 @@ import rq.common.table.Record;
  */
 public class OnGreaterThan extends OnCompare {
 
-	public OnGreaterThan(Attribute left, Attribute right) {
+	public OnGreaterThan(RecordValue left, RecordValue right) {
 		super(left, right);
 	}
 	
-	public static OnGreaterThan factory(Attribute left, Attribute right) 
+	public static OnGreaterThan factory(RecordValue left, RecordValue right) 
 		throws NotComparableException, ComparableDomainMismatchException {
 		validateComparable(left, right);
 		

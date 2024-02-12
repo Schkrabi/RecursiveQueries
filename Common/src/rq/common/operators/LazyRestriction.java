@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.statistic.Statistics;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 
@@ -48,6 +49,16 @@ public class LazyRestriction implements LazyExpression, SchemaProvider {
 			record = this.argExp.next();
 		}
 		return null;
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 
 }

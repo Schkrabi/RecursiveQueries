@@ -3,7 +3,7 @@
  */
 package rq.common.exceptions;
 
-import rq.common.table.Attribute;
+import rq.common.onOperators.RecordValue;
 
 /**
  * @author Mgr. Radomir Skrabal
@@ -14,10 +14,10 @@ public class ComparableDomainMismatchException extends Exception {
 	 * 
 	 */
 	private static final long serialVersionUID = 507942147540763204L;
-	public final Attribute left;
-	public final Attribute right;
+	public final RecordValue left;
+	public final RecordValue right;
 	
-	public ComparableDomainMismatchException(Attribute left, Attribute right) {
+	public ComparableDomainMismatchException(RecordValue left, RecordValue right) {
 		super(new StringBuilder()
 				.append("Compared attributes ")
 				.append(left.toString())

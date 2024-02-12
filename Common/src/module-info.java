@@ -12,4 +12,9 @@ module rq.common {
 	exports rq.common.interfaces;
 	exports rq.common.types;
 	exports rq.common.tools;
+	exports rq.common.algorithms;
+	exports rq.common.annotations;
+	exports rq.common.statistic;
+	exports rq.common.restrictions;
+	exports rq.common.estimations;
 }

@@ -5,6 +5,7 @@ import java.util.Iterator;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
 import rq.common.interfaces.Table;
+import rq.common.statistic.Statistics;
 
 /**
  * Lazy facade for tables
@@ -33,6 +34,16 @@ public class LazyFacade implements LazyExpression, SchemaProvider {
 			return it.next();
 		}
 		return null;
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return table.getStatistics();
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return table.hasStatistics();
 	}
 
 }

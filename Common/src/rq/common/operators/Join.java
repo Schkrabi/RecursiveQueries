@@ -22,6 +22,7 @@ import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.OnOperator;
+import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 
@@ -219,5 +220,15 @@ public class Join extends AbstractJoin implements TabularExpression {
 				.append(this.onClause.stream().map(p -> p.toString()).reduce((s1, s2) -> s1 + " AND " + s2))
 				.append(")")
 				.toString();
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

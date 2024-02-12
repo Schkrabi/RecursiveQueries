@@ -15,6 +15,7 @@ import rq.common.interfaces.LazyIterator;
 import rq.common.interfaces.SchemaProvider;
 import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.OnOperator;
+import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
 import rq.common.table.CachedExpression;
 import rq.common.table.Record;
@@ -166,5 +167,15 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 			this.rightIterator.restart();
 		}
 		return null;
+	}
+
+	@Override
+	public Statistics getStatistics() {
+		return null;
+	}
+
+	@Override
+	public boolean hasStatistics() {
+		return false;
 	}
 }

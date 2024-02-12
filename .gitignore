@@ -1,5 +1,6 @@
-# Compiled class file
+# Compiled class file, binaries
 *.class
+bin
 
 # Log file
 *.log
@@ -23,3 +24,12 @@
 hs_err_pid*
 replay_pid*
 /.metadata/
+
+# data
+*.csv
+*.stat
+experiments
+
+# data aggregation scripts
+*.R
+
