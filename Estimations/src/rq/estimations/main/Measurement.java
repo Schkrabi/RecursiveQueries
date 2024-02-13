@@ -18,10 +18,11 @@ public class Measurement {
 	public final EstimationSetupContract contract;
 	
 	private final String similarityName;
+	private final String estimationName;
 	
 	public final BiFunction<Selection, EstimationSetupContract, RankHistogram> estimateProvider;
 	
-	private final String resultHeader = "accuracy, inaccuracy, attribute, value, similarity, estimated data, actual data, contract";
+	private final String resultHeader = "accuracy, inaccuracy, estimation, attribute, value, similarity, estimated data, actual data, contract";
 
 	public Measurement(
 			Attribute attribute,
@@ -29,14 +30,15 @@ public class Measurement {
 			Table data,
 			EstimationSetupContract contract,
 			String similarityName,
-			BiFunction<Selection, EstimationSetupContract, RankHistogram> estimateProvider) {
+			String estimationName) {
 		this.attribute = attribute;
 		this.value = value;
 		this.data = data;
 		this.contract = contract;
 		this.similarityName = similarityName;
 		this.similarity = SimilarityProvider.gets(similarityName);
-		this.estimateProvider = estimateProvider;
+		this.estimationName = estimationName;
+		this.estimateProvider = EstimationProviders.parse(estimationName);
 	}
 
 	public String measure() {		
@@ -74,6 +76,7 @@ public class Measurement {
 				.append(this.resultHeader).append("\n")
 				.append(this.accuracy(estimated, actual, data.size())).append(",")
 				.append(this.inaccuracy(estimated, actual, data.size())).append(",")
+				.append(this.estimationName).append(",")
 				.append(this.attribute.name).append(",")
 				.append(this.value).append(",")
 				.append(this.similarityName).append(",")

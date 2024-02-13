@@ -22,7 +22,7 @@ public class Main {
 		var atributeName = args[1];
 		var value = Double.parseDouble(args[2]);
 		var similarityName = args[3];
-		var estimateProvider = EstimationProviders.parse(args[4]);
+		var estimateProvider = args[4];
 		var contract = new EstimationSetupContract(args[5]);
 		
 		//Load data
