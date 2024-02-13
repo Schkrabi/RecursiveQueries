@@ -3,7 +3,6 @@ package algorithmBuilder;
 import java.util.function.Function;
 
 import annotations.BuildsAlgorithm;
-import rq.common.algorithms.LazyRecursiveTransformed;
 import rq.common.algorithms.LazyRecursiveTransformed_topKpruning;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;

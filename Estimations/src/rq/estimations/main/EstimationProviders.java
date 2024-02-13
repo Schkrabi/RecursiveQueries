@@ -1,5 +1,6 @@
 package rq.estimations.main;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -13,9 +14,23 @@ import rq.common.statistic.RankHistogram;
 
 public class EstimationProviders {
 	
-//	public static BiFunction<Selection, EstimationSetupContract, RankHistogram> parse(String estName){
-//		List.of(EstimationProviders.class.getFields()).stream().filter(f -> )
-//	}
+	@SuppressWarnings("unchecked")
+	public static BiFunction<Selection, EstimationSetupContract, RankHistogram> parse(String estName){
+		var o = 
+		List.of(EstimationProviders.class.getFields()).stream()
+			.filter(f -> 	Modifier.isStatic(f.getModifiers()) 
+						&&	f.getName().equals(estName))
+			.findAny();
+		
+		if(o.isPresent()) {
+			try {
+				return (BiFunction<Selection, EstimationSetupContract, RankHistogram>)o.get().get(null);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return null;
+	}
 
 	/** Numerical estimation */
 	public static final BiFunction<Selection, EstimationSetupContract, RankHistogram> numerical =

@@ -217,4 +217,15 @@ public class Schema implements Iterable<Attribute> {
 	public Set<Attribute> attributeSet(){
 		return this.indexMap.keySet();
 	}
+	
+	/** Gets attribute of given name or null if it does not exists in this schema */
+	public Attribute attributeByName(String name) {
+		var o = this.attributeSet().stream()
+				.filter(a -> a.name.equals(name))
+				.findAny();
+		if(o.isPresent()) {
+			return o.get();
+		}
+		return null;
+	}
 }

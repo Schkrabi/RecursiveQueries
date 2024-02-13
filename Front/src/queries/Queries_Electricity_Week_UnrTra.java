@@ -4,7 +4,6 @@ import java.time.Duration;
 
 import annotations.CallingArg;
 import data.Electricity;
-import queries.Queries.Algorithm;
 import rq.common.algorithms.LazyRecursiveTransformed;
 import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.DuplicateAttributeNameException;
@@ -30,7 +29,6 @@ import rq.common.table.LazyFacade;
 import rq.common.table.MemoryTable;
 import rq.common.table.TopKTable;
 import rq.common.tools.AlgorithmMonitor;
-import rq.common.tools.Counter;
 
 @CallingArg("electricity_week_unrtra")
 public class Queries_Electricity_Week_UnrTra extends Queries {

@@ -29,7 +29,6 @@ import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.table.TopKTable;
 import rq.common.tools.AlgorithmMonitor;
-import rq.common.tools.Counter;
 
 @CallingArg("electricity_noCust_unrtopk")
 public class Queries_Electricity_NoCust_UnrTopK extends Queries {

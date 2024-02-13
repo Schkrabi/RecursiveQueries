@@ -48,6 +48,7 @@ public class EstimationSetupContract {
 		try {
 			Scanner s = new Scanner(Path.of(path));
 			this.deserialize(s);
+			s.close();
 		}catch(Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -96,5 +97,17 @@ public class EstimationSetupContract {
 		if(dss != null) {
 			this.domainSampleSize = Double.parseDouble(dss);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("slices").append("=").append(this.getSlices()).append(";")
+				.append("probes").append("=").append(this.getProbes()).append(";")
+				.append("domainSamples").append("=").append(this.getDomainSamples()).append(";")
+				.append("stochasticSamples").append("=").append(this.getStochasticSamples()).append(";")
+				.append("equinominal").append("=").append(this.getEquinominal()).append(";")
+				.append("domainSampleSize").append("=").append(this.getDomainSampleSize()).append(";")
+				.toString();
 	}
 }

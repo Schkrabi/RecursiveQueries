@@ -5,7 +5,6 @@ package rq.common.onOperators;
 
 import rq.common.exceptions.ComparableDomainMismatchException;
 import rq.common.exceptions.NotComparableException;
-import rq.common.table.Attribute;
 
 /**
  * @author Mgr. Radomir Skrabal

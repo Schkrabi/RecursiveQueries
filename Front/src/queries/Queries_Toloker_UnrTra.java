@@ -24,7 +24,6 @@ import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.table.MemoryTable;
 import rq.common.tools.AlgorithmMonitor;
-import rq.common.tools.Counter;
 
 @CallingArg("toloker_unrtra")
 public class Queries_Toloker_UnrTra extends Queries {

@@ -21,7 +21,6 @@ import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.table.Schema;
 import rq.common.tools.AlgorithmMonitor;
-import rq.common.tools.Counter;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnSimilar;
 import rq.common.table.TopKTable;

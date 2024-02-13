@@ -22,7 +22,6 @@ import rq.common.operators.Projection;
 import rq.common.operators.Restriction;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.tools.AlgorithmMonitor;
-import rq.common.tools.Counter;
 import rq.common.table.LazyFacade;
 import rq.common.table.Record;
 import rq.common.table.TopKTable;

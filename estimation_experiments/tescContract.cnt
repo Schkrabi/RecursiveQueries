@@ -1,0 +1,6 @@
+slices=3
+probes=1
+domainSamples=20
+domainSampleSize=0.05d
+stochasticSamples=10
+equinominal=false

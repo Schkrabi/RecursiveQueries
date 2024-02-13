@@ -2,7 +2,6 @@ package rq.common.operators;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.operators.Restriction;
 import rq.common.table.Attribute;

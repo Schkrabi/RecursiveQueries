@@ -3,7 +3,6 @@
  */
 package rq.common.onOperators;
 
-import rq.common.table.Attribute;
 import rq.common.table.Record;
 
 /**
