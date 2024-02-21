@@ -1,60 +1,37 @@
 package rq.estimations.main;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-public class EstimationSetupContract {
+public abstract class EstimationSetupContract {
 
 	/** Number of slices for histogram */
 	private int slices = 3;
-	/** Number of probes for histogram if applicable */
-	private int probes = 0;
-	/** Number of samples for numerical domain if applicable */ 
-	private int domainSamples = 100;
-	/** Number of stochastic samples if applicable */
-	private int stochasticSamples = 10;
-	/** Is equinominal interval used? Otherwise use equidistant if applicable */
-	private boolean equinominal = false;
-	/** Domain sample size if applicable */
-	private double domainSampleSize = 0.5d;
+	
+	private String estimation;
 	
 	public int getSlices() {
 		return this.slices;
 	}
 	
-	public int getProbes() {
-		return this.probes;
+	public String getEstimation() {
+		return this.estimation;
 	}
 	
-	public int getDomainSamples() {
-		return this.domainSamples;
-	}
+	public abstract void setTables(List<String> paths);
 	
-	public int getStochasticSamples() {
-		return this.stochasticSamples;
-	}
+	/** Sets the table arguments */
+	public void setTables(String ...paths) {
+		this.setTables(Arrays.asList(paths));
+	}	
 	
-	public boolean getEquinominal() {
-		return this.equinominal;
-	}
-	
-	public double getDomainSampleSize() {
-		return this.domainSampleSize;
-	}
-	
-	public EstimationSetupContract(String path) {
-		try {
-			Scanner s = new Scanner(Path.of(path));
-			this.deserialize(s);
-			s.close();
-		}catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+	protected EstimationSetupContract() {}
 
-	public void deserialize(Scanner s) {
+	public static Map<String, String> deserialize(Scanner s) {
 		Map<String, String> args = new LinkedHashMap<String, String>();
 		
 		while(s.hasNext()) {
@@ -64,7 +41,7 @@ public class EstimationSetupContract {
 			args.put(spl[0], spl[1]);
 		}		
 		
-		this.initFromMap(args);
+		return args;
 	}
 	
 	protected void initFromMap(Map<String, String> args) {
@@ -73,29 +50,12 @@ public class EstimationSetupContract {
 			this.slices = Integer.parseInt(slc);
 		}
 		
-		String pro = args.get("probes");
-		if(pro != null) {
-			this.probes = Integer.parseInt(pro);
+		var est = args.get("estimation");
+		if(est != null) {
+			this.estimation = est;
 		}
-		
-		String ds = args.get("domainSamples");
-		if(ds != null) {
-			this.domainSamples = Integer.parseInt(ds);
-		}
-		
-		String stoch = args.get("stochasticSamples");
-		if(stoch != null) {
-			this.stochasticSamples = Integer.parseInt(stoch);
-		}
-		
-		String eq = args.get("equinominal");
-		if(eq !=  null) {
-			this.equinominal = Boolean.parseBoolean(eq);
-		}
-		
-		String dss = args.get("domainSampleSize");
-		if(dss != null) {
-			this.domainSampleSize = Double.parseDouble(dss);
+		else {
+			throw new RuntimeException("Estimation must be provided.");
 		}
 	}
 	
@@ -103,11 +63,38 @@ public class EstimationSetupContract {
 	public String toString() {
 		return new StringBuilder()
 				.append("slices").append("=").append(this.getSlices()).append(";")
-				.append("probes").append("=").append(this.getProbes()).append(";")
-				.append("domainSamples").append("=").append(this.getDomainSamples()).append(";")
-				.append("stochasticSamples").append("=").append(this.getStochasticSamples()).append(";")
-				.append("equinominal").append("=").append(this.getEquinominal()).append(";")
-				.append("domainSampleSize").append("=").append(this.getDomainSampleSize()).append(";")
 				.toString();
+	}
+	
+	public static EstimationSetupContract factory(Path path, List<String> tables) {
+		Map<String, String> argMap = null;
+		try {
+			argMap = deserialize(new Scanner(path));
+		}catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+		EstimationSetupContract contract = null;
+		
+		switch(argMap.get("estimation")) {
+		case "numerical":
+		case "numericalDomainPruning":
+		case "numericalStochastic":
+		case "numericalStochasticDomainPruning":
+		case "interval_equidistant":
+		case "interval_equinominal":
+			contract = new UnaryOperationContract();
+			break;
+		case "union":
+		case "crossJoin":
+			contract = new BinaryOperationContract();
+			break;
+		default:
+			throw new RuntimeException("Estimation not recognized.");
+		}
+		
+		contract.setTables(tables);
+		contract.initFromMap(argMap);
+		return contract;
 	}
 }

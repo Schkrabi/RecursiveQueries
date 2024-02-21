@@ -1,9 +1,8 @@
 package rq.estimations.main;
 
 import java.nio.file.Path;
-
-import rq.common.interfaces.Table;
-import rq.files.io.TableReader;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -16,29 +15,15 @@ public class Main {
 //		final int probes = 10;
 		
 		//Usage:
-		// java -jar <jarname> (table file) (queried attribute) (queried value) (similarity) (estimate algorithm) (estimate setup file)
+		// java -jar <jarname> (contract file) (table) (table...)
 		
-		var tableFile = Path.of(args[0]);
-		var atributeName = args[1];
-		var value = Double.parseDouble(args[2]);
-		var similarityName = args[3];
-		var estimateProvider = args[4];
-		var contract = new EstimationSetupContract(args[5]);
+		var contract = EstimationSetupContract.factory(Path.of(
+				args[0]),
+				Arrays.asList(args).stream().skip(1).collect(Collectors.toList()));
 		
-		//Load data
-		var reader = TableReader.open(tableFile);
-		Table data = reader.read();
+		var provider = EstimationProviders.get(contract.getEstimation()).apply(contract);
 		
-		var attribute = data.schema().attributeByName(atributeName);
-		
-		var measurement =
-				new Measurement(
-						attribute, 
-						value, 
-						data, 
-						contract, 
-						similarityName, 
-						estimateProvider);
+		var measurement = new Measurement(provider);
 		
 		var rslt = 
 				measurement.measure();

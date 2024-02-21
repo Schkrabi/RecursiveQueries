@@ -1,70 +1,22 @@
 package rq.estimations.main;
 
-import java.util.function.BiFunction;
-
 import rq.common.statistic.RankHistogram;
-import rq.common.table.Attribute;
-import rq.common.interfaces.Table;
-import rq.common.onOperators.Constant;
-import rq.common.operators.Selection;
-import rq.common.restrictions.Similar;
+
 
 public class Measurement {
 	
-	public final Attribute attribute;
-	public final double value;
-	public final BiFunction<Object, Object, Double> similarity;
-	public final Table data;
-	public final EstimationSetupContract contract;
+	private final EstimationProvider provider;
 	
-	private final String similarityName;
-	private final String estimationName;
-	
-	public final BiFunction<Selection, EstimationSetupContract, RankHistogram> estimateProvider;
-	
-	private final String resultHeader = "accuracy, inaccuracy, estimation, attribute, value, similarity, estimated data, actual data, contract";
+	private final String resultHeader = "accuracy, inaccuracy, estimation, estimated data, actual data, contract";
 
 	public Measurement(
-			Attribute attribute,
-			double value,
-			Table data,
-			EstimationSetupContract contract,
-			String similarityName,
-			String estimationName) {
-		this.attribute = attribute;
-		this.value = value;
-		this.data = data;
-		this.contract = contract;
-		this.similarityName = similarityName;
-		this.similarity = SimilarityProvider.gets(similarityName);
-		this.estimationName = estimationName;
-		this.estimateProvider = EstimationProviders.parse(estimationName);
+			EstimationProvider provider) {
+		this.provider = provider;
 	}
 
 	public String measure() {		
-		Selection selection = new Selection(
-								this.data,
-								new Similar(this.attribute, new Constant<Double>(value), this.similarity));
-		
-		if(this.contract.getEquinominal()) {
-			this.data.getStatistics()
-				.addEquinominalHistogram(this.attribute, contract.getDomainSamples());
-		}
-		else {
-			this.data.getStatistics()
-				.addEquidistantHistogram(attribute, contract.getDomainSamples());
-		}
-		this.data.getStatistics().addSampledHistogram(attribute, contract.getDomainSampleSize());
-		this.data.getStatistics().gather();
-		
-		RankHistogram estimate = this.estimateProvider.apply(selection, this.contract);
-		
-		Table selected = selection.eval();
-		selected.getStatistics().addRankHistogram(estimate.getSlices());
-		
-		selected.getStatistics().gather();
-		
-		RankHistogram actual = selected.getStatistics().getRankHistogram(estimate.getSlices()).get();
+		var estimate = this.provider.estimate();
+		var actual = this.provider.compute();
 		
 		return this.outputResult(estimate, actual);
 	}
@@ -74,15 +26,12 @@ public class Measurement {
 			RankHistogram actual) {
 		return new StringBuilder()
 				.append(this.resultHeader).append("\n")
-				.append(this.accuracy(estimated, actual, data.size())).append(",")
-				.append(this.inaccuracy(estimated, actual, data.size())).append(",")
-				.append(this.estimationName).append(",")
-				.append(this.attribute.name).append(",")
-				.append(this.value).append(",")
-				.append(this.similarityName).append(",")
+				.append(this.accuracy(estimated, actual, this.provider.dataSize())).append(",")
+				.append(this.inaccuracy(estimated, actual, this.provider.dataSize())).append(",")
+				.append(this.provider.name()).append(",")
 				.append("\"").append(estimated.get().toString()).append("\",")
 				.append("\"").append(actual.get().toString()).append("\",")
-				.append("\"").append(this.contract.toString()).append("\"")
+				.append("\"").append(this.provider.contract().toString()).append("\"")
 				.toString();
 	}
 	
