@@ -30,7 +30,7 @@ public abstract class Str implements ByteArraySerializable {
 		if(len <= maxLen) {
 			return constructor.apply(value, len);
 		}		
-		return constructor.apply(value.substring(0, maxLen - 1), maxLen);
+		return constructor.apply(new String(Arrays.copyOf(value.getBytes(), maxLen - 1)), maxLen);
 	}
 	
 	protected abstract int arrayLen();

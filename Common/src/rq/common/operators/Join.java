@@ -21,6 +21,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.latices.LaticeFactory;
+import rq.common.onOperators.Constant;
 import rq.common.onOperators.OnOperator;
 import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
@@ -230,5 +231,18 @@ public class Join extends AbstractJoin implements TabularExpression {
 	@Override
 	public boolean hasStatistics() {
 		return false;
+	}
+	
+	/** Creates crossjoin */
+	public static Join crossJoin(TabularExpression left, TabularExpression right) {
+		try {
+			return Join.factory(left, right, 
+					new rq.common.onOperators.OnEquals(
+							new Constant<Boolean>(true), 
+							new Constant<Boolean>(true)));
+		} catch (OnOperatornNotApplicableToSchemaException e) {
+			//unlikely
+			throw new RuntimeException(e);
+		}
 	}
 }

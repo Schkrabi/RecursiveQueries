@@ -121,6 +121,7 @@ public class Statistics {
 				this.statistics.stream()
 					.filter(x -> x instanceof RankHistogram && ((RankHistogram)x).getSlices().size() == slices)
 					.findAny();
+		
 		if(o.isPresent()) {
 			return Optional.of((RankHistogram)o.get());
 		}
@@ -225,6 +226,26 @@ public class Statistics {
 		}
 	}
 	
+	public Optional<EquinominalHistogram> getEquinominalHistogram(Attribute a, int n){
+		var hist = this.getStatisticByFilter(s -> (s instanceof EquinominalHistogram)
+				&& ((EquinominalHistogram)(s)).observed.equals(a)
+				&& ((EquinominalHistogram)(s)).n == n);
+		if(hist.isPresent()) {
+			return Optional.of((EquinominalHistogram)hist.get());
+		}
+		return Optional.empty();
+	}
+	
+	public Optional<EquidistantHistogram> getEquidistantHistogram(Attribute a, int n){
+		var hist = this.getStatisticByFilter(s -> (s instanceof EquidistantHistogram)
+				&& ((EquidistantHistogram)(s)).observed.equals(a)
+				&& ((EquidistantHistogram)(s)).n == n);
+		if(hist.isPresent()) {
+			return Optional.of((EquidistantHistogram)hist.get());
+		}
+		return Optional.empty();
+	}
+	
 	public Optional<DataSlicedHistogram> getDataSlicedHistogram(Attribute a, int n){
 		var hist = this.getStatisticByFilter(s -> s instanceof DataSlicedHistogram 
 				&& ((DataSlicedHistogram)s).observed.equals(a)
@@ -236,13 +257,13 @@ public class Statistics {
 	}
 	
 	public void addEquinominalHistogram(Attribute a, int n) {
-		if(this.getDataSlicedHistogram(a, n).isEmpty()) {
-			this.statistics.add(new EquinominalHistogra(a, n));
+		if(this.getEquinominalHistogram(a, n).isEmpty()) {
+			this.statistics.add(new EquinominalHistogram(a, n));
 		}
 	}
 	
 	public void addEquidistantHistogram(Attribute a, int n) {
-		if(this.getDataSlicedHistogram(a, n).isEmpty()) {
+		if(this.getEquidistantHistogram(a, n).isEmpty()) {
 			this.statistics.add(new EquidistantHistogram(a, n));
 		}
 	}

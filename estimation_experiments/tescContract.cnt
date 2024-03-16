@@ -1,6 +1,12 @@
 slices=3
+estimation=union
+attribute=source_approved_rate
+similarity=dl0_5
+value=0.5d
 probes=1
 domainSamples=20
 domainSampleSize=0.05d
 stochasticSamples=10
-equinominal=false
+supremum=max
+unionValueCombinator=add
+product=goguenProduct

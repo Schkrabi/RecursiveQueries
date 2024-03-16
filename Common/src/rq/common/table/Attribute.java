@@ -85,4 +85,19 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 	public Class<?> domain() {
 		return this.domain;
 	}
+	
+	public static Attribute parse(String serialized) throws ClassNotFoundException {
+		String[] pair = serialized.split(":");
+		Class<?> clazz = Class.forName(pair[1]);
+		return new Attribute(pair[0], clazz);
+	}
+	
+	public String serialize() {
+		String s = new StringBuilder()
+				.append(this.name)
+				.append(":")
+				.append(this.domain.getName())
+				.toString();
+		return s;
+	}
 }

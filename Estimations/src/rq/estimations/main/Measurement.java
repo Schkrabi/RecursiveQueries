@@ -26,8 +26,8 @@ public class Measurement {
 			RankHistogram actual) {
 		return new StringBuilder()
 				.append(this.resultHeader).append("\n")
-				.append(this.accuracy(estimated, actual, this.provider.dataSize())).append(",")
-				.append(this.inaccuracy(estimated, actual, this.provider.dataSize())).append(",")
+				.append(Measurement.accuracy(estimated, actual, this.provider.dataSize())).append(",")
+				.append(Measurement.inaccuracy(estimated, actual, this.provider.dataSize())).append(",")
 				.append(this.provider.name()).append(",")
 				.append("\"").append(estimated.get().toString()).append("\",")
 				.append("\"").append(actual.get().toString()).append("\",")
@@ -59,7 +59,7 @@ public class Measurement {
 	 * @param dataSize -- celkovy pocet radku, ze kterych byl provaden odhad
 	 * @return hodnotu od 0.0 do 1.0 predstavujici presnost odhadu
 	 */
-	public double accuracy(RankHistogram estimate, RankHistogram measurement, int dataSize) {
+	public static double accuracy(RankHistogram estimate, RankHistogram measurement, int dataSize) {
 		int correct = 0;
 		for (var interval : measurement.getSlices()) {
 			correct += Math.min(measurement.get(interval), estimate.get(interval));
@@ -70,7 +70,9 @@ public class Measurement {
 		int zeroRankMeasured = (int) (dataSize - measurement.tableSize());
 		correct += Math.min(zeroRankEst, zeroRankMeasured);
 		
-		return correct / (double) Math.max(dataSize, estimate.tableSize());
+		var ret = correct / (double) Math.max(dataSize, estimate.tableSize());
+		
+		return ret;
 	}
 	
 	/**
@@ -95,7 +97,7 @@ public class Measurement {
 	 * @param dataSize -- celkovy pocet radku, ze kterych byl provaden odhad
 	 * @return hodnota z intervalu od 0.0 do nekonecna, ktera predstavuje nepresnost odhadu
 	 */
-	public double inaccuracy(RankHistogram estimate, RankHistogram measurement, int dataSize) {
+	public static double inaccuracy(RankHistogram estimate, RankHistogram measurement, int dataSize) {
 	
 		int err = 0;
 		for (var interval : measurement.getSlices()) {

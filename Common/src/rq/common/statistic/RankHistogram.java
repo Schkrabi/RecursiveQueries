@@ -5,8 +5,12 @@ package rq.common.statistic;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 
 import rq.common.interfaces.Table;
@@ -186,4 +190,49 @@ public class RankHistogram extends SlicedStatistic {
 		return hist;
 	}
 	
+	public String serialize() {
+		var sb = new StringBuilder();
+		
+		for(var e : this.rankHistogram.entrySet()) {
+			sb.append(e.getKey().start)
+				.append(";")
+				.append(e.getKey().end)
+				.append(";")
+				.append(e.getValue())
+				.append("\n");
+			
+		}
+		
+		return sb.toString();
+	}
+	
+	public static RankHistogram deserialize(String data) {
+		var hist = new LinkedHashMap<RankInterval, Double>();
+		
+		for(var line : data.split("\n")) {
+			var vls = line.split(";");
+			var start = Double.parseDouble(vls[0]);
+			var end = Double.parseDouble(vls[1]);
+			var count = Double.parseDouble(vls[2]);
+			hist.put(new RankInterval(start, end), count);
+		}
+		
+		return new RankHistogram(hist);
+	}
+	
+	public void writeFile(String path) throws IOException {
+		writeFile(Path.of(path));
+	}
+	
+	public void writeFile(Path path) throws IOException {
+		Files.write(path, this.serialize().getBytes());
+	}
+	
+	public static RankHistogram readFile(Path path) throws IOException {
+		return deserialize(Files.readString(path));
+	}
+	
+	public static RankHistogram readFile(String path) throws IOException {
+		return readFile(Path.of(path));
+	}
 }

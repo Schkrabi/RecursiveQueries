@@ -17,12 +17,7 @@ public class AttributeSerializer {
 	}
 	
 	public String serialize() {
-		String s = new StringBuilder()
-				.append(serialized.name)
-				.append(":")
-				.append(serialized.domain.getName())
-				.toString();
-		return s;
+		return this.serialized.serialize();
 	}
 	
 	public static String serialize(Attribute serialized) {

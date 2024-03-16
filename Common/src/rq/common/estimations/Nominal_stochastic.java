@@ -59,4 +59,11 @@ public class Nominal_stochastic extends Nominal {
 		
 		return rslt;
 	}
+	
+	public static RankHistogram estimateStatic(Selection selection, int resultSlices,
+		int probedAttributes, Set<Object> attributeDomain, int restSamples){
+		var me = new Nominal_stochastic(selection, resultSlices, probedAttributes, attributeDomain, restSamples);
+		var rslt = me.estimate();
+		return rslt;
+	}
 }

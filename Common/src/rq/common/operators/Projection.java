@@ -6,6 +6,7 @@ package rq.common.operators;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
@@ -15,6 +16,7 @@ import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.TabularExpression;
+import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.RecordValue;
 import rq.common.statistic.Statistics;
 import rq.common.table.Schema;
@@ -34,6 +36,7 @@ public class Projection implements TabularExpression {
 	private final TabularExpression argument;
 	private final java.util.Map<Attribute, RecordValue> projection;
 	private final BiFunction<Schema, Integer, Table> tableSupplier;
+	private final BinaryOperator<Double> supremum = LaticeFactory.instance().getSupremum();
 	
 	private Projection(TabularExpression argument, Schema schema, java.util.Map<Attribute, RecordValue> projection, BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.schema = schema;
@@ -157,7 +160,16 @@ public class Projection implements TabularExpression {
 		
 		for(Record r : source) {
 			try {
-				dest.insert(this.project(r));
+				var rec = this.project(r);
+				var o = dest.findNoRank(rec);
+				if(o.isPresent()) {
+					dest.delete(o.get());
+					rec = new Record(rec, this.supremum.apply(rec.rank, o.get().rank));
+					dest.insert(rec);
+				}
+				else {
+					dest.insert(rec);
+				}
 			} catch (TableRecordSchemaMismatch | TypeSchemaMismatchException e) {
 				// Unlikely
 				return null;

@@ -1,7 +1,11 @@
 package rq.common.statistic;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +88,13 @@ public abstract class DataSlicedHistogram extends AbstractStatistic {
 		this.observed = observed;
 		this.n = n;
 	}
+	
+	protected DataSlicedHistogram(Attribute observed, int n, Map<Interval, Integer> counts) {
+		super();
+		this.observed = observed;
+		this.n = n;
+		this.counts = new HashMap<Interval, Integer>(counts);
+	}
 
 	/** vraci mnozinu intervalu, se kterymi histogram pracuje */
 	public Set<Interval> intervals() {
@@ -111,5 +122,76 @@ public abstract class DataSlicedHistogram extends AbstractStatistic {
 	/** vraci celkovy pocet hodnot v historgramu */
 	public int totalSize() {
 		return counts.values().stream().mapToInt(a -> a).sum();
+	}
+	
+	@Override
+	public String toString() {
+		return this.counts.toString();
+	}
+	
+	public String serialize() {
+		var sb = new StringBuilder();
+		
+		sb.append(this.n).append("\n");
+		sb.append(this.observed.serialize()).append("\n");
+		
+		for(var e : this.counts.entrySet()) {
+			sb.append(e.getKey().from).append(";")
+				.append(e.getKey().closedFrom).append(";")
+				.append(e.getKey().to).append(";")
+				.append(e.getKey().closedTo).append(";")
+				.append(e.getValue()).append("\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	public void writeFile(String path) throws IOException {
+		var serialized = this.serialize();
+		Files.write(Path.of(path), serialized.getBytes());
+	}
+	
+	public void writeFile(Path path) throws IOException {
+		var serialized = this.serialize();
+		Files.write(path, serialized.getBytes());
+	}
+	
+	protected static class HistArgs {
+		public final Attribute observed;
+		public final int n;
+		public final Map<Interval, Integer> counts;
+		public HistArgs(Attribute observed, int n, Map<Interval, Integer> counts) {
+			this.observed = observed;
+			this.n = n;
+			this.counts = counts;
+		}
+	}
+	
+	protected static HistArgs doDeserialize(String serialized) throws ClassNotFoundException{
+		Attribute observed = null;
+		Integer n = null;
+		var counts = new LinkedHashMap<Interval, Integer>();
+		
+		for(var line : serialized.split("\n")) {
+			if(n == null) {
+				n = Integer.parseInt(line);
+				continue;
+			}
+			if(observed == null) {
+				observed = Attribute.parse(line);
+				continue;
+			}
+			
+			var parts = line.split(";");
+			var from = Double.parseDouble(parts[0]);
+			var closedFrom = Boolean.parseBoolean(parts[1]);
+			var to = Double.parseDouble(parts[2]);
+			var closedTo = Boolean.parseBoolean(parts[3]);
+			var count = Integer.parseInt(parts[4]);
+			
+			counts.put(new Interval(from, to, closedFrom, closedTo), count);
+		}
+		
+		return new HistArgs(observed, n, counts);
 	}
 }

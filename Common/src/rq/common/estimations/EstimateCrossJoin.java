@@ -3,6 +3,7 @@ package rq.common.estimations;
 import java.util.LinkedHashMap;
 import java.util.function.BinaryOperator;
 
+import rq.common.latices.LaticeFactory;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 
@@ -58,5 +59,10 @@ public class EstimateCrossJoin {
 	public static RankHistogram estimate(RankHistogram left, RankHistogram right, BinaryOperator<Double> product) {
 		var me = new EstimateCrossJoin(left, right, product);
 		return me.doEstimate();
+	}
+	
+	/** Estimates the crossjoin */
+	public static RankHistogram estimate(RankHistogram left, RankHistogram right) {
+		return estimate(left, right, LaticeFactory.instance().getProduct());
 	}
 }

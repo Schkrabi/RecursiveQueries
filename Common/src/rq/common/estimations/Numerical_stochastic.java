@@ -14,8 +14,8 @@ public class Numerical_stochastic extends Numerical {
 	public final int samples;
 	
 	public Numerical_stochastic(Selection selection, int resultSlices,
-			 double domainSampleSize, int samples) {
-		super(selection, resultSlices, domainSampleSize);
+			 double domainSampleSize, int samples, rq.common.statistic.SampledHistogram h) {
+		super(selection, resultSlices, domainSampleSize, h);
 		this.samples = samples;
 	}
 
@@ -49,5 +49,17 @@ public class Numerical_stochastic extends Numerical {
 		RankHistogram rslt = RankHistogram.build(rankList, this.resultSlices);
 		
 		return rslt;
+	}
+	
+	public static RankHistogram estimateStatic(
+			Selection selection, 
+			int resultSlices,
+			double domainSampleSize, 
+			int samples,
+			int probes,
+			rq.common.statistic.SampledHistogram h) {
+		var me = new Numerical_stochastic(selection, resultSlices, domainSampleSize, samples, h);
+		me.setProbes(probes);
+		return me.estimate();
 	}
 }

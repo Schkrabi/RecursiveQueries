@@ -14,6 +14,7 @@ import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.LazyIterator;
 import rq.common.interfaces.SchemaProvider;
 import rq.common.latices.LaticeFactory;
+import rq.common.onOperators.Constant;
 import rq.common.onOperators.OnOperator;
 import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
@@ -177,5 +178,18 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	@Override
 	public boolean hasStatistics() {
 		return false;
+	}
+	
+	/** Crossjoin */
+	public static <T extends LazyExpression & SchemaProvider, U extends LazyExpression & SchemaProvider> 
+		LazyJoin crossJoin(T left, U right) {
+		try {
+			return LazyJoin.factory(
+					left, 
+					right, 
+					new rq.common.onOperators.OnEquals(new Constant<Boolean>(true), new Constant<Boolean>(true)));
+		} catch (OnOperatornNotApplicableToSchemaException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

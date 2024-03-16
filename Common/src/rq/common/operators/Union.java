@@ -84,7 +84,8 @@ public class Union implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table arg = this.argument1.eval(); 
-		Table table = this.tableSupplier.apply(this.schema(), arg.size());
+		var arg2 = this.argument2.eval(); 
+		Table table = this.tableSupplier.apply(this.schema(), arg.size() + arg2.size());
 		arg.stream().forEach(r -> {
 			try {
 				table.insert(r);
@@ -92,8 +93,8 @@ public class Union implements TabularExpression {
 				// Unlikely
 				throw new RuntimeException(e);
 			}
-		});;
-		this.argument2.eval().stream().forEach(r -> {
+		});
+		arg2.stream().forEach(r -> {
 			try {
 				Optional<Record> o = table.findNoRank(r);
 				if(o.isEmpty()) {

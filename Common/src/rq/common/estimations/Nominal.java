@@ -79,4 +79,14 @@ public class Nominal extends ProbeableEstimation {
 	protected Map<Object, Integer> getHistogramData() {
 		return this.argumentAttributeHistogram.getHistogram();
 	}
+	
+	public static RankHistogram estimateStatic(
+			Selection selection, 
+			int resultSlices,
+			int probedAttributes,
+			Set<Object> attributeDomain) {
+		var me = new Nominal(selection, resultSlices, probedAttributes, attributeDomain);
+		var rslt = me.estimate();
+		return rslt;
+	}
 }

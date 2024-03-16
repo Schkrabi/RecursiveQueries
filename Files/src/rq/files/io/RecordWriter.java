@@ -4,6 +4,7 @@
 package rq.files.io;
 
 import java.io.Closeable;
+import java.io.FileOutputStream;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,6 +13,7 @@ import java.io.OutputStreamWriter;
 import com.opencsv.CSVWriter;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
+import rq.common.interfaces.LazyExpression;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -138,5 +140,18 @@ public class RecordWriter implements Closeable, Flushable {
 	public void flush() throws IOException {
 		this.writer.flush();;		
 	}
+	
+	public void writeLazyExpression(LazyExpression exp) throws ClassNotInContextException {
+		var record = exp.next();
+		while(record != null) {
+			this.writeRecord(record);
+			record = exp.next();
+		}
+	}
 
+	public static void spit(LazyExpression exp, String path) throws ClassNotInContextException, IOException {
+		var me = RecordWriter.open(new FileOutputStream(path));
+		me.writeLazyExpression(exp);
+		me.close();
+	}
 }

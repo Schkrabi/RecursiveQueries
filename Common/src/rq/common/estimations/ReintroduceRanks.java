@@ -3,16 +3,17 @@ package rq.common.estimations;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
+import rq.common.latices.LaticeFactory;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 
-public class PostProcessEstimateWithFuzzyTable {
+public class ReintroduceRanks {
 
 	public final RankHistogram originalEstimate;
 	public final RankHistogram dataRankHistogram;
 	public final BinaryOperator<Double> product;
 	
-	public PostProcessEstimateWithFuzzyTable(
+	public ReintroduceRanks(
 			RankHistogram originalEstimate,
 			RankHistogram dataRankHistogram,
 			BinaryOperator<Double> product) {		
@@ -26,6 +27,11 @@ public class PostProcessEstimateWithFuzzyTable {
 		
 		double estSize = this.originalEstimate.tableSize();
 		double dataSize = this.dataRankHistogram.tableSize();
+		
+		//If either size is 0, return 0 histogram, since otherwise we get NaN's
+		if(estSize == 0 || dataSize == 0) {
+			return rslt;
+		}
 		
 		for(RankInterval est : this.originalEstimate.getSlices()) {
 			for(RankInterval data : this.dataRankHistogram.getSlices()) {
@@ -57,10 +63,17 @@ public class PostProcessEstimateWithFuzzyTable {
 			RankHistogram originalEstimate,
 			RankHistogram dataRankHistogram,
 			BinaryOperator<Double> product) {
-		PostProcessEstimateWithFuzzyTable me = 
-				new PostProcessEstimateWithFuzzyTable(originalEstimate, dataRankHistogram, product);
+		ReintroduceRanks me = 
+				new ReintroduceRanks(originalEstimate, dataRankHistogram, product);
 		
 		return me.doRecalculate();
 	}
+	
+	public static RankHistogram recalculate(
+			RankHistogram est,
+			RankHistogram hist) {
+		return recalculate(est, hist, LaticeFactory.instance().getProduct());
+	}
+	
 
 }

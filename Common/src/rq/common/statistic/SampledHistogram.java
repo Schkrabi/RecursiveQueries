@@ -1,8 +1,13 @@
 package rq.common.statistic;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.Set;
 
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
@@ -17,6 +22,15 @@ public class SampledHistogram extends AbstractStatistic {
 	public SampledHistogram(
 			Attribute observed,
 			double sampleSize) {
+		this.observed = observed;
+		this.sampleSize = sampleSize;
+	}
+	
+	private SampledHistogram(
+			Attribute observed,
+			double sampleSize,
+			Map<Double, Integer> data) {
+		this.data.putAll(data);
 		this.observed = observed;
 		this.sampleSize = sampleSize;
 	}
@@ -81,5 +95,68 @@ public class SampledHistogram extends AbstractStatistic {
 			return min.getAsDouble();
 		}
 		return 0.d;
+	}
+	
+	/**
+	 * Gets the values truly observed by the histogram
+	 * @return
+	 */
+	public Set<Double> values(){
+		return this.data.keySet();
+	}
+	
+	public String serialize() {
+		var sb = new StringBuilder();
+		
+		sb.append(this.observed.serialize()).append("\n")
+			.append(this.sampleSize).append("\n");
+		
+		for(var e : this.data.entrySet()) {
+			sb.append(e.getKey()).append(";")
+				.append(e.getValue()).append("\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	public static SampledHistogram deserialize(String serialized) throws ClassNotFoundException {
+		var data = new LinkedHashMap<Double, Integer>();
+		
+		Attribute observed = null;
+		Double sampleSize = null;
+		
+		for(var line : serialized.split("\n")) {
+			if(observed == null) {
+				observed = Attribute.parse(line);
+				continue;
+			}
+			if(sampleSize == null) {
+				sampleSize = Double.parseDouble(line);
+				continue;
+			}
+			
+			var vls = line.split(";");
+			var key = Double.parseDouble(vls[0]);
+			var value = Integer.parseInt(vls[1]);
+			data.put(key, value);
+		}
+		
+		return new SampledHistogram(observed, sampleSize, data);
+	}
+	
+	public void writeFile(String path) throws IOException {
+		Files.write(Path.of(path), this.serialize().getBytes());
+	}
+	
+	public void writeFile(Path path) throws IOException {
+		Files.write(path, this.serialize().getBytes());
+	}
+	
+	public static SampledHistogram readFile(String path) throws IOException, ClassNotFoundException {
+		return readFile(Path.of(path));
+	}
+	
+	public static SampledHistogram readFile(Path path) throws IOException, ClassNotFoundException {
+		return deserialize(Files.readString(path));
 	}
 }

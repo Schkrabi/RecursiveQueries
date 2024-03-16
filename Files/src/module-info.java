@@ -10,4 +10,6 @@ module rq.files {
 	requires com.opencsv;
 	exports rq.files.io;
 	exports rq.files.exceptions;
+	exports rq.files.helpers;
+	exports rq.files.similarities;
 }

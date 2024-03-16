@@ -19,8 +19,15 @@ public class EstimateUnion {
 		if(!left.getSlices().equals(right.getSlices())) {
 			throw new RuntimeException("Must have the same slices!");
 		}
-		this.left = left;
-		this.right = right;
+		//Left is always smaller
+		if(left.tableSize() < right.tableSize()) {
+			this.left = left;
+			this.right = right;
+		}
+		else {
+			this.left = right;
+			this.right = left;
+		}
 	}
 
 	/** Estimates */

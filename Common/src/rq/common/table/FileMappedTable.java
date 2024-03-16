@@ -206,7 +206,7 @@ public class FileMappedTable implements Closeable, Table {
 	}
 	
 	/**
-	 * Inserts recoed into the table
+	 * Inserts record into the table
 	 * @param record
 	 * @return
 	 */

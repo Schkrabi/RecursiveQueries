@@ -1,10 +1,14 @@
 package rq.common.statistic;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
-
+import rq.common.types.Str50;
 import rq.common.interfaces.Table;
 
 /**
@@ -17,6 +21,11 @@ public class AttributeHistogram extends AbstractStatistic {
 	
 	public AttributeHistogram(Attribute attribute) {
 		this.counted = attribute;
+	}
+	
+	private AttributeHistogram(Attribute attribute, LinkedHashMap<Str50, Integer> data) {
+		this.counted = attribute;
+		this.counts.putAll(data);
 	}
 
 	@Override
@@ -59,6 +68,11 @@ public class AttributeHistogram extends AbstractStatistic {
 		return count;
 	}
 	
+	/** Return number of distinct values in the histogram */
+	public int distinctValues() {
+		return this.counts.size();
+	}
+	
 	@Override
 	public String toString() {
 		return new StringBuilder()
@@ -68,5 +82,51 @@ public class AttributeHistogram extends AbstractStatistic {
 				.append(this.counts.toString())
 				.toString();
 				
+	}
+	
+	public String serialize() {
+		var sb = new StringBuilder();
+		
+		sb.append(this.counted.serialize())
+			.append("\n");
+		
+		for(var e : this.counts.entrySet()) {
+			sb.append(e.getKey().toString())
+				.append(";")
+				.append(e.getValue())
+				.append("\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	public static AttributeHistogram deserialize(String serialized) throws ClassNotFoundException {
+		Attribute attribute = null;
+		var data = new LinkedHashMap<Str50, Integer>();
+		for(var line : serialized.split("\n")) {
+			if(attribute == null) {
+				attribute = Attribute.parse(line);
+				continue;
+			}
+			var vls = line.split(";");
+			data.put(Str50.factory(vls[0]), Integer.parseInt(vls[1]));
+		}
+		return new AttributeHistogram(attribute, data);
+	}
+	
+	public void writeFile(String path) throws IOException {
+		Files.write(Path.of(path), this.serialize().getBytes());
+	}
+	
+	public void writeFile(Path path) throws IOException {
+		Files.write(path, this.serialize().getBytes());
+	}
+	
+	public static AttributeHistogram readFile(String path) throws ClassNotFoundException, IOException {
+		return readFile(Path.of(path));
+	}
+	
+	public static AttributeHistogram readFile(Path path) throws ClassNotFoundException, IOException {
+		return deserialize(Files.readString(path));
 	}
 }

@@ -1,15 +1,23 @@
 package rq.common.statistic;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.TreeMap;
 
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class EquinominalHistogra extends DataSlicedHistogram {
+public class EquinominalHistogram extends DataSlicedHistogram {
 
-	public EquinominalHistogra(Attribute observed, int n) {
+	public EquinominalHistogram(Attribute observed, int n) {
 		super(observed, n);
+	}
+	
+	private EquinominalHistogram(Attribute observed, int n, Map<Interval, Integer> counts) {
+		super(observed, n, counts);
 	}
 
 	@Override
@@ -42,4 +50,18 @@ public class EquinominalHistogra extends DataSlicedHistogram {
 		this.counts.put(new Interval(start.doubleValue(), next.doubleValue(), true, true), count);
 	}
 
+	public static EquinominalHistogram deserialize(String serialized) throws ClassNotFoundException {
+		var args = DataSlicedHistogram.doDeserialize(serialized);
+		var hist = new EquinominalHistogram(args.observed, args.n, args.counts);
+		return hist;
+	}
+	
+	public static EquinominalHistogram readFile(String path) throws ClassNotFoundException, IOException {
+		return readFile(Path.of(path));
+	}
+	
+	public static EquinominalHistogram readFile(Path path) throws ClassNotFoundException, IOException {
+		var hist = deserialize(Files.readString(path));
+		return hist;
+	}
 }

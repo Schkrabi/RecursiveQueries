@@ -3,6 +3,8 @@ package rq.files.io;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import rq.common.interfaces.Table;
 import rq.files.exceptions.ClassNotInContextException;
@@ -61,5 +63,11 @@ public class TableWriter implements Closeable {
 			this.recordWriter.flush();
 			this.recordWriter.close();
 		}
+	}
+	
+	public static void spit(Table table, Path path) throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
+		var tw = TableWriter.open(Files.newOutputStream(path));
+		tw.write(table);
+		tw.close();
 	}
 }

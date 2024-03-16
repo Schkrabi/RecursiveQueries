@@ -14,8 +14,12 @@ public class Numerical_domainPruning extends Numerical {
 
 	protected double similarityDistance;
 	
-	public Numerical_domainPruning(Selection selection, int resultSlices, double domainSampleSize) {
-		super(selection, resultSlices, domainSampleSize);
+	public Numerical_domainPruning(
+			Selection selection, 
+			int resultSlices, 
+			double domainSampleSize,
+			rq.common.statistic.SampledHistogram h) {
+		super(selection, resultSlices, domainSampleSize, h);
 		this.similarityDistance = this.similarityDistance();
 	}
 	
@@ -75,5 +79,16 @@ public class Numerical_domainPruning extends Numerical {
 		RankHistogram rslt = RankHistogram.build(rankList, this.resultSlices);
 		
 		return rslt;
+	}
+	
+	public static RankHistogram estimateStatic(
+			Selection selection, 
+			int resultSlices, 
+			double domainSampleSize,
+			int probes,
+			rq.common.statistic.SampledHistogram h) {
+		var me = new Numerical_domainPruning(selection, resultSlices, domainSampleSize, h);
+		me.setProbes(probes);
+		return me.estimate();
 	}
 }

@@ -18,7 +18,7 @@ import rq.common.exceptions.TypeSchemaMismatchException;
  * @author Mgr. R.Skrabal
  *
  */
-public class Record {
+public class Record implements Comparable<Record>{
 	
 	/**
 	 * Rank comparator for records
@@ -288,5 +288,10 @@ public class Record {
 	
 	public static Record empty(Schema schema) {
 		return new Record(schema, schema.stream().map(a -> "").toArray(), 1.0d);
+	}
+
+	@Override
+	public int compareTo(Record o) {
+		return this.toString().compareTo(o.toString());
 	}
 }

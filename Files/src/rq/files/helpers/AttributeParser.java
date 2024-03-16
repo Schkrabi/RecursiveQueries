@@ -21,9 +21,7 @@ public class AttributeParser {
 	 */
 	public Attribute parse() 
 			throws ClassNotFoundException {
-		String[] pair = this.parsed.split(":");
-		Class<?> clazz = Class.forName(pair[1]);
-		return new Attribute(pair[0], clazz);
+		return Attribute.parse(parsed);
 	}
 	
 	/**

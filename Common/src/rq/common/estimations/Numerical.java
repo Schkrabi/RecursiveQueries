@@ -24,14 +24,21 @@ public class Numerical extends ProbeableEstimation {
 	public Numerical(
 			Selection selection,  
 			int resultSlices,
-			double domainSampleSize) {
+			double domainSampleSize,
+			SampledHistogram h) {
 		super(selection, resultSlices);
 		
 		var stats = this.argument.getStatistics();
 		this.domainSampleSize = domainSampleSize;
 		
-		SampledHistogram hist = stats
+		SampledHistogram hist = null;
+		if(h == null) {
+			hist = stats
 				.getSampledHistogram(this.attribute, domainSampleSize).get();
+		}
+		else {
+			hist = h;
+		}
 
 		this.attributeHistogram = hist;
 		this.domainMin = hist.min();
@@ -79,4 +86,15 @@ public class Numerical extends ProbeableEstimation {
 		return new HashMap<Object, Integer>(this.attributeHistogram.getHistogram());
 	}
 
+	
+	public static RankHistogram estimateStatic(Selection selection,  
+			int resultSlices,
+			double domainSampleSize,
+			int probes,
+			SampledHistogram hist) {
+		var me = new Numerical(selection, resultSlices, domainSampleSize, hist);
+		me.setProbes(probes);
+		var est = me.estimate();
+		return est;
+	}
 }

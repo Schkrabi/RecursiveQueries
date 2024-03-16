@@ -9,7 +9,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.table.Record;
 
-public interface Table extends TabularExpression, Iterable<Record>{
+public interface Table extends TabularExpression, Iterable<Record> {
 
 	/**
 	 * Inserts recoed into the table

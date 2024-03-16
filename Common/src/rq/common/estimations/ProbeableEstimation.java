@@ -66,7 +66,7 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 				.map(e -> e.getKey())
 				.collect(Collectors.toList());
 		List<Object> mostFrequent = new ArrayList<Object>(probedValues);
-		List<Object> rest = new ArrayList<Object>(histogram.size() - probedValues);			
+		List<Object> rest = new ArrayList<Object>(Math.max(histogram.size() - probedValues, 1));			
 		
 		int i = 0;
 		for(Object o : sorted) {

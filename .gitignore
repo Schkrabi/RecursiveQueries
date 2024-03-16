@@ -28,7 +28,10 @@ replay_pid*
 # data
 *.csv
 *.stat
+*.hist
+*.est
 experiments
+./estimation_experiments
 
 # data aggregation scripts
 *.R
