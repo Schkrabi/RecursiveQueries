@@ -5,6 +5,8 @@ package rq.common.operators;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.PriorityQueue;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
@@ -14,6 +16,7 @@ import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.SchemaProvider;
+import rq.common.latices.LaticeFactory;
 import rq.common.onOperators.RecordValue;
 import rq.common.operators.Projection.To;
 import rq.common.statistic.Statistics;
@@ -32,10 +35,15 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 	private final Schema schema;
 	private final java.util.Map<Attribute, RecordValue> projection;
 	private final LazyExpression argExp;
-	private LazyProjection(Schema schema, java.util.Map<Attribute, RecordValue> projection, LazyExpression argExp, SchemaProvider argSch) {
+	private final BinaryOperator<Double> supremum;
+	
+	private PriorityQueue<Record> queue = null;
+	
+	private LazyProjection(Schema schema, java.util.Map<Attribute, RecordValue> projection, LazyExpression argExp, SchemaProvider argSch, BinaryOperator<Double> supremum) {
 		this.schema = schema;
 		this.projection = projection;
 		this.argExp = argExp;
+		this.supremum = supremum;
 	}
 	
 	/**
@@ -56,7 +64,7 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		schema.stream().forEach(a -> projection.put(a, a));
 
-		return new LazyProjection(schema, projection, argument, argument);
+		return new LazyProjection(schema, projection, argument, argument, LaticeFactory.instance().getSupremum());
 	}
 	
 	/**
@@ -86,7 +94,7 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
 		
-		return new LazyProjection(schema, projection, argument, argument);
+		return new LazyProjection(schema, projection, argument, argument, LaticeFactory.instance().getSupremum());
 	}
 	
 	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To... tos)
@@ -98,13 +106,8 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 	public Schema schema() {
 		return this.schema;
 	}
-
-	@Override
-	public Record next() {
-		Record record = this.argExp.next();
-		if(record == null) {
-			return null;
-		}
+	
+	private Record project(Record record) {
 		try {
 			return 
 					Record.factory(
@@ -117,9 +120,40 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 								}).collect(Collectors.toList()),
 							record.rank);
 		} catch (TypeSchemaMismatchException | AttributeNotInSchemaException e) {
-			// Unlikely
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public Record next() {
+		if(this.queue == null) {
+			var arg = LazyExpression.realizeInMemory(this.argExp);
+			if(arg != null) {
+				this.queue = new PriorityQueue<Record>(Math.max(arg.size(), 1));
+				arg.stream().forEach(r -> this.queue.add(r));
+			}
+		}
+		
+		if(this.queue != null) {
+			Record record = this.queue.poll();
+			if(record == null) {
+				return null;
+			}
+			var p = this.project(record);
+			if(this.queue.isEmpty()) {
+				return p;
+			}
+			
+			var p1 = this.project(this.queue.peek());
+			while(p.equalsNoRank(p1)) {
+				p = new Record(p, this.supremum.apply(p.rank, p1.rank));
+				this.queue.poll();
+				p1 = this.project(this.queue.peek());
+			}
+			
+			return p;
+		}
+		return null;
 	}
 
 	@Override

@@ -144,7 +144,6 @@ public class ProjectionExperiment {
 		sb.append(Workbench.statHeader);
 		sb.append("\n");
 		
-		if(!(this.parent instanceof BeerReviews)) {
 		
 		for(var slice : this.parent.slices()) {
 			var estName = this.estFileName(slice);
@@ -159,7 +158,6 @@ public class ProjectionExperiment {
 				sb.append(Workbench.statLine(est, estName, hist, histName, size));
 				sb.append("\n");				
 			}
-		}
 		}
 		
 		Files.writeString(this.parent.resultFolder().resolve(this.resultFileName()),

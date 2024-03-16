@@ -390,20 +390,19 @@ public class Workbench {
 
 	public static void main(String[] args) throws CsvValidationException, ClassNotFoundException, IOException, DuplicateAttributeNameException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, OnOperatornNotApplicableToSchemaException {
 		var datasets = List.of(
-				VideoGameSales.instance()
+				//VideoGameSales.instance()
 				//, AnimeDataset2023.instance()
 				//, TopRankedRealMovies.instance()
 				//, AmazonBookScrappings.instance()
-				//, BeerReviews.instance()
+				/*,*/ BeerReviews.instance()
 				);
 		
 		var start = System.currentTimeMillis();
 		for(var ds : datasets) {
 			System.out.println(ds.getClass().getSimpleName());
 			//ds.experiment();
-			ds.prepareData();
-			ds.preparedDataStatistics();
-			ds.projection.query();
+			ds.reloadPreparedData();
+			ds.gatherData();
 		}
 		var end = System.currentTimeMillis();
 		

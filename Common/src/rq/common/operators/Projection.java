@@ -5,6 +5,7 @@ package rq.common.operators;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.PriorityQueue;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
@@ -156,24 +157,33 @@ public class Projection implements TabularExpression {
 	@Override
 	public Table eval() {
 		Table source = this.argument.eval();
+		var q = new PriorityQueue<Record>(Math.max(source.size(), 1));
+		source.stream().forEach(r -> q.add(r));
+		
 		Table dest = this.tableSupplier.apply(schema, source.size());
 		
-		for(Record r : source) {
-			try {
-				var rec = this.project(r);
-				var o = dest.findNoRank(rec);
-				if(o.isPresent()) {
-					dest.delete(o.get());
-					rec = new Record(rec, this.supremum.apply(rec.rank, o.get().rank));
-					dest.insert(rec);
+		try {
+			var r = q.poll();
+			while(r != null) {
+				var p = this.project(r);
+				if(!q.isEmpty()) {
+					var p1 = this.project(q.peek());
+					
+					while(p.equalsNoRank(p1)) {
+						p = new Record(p, this.supremum.apply(p.rank, p1.rank));
+						q.poll();
+						if(q.isEmpty()) {
+							break;
+						}
+						p1 = this.project(q.peek());
+					}
 				}
-				else {
-					dest.insert(rec);
-				}
-			} catch (TableRecordSchemaMismatch | TypeSchemaMismatchException e) {
-				// Unlikely
-				return null;
+				
+				dest.insert(p);			
+				r = q.poll();
 			}
+		} catch (TableRecordSchemaMismatch | TypeSchemaMismatchException e) {
+			throw new RuntimeException(e);
 		}
 		
 		return dest;
