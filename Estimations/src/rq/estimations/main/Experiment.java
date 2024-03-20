@@ -9,8 +9,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -210,19 +212,40 @@ public abstract class Experiment {
 				
 				//Interval estimates
 				for(var i : this.intervals(a)) {
+					var eqdHist = EquidistantHistogram.readFile(this.preparedDataHistFolder()
+							.resolve(Workbench.eqdHistName(this.preparedDataFileName(), a.name, i)));
+					
 					Workbench.eqd(
 							slice, 
 							this.similarity(a),
-							EquidistantHistogram.readFile(this.preparedDataHistFolder()
-									.resolve(Workbench.eqdHistName(this.preparedDataFileName(), a.name, i))),
+							eqdHist,
 							hist, 
 							this.preparedDataEstFolder().toString(), 
 							fileNamePrefix);
+					
+					Workbench.eqdC(
+							slice, 
+							this.similarity(a), 
+							eqdHist, 
+							hist, 
+							this.preparedDataEstFolder().toString(), 
+							fileNamePrefix);
+					
+					
+					var eqnHist = EquinominalHistogram.readFile(this.preparedDataHistFolder()
+							.resolve(Workbench.eqnHistName(this.preparedDataFileName(), a.name, i)));
 					Workbench.eqn(
 							slice, 
 							this.similarity(a), 
-							EquinominalHistogram.readFile(this.preparedDataHistFolder()
-									.resolve(Workbench.eqnHistName(this.preparedDataFileName(), a.name, i))), 
+							eqnHist, 
+							hist, 
+							this.preparedDataEstFolder().toString(), 
+							fileNamePrefix);
+					
+					Workbench.eqnC(
+							slice, 
+							this.similarity(a), 
+							eqnHist, 
 							hist, 
 							this.preparedDataEstFolder().toString(), 
 							fileNamePrefix);
@@ -309,21 +332,53 @@ public abstract class Experiment {
 		return attrs;
 	}
 	
+	private Map<Attribute, List<Double>> _sampleQueryValues = new LinkedHashMap<Attribute, List<Double>>();
+	private Random rand = new Random(this.seed());
+	
+	private List<Double> sampleQueryValues(Attribute a) throws ClassNotFoundException, IOException{
+		var vls = this._sampleQueryValues.get(a); 
+		if(vls == null) {
+			var sHist = this.sampledHist(a);
+			var min = sHist.min();
+			var max = sHist.max();
+			vls =  Stream.generate(new Supplier<Double>() {
+	
+				@Override
+				public Double get() {
+					return min + rand.nextDouble() * max;
+				}
+				
+			}).limit(this.SAMPLE_QUERY_COUNT).collect(Collectors.toList());
+			this._sampleQueryValues.put(a, vls);
+		}
+		return vls;
+	}
+	
+	public final long SAMPLE_QUERY_COUNT = 200;
+	
+	private Path sampledHistFile(Attribute a) {
+		return this.preparedDataHistFolder().resolve(
+				Workbench.sampledHistName(this.preparedDataFileName(), a.name));
+	}
+	
+	public SampledHistogram sampledHist(Attribute a) throws ClassNotFoundException, IOException {
+		return SampledHistogram.readFile(this.sampledHistFile(a));
+	}
+	
 	/** Computes the queries  
 	 * @throws DuplicateAttributeNameException 
 	 * @throws NotSubschemaException 
-	 * @throws OnOperatornNotApplicableToSchemaException */
-	public void queries() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, DuplicateAttributeNameException, OnOperatornNotApplicableToSchemaException {
+	 * @throws OnOperatornNotApplicableToSchemaException 
+	 * @throws ClassNotFoundException */
+	public void queries() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, DuplicateAttributeNameException, OnOperatornNotApplicableToSchemaException, ClassNotFoundException {
 		if(!Files.exists(this.queryFolder())) {
 			Files.createDirectory(this.queryFolder());
 		}
 		
-		for(var a : this.allMeasuredAttributes()) {
-			var values = this.queryValues(a);
+		for(var a : this.numericAttributes()) {			
+			var values = this.sampleQueryValues(a);
 			if(values != null) {
-				for(var v : this.queryValues(a)) {
-					
-					
+				for(var v : values) {					
 					var selection = new LazySelection(
 							new LazyFacade(this.preparedData),
 							new Similar(a, new Constant<Object>(v), this.similarity(a)));
@@ -332,6 +387,11 @@ public abstract class Experiment {
 					
 					var start = System.currentTimeMillis();
 					var record = selection.next();
+					//Skip if empty
+					if(record == null) {
+						continue;
+					}
+					
 					while(record != null) {
 						for(var hist : hists) {
 							hist.addRank(record.rank);
@@ -363,9 +423,18 @@ public abstract class Experiment {
 			var eqn = Workbench.eqnEstName(fileNamePrefix, slice, i);
 			ret.put(eqn, RankHistogram.readFile(this.preparedDataEstFolder()
 					.resolve(eqn)));
+			
+			var eqnC = Workbench.eqnCEstName(fileNamePrefix, slice, i);
+			ret.put(eqnC, RankHistogram.readFile(this.preparedDataEstFolder()
+					.resolve(eqnC)));
+			
 			var eqd = Workbench.eqdEstName(fileNamePrefix, slice, i);
 			ret.put(eqd, RankHistogram.readFile(this.preparedDataEstFolder()
 					.resolve(eqd)));
+			
+			var eqdC = Workbench.eqdCEstName(fileNamePrefix, slice, i);
+			ret.put(eqdC, RankHistogram.readFile(this.preparedDataEstFolder()
+					.resolve(eqdC)));
 		}
 		
 		for(var probe : this.probes()) {
@@ -392,15 +461,19 @@ public abstract class Experiment {
 		return ret;
 	}
 	
-	/**Gathers all sample queries for given attribute and slice */
-	private Map<String, RankHistogram> gatherQueries(Attribute a, int slice) throws IOException{
+	/**Gathers all sample queries for given attribute and slice 
+	 * @throws ClassNotFoundException */
+	private Map<String, RankHistogram> gatherQueries(Attribute a, int slice) throws IOException, ClassNotFoundException{
 		var ret = new LinkedHashMap<String, RankHistogram>();
 		
-		for(var v : this.queryValues(a)) {
+		for(var v : this.sampleQueryValues(a)) {
 			var name = Workbench.rankHistFileName(this.queryFileName(a, v), slice);
-			ret.put(name, 
-					RankHistogram.readFile(this.preparedDataHistFolder()
-							.resolve(name)));
+			var path = this.preparedDataHistFolder()
+					.resolve(name);
+			
+			if(Files.exists(path)) {
+				ret.put(name, RankHistogram.readFile(path));
+			}
 		}
 		
 		return ret;
@@ -436,8 +509,9 @@ public abstract class Experiment {
 		this.prepareJoins();
 	}
 	
-	/** Gathers experiment results */
-	public void gatherData() throws IOException {
+	/** Gathers experiment results 
+	 * @throws ClassNotFoundException */
+	public void gatherData() throws IOException, ClassNotFoundException {
 		var tableSize = this.preparedData.size();
 		
 		if(!Files.exists(this.resultFolder())) {
@@ -493,7 +567,7 @@ public abstract class Experiment {
 		return this.preparedDataFolder().resolve(this.subdataName(identifier));
 	}
 	
-	private Map<String, Table> bidata = new LinkedHashMap<String, Table>();
+	protected Map<String, Table> bidata = new LinkedHashMap<String, Table>();
 	
 	/** Prepares sub data */
 	private void biPreparedData() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
@@ -571,7 +645,7 @@ public abstract class Experiment {
 			join.gather(join.joined != null ? sb : sb_cj);
 		}
 		Files.writeString(this.resultFolder().resolve(this.joinResultFileName()), sb.toString());
-		Files.writeString(this.resultFolder().resolve(this.crossjoinResultFileName()), sb.toString());
+		Files.writeString(this.resultFolder().resolve(this.crossjoinResultFileName()), sb_cj.toString());
 	}
 	
 	public Table getPreparedData() {
@@ -651,6 +725,8 @@ public abstract class Experiment {
 	}
 	
 	protected abstract List<Attribute> projectionAttributes();
+	
+	protected abstract long seed();
 	
 	/** Executes the whole experiment 
 	 * @throws DuplicateHeaderWriteException 

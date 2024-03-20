@@ -25,7 +25,7 @@ import rq.files.io.TableWriter;
 public class BeerReviews extends Experiment {
 	
 	//Path folder = Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Beer Reviews\\");
-	Path folder = Path.of("./Beer Reviews");
+	Path folder = Path.of("./Beer_Reviews");
 	String beer_reviews_csv = "beer_reviews.nona.csv";
 	Path beer_reviews_path = folder.resolve(beer_reviews_csv);
 	String query1 = "q1";
@@ -176,8 +176,8 @@ public class BeerReviews extends Experiment {
 		return Map.of(
 				"s1", new Selection(preparedData,
 						new InfimumAnd(
-							new LesserThanOrEquals(this.review_palate, new Constant<Double>(1.0d)),
-							new GreaterThanOrEquals(this.review_palate, new Constant<Double>(2.0d)))),
+							new LesserThanOrEquals(this.review_palate, new Constant<Double>(2.0d)),
+							new GreaterThanOrEquals(this.review_palate, new Constant<Double>(1.0d)))),
 				"s2", new Selection(preparedData,
 						new InfimumAnd(
 								new LesserThanOrEquals(this.review_taste,  new Constant<Double>(2d)),
@@ -188,8 +188,8 @@ public class BeerReviews extends Experiment {
 								new GreaterThanOrEquals(this.review_aroma, new Constant<Double>(2d)))),
 				"s4", new Selection(preparedData,
 						new InfimumAnd(
-								new LesserThanOrEquals(this.review_appearance,  new Constant<Double>(2d)),
-								new GreaterThanOrEquals(this.review_appearance, new Constant<Double>(2.5d)))),
+								new LesserThanOrEquals(this.review_appearance,  new Constant<Double>(2.5d)),
+								new GreaterThanOrEquals(this.review_appearance, new Constant<Double>(2d)))),
 				"s5", new Selection(preparedData,
 						new InfimumAnd(
 								new LesserThanOrEquals(this.review_overall,  new Constant<Double>(1.5d)),
@@ -242,5 +242,10 @@ public class BeerReviews extends Experiment {
 	@Override
 	protected List<Attribute> projectionAttributes() {
 		return List.of(this.brewery_id, this.beer_beerid);
+	}
+
+	@Override
+	protected long seed() {
+		return 331226761;
 	}
 }

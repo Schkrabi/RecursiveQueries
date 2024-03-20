@@ -139,7 +139,7 @@ public class VideoGameSales extends Experiment {
 	
 	@Override
 	protected Path folder() {
-//		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales");
+		//return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales");
 		return Path.of("./VideoGameSales");
 	}
 	@Override
@@ -276,5 +276,10 @@ public class VideoGameSales extends Experiment {
 	@Override
 	protected List<Attribute> projectionAttributes() {
 		return List.of(this.name, this.developer, this.genre, this.platform, this.publisher, this.developer, this.rating);
+	}
+
+	@Override
+	protected long seed() {
+		return 113266111;
 	}
 }

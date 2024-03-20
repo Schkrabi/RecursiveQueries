@@ -1,47 +1,32 @@
 package rq.common.estimations;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 
 import rq.common.statistic.DataSlicedHistogram;
-import rq.common.statistic.DataSlicedHistogram.Interval;
 import rq.common.statistic.RankHistogram;
+import rq.common.statistic.DataSlicedHistogram.Interval;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 
-public abstract class AbstractIntervalEstimation {
+public abstract class IntervalEstimationCenter extends AbstractIntervalEstimation {
 
-	public final int slices;
-	protected final BiFunction<Object, Object, Double> similarity;
-	
-	public AbstractIntervalEstimation(int slices, BiFunction<Object, Object, Double> similarity) {
-		this.slices = slices;
-		this.similarity = similarity;
+	public IntervalEstimationCenter(int slices, BiFunction<Object, Object, Double> similarity) {
+		super(slices, similarity);
 	}
-	
-	public abstract RankHistogram doEstimate();
 
-	protected double center(double a, double b) {
-		var min = Math.min(a, b);
-		var max = Math.max(a, b);
-		
-		//Abs probably not necessary
-		var d = Math.abs(max - min);
-		return min + (d/2);
-	}
-	
+	@Override
 	protected RankHistogram universalRanks(Set<RankInterval> rankIntervals, DataSlicedHistogram dataIntervals) {
 		var histograms = new HashMap<Interval, RankHistogram>();
 
 		var min = dataIntervals.intervals().stream().mapToDouble(i -> i.from).min().getAsDouble();
 		var max = dataIntervals.intervals().stream().mapToDouble(i -> i.to).max().getAsDouble();
 		
+		var center = this.center(min, max);
+		
 		for (var dataInterval : dataIntervals.intervals()) {
 			int count = dataIntervals.get(dataInterval);
-			var center = this.center(dataInterval.from, dataInterval.to);
 			var histogram = new RankHistogram(rankIntervals);
 			histogram.addRanks(this.ranksForInterval(dataInterval, count, center));
 			histograms.put(dataInterval, histogram);
@@ -60,30 +45,5 @@ public abstract class AbstractIntervalEstimation {
 			}
 		}
 		return new RankHistogram(avg);
-	}
-
-	protected List<Double> ranksForInterval(Interval dataInterval, int count, Double value) {
-		List<Double> result = new ArrayList<Double>();
-
-		double step = (dataInterval.to - dataInterval.from) / count;
-		double x;
-		if (value.doubleValue() <= dataInterval.from) {
-			x = dataInterval.from;
-		} else {
-			x = dataInterval.to;
-			if (!dataInterval.closedTo)
-				x -= step;
-			step = -step;
-		}
-
-		for (int i = 0; i < count; i++) {
-			double rank = this.similarity.apply(x, value.doubleValue());
-			if (rank == 0)
-				break;
-			result.add(rank);
-			x += step;
-		}
-
-		return result;
 	}
 }

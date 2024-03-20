@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 
 import com.opencsv.exceptions.CsvValidationException;
 
+import rq.common.estimations.IntervalCenterEquidistant;
+import rq.common.estimations.IntervalCenterEquinominal;
 import rq.common.estimations.IntervalEquidistant;
 import rq.common.estimations.IntervalEquinominal;
 import rq.common.estimations.Numerical;
@@ -250,6 +252,23 @@ public class Workbench {
 				.toString();
 	}
 	
+	public static void eqdC(int slices, BiFunction<Object, Object, Double> similarity, EquidistantHistogram eqdHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+		var est = IntervalCenterEquidistant.estimate(slices, eqdHist, similarity);
+		est = ReintroduceRanks.recalculate(est, hist);
+		est.writeFile(Path.of(path, eqdCEstName(namePrefix, slices, eqdHist.n)));
+	}
+	
+	public static String eqdCEstName(String namePrefix, int slices, int n) {
+		return new StringBuilder()
+				.append(namePrefix)
+				.append(".eqdc.")
+				.append(slices)
+				.append(".")
+				.append(n)
+				.append(".est")
+				.toString();
+	}
+	
 	public static void eqn(int slices, BiFunction<Object, Object, Double> similarity, EquinominalHistogram eqnHist, RankHistogram hist, String path, String namePrefix) throws IOException {
 		var est = IntervalEquinominal.estimate(slices, eqnHist, similarity);
 		est = ReintroduceRanks.recalculate(est, hist);
@@ -260,6 +279,23 @@ public class Workbench {
 		return new StringBuilder()
 				.append(namePrefix)
 				.append(".eqn.")
+				.append(slices)
+				.append(".")
+				.append(n)
+				.append(".est")
+				.toString();
+	}
+	
+	public static void eqnC(int slices, BiFunction<Object, Object, Double> similarity, EquinominalHistogram eqnHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+		var est = IntervalCenterEquinominal.estimate(slices, eqnHist, similarity);
+		est = ReintroduceRanks.recalculate(est, hist);
+		est.writeFile(Path.of(path, eqnCEstName(namePrefix, slices, eqnHist.n)));
+	}
+	
+	public static String eqnCEstName(String namePrefix, int slices, int n) {
+		return new StringBuilder()
+				.append(namePrefix)
+				.append(".eqnc.")
 				.append(slices)
 				.append(".")
 				.append(n)
@@ -390,19 +426,17 @@ public class Workbench {
 
 	public static void main(String[] args) throws CsvValidationException, ClassNotFoundException, IOException, DuplicateAttributeNameException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, OnOperatornNotApplicableToSchemaException {
 		var datasets = List.of(
-				//VideoGameSales.instance()
-				//, AnimeDataset2023.instance()
-				//, TopRankedRealMovies.instance()
-				//, AmazonBookScrappings.instance()
-				/*,*/ BeerReviews.instance()
+				VideoGameSales.instance()
+				, AnimeDataset2023.instance()
+				, TopRankedRealMovies.instance()
+				, AmazonBookScrappings.instance()
+				, BeerReviews.instance()
 				);
 		
 		var start = System.currentTimeMillis();
 		for(var ds : datasets) {
 			System.out.println(ds.getClass().getSimpleName());
-			//ds.experiment();
-			ds.reloadPreparedData();
-			ds.gatherData();
+			ds.experiment();
 		}
 		var end = System.currentTimeMillis();
 		

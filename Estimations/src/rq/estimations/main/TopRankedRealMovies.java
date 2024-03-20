@@ -1,6 +1,7 @@
 package rq.estimations.main;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -197,12 +198,19 @@ public class TopRankedRealMovies extends Experiment {
 
 	@Override
 	protected Map<String, List<Attribute>> smallData() {
-		return Map.of();
+		var m = new LinkedHashMap<String, List<Attribute>>();
+		Stream.of("s1", "s2", "s3", "s4", "s5").forEach(s -> m.put(this.subdataName(s), List.of()));
+		return m;
 	}
 
 	@Override
 	protected List<Attribute> projectionAttributes() {
 		return List.of(this.Id, this.Movie_Name);
+	}
+
+	@Override
+	protected long seed() {
+		return 547341576;
 	}
 
 }

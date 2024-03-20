@@ -283,4 +283,9 @@ public class AnimeDataset2023 extends Experiment {
 	protected List<Attribute> projectionAttributes() {
 		return this.projectionAttributes;
 	}
+
+	@Override
+	protected long seed() {
+		return 114115395;
+	}
 }

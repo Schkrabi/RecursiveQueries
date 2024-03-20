@@ -229,4 +229,9 @@ public class AmazonBookScrappings extends Experiment {
 	protected List<Attribute> projectionAttributes() {
 		return this.projectionAttributes;
 	}
+
+	@Override
+	protected long seed() {
+		return 863522926;
+	}
 }

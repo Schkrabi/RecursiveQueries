@@ -17,17 +17,17 @@ public class Main {
 		//Usage:
 		// java -jar <jarname> (contract file) (table) (table...)
 		
-		var contract = EstimationSetupContract.factory(Path.of(
-				args[0]),
-				Arrays.asList(args).stream().skip(1).collect(Collectors.toList()));
-		
-		var provider = EstimationProviders.get(contract.getEstimation()).apply(contract);
-		
-		var measurement = new Measurement(provider);
-		
-		var rslt = 
-				measurement.measure();
-		
-		System.out.println(rslt);
+//		var contract = EstimationSetupContract.factory(Path.of(
+//				args[0]),
+//				Arrays.asList(args).stream().skip(1).collect(Collectors.toList()));
+//		
+//		var provider = EstimationProviders.get(contract.getEstimation()).apply(contract);
+//		
+//		var measurement = new Measurement(provider);
+//		
+//		var rslt = 
+//				measurement.measure();
+//		
+//		System.out.println(rslt);
 	}
 }
