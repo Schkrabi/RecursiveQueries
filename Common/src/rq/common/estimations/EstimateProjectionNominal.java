@@ -39,7 +39,7 @@ public class EstimateProjectionNominal {
 		var r2 = RankHistogram.mult(this.hist, 1 - (ratio));
 		var est = EstimateUnion.estimate(r1, r2);
 		
-		var ratio2 = estSize.divide(BigDecimal.valueOf(est.tableSize()), 5, RoundingMode.HALF_EVEN).doubleValue();
+		var ratio2 = 1.d;//estSize.divide(BigDecimal.valueOf(tableSize), 5, RoundingMode.HALF_EVEN).doubleValue();
 		
 		est = RankHistogram.mult(est, ratio2);
 		return est;
