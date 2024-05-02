@@ -1,6 +1,7 @@
 package rq.common.restrictions;
 
 import java.util.function.BinaryOperator;
+import java.util.stream.Stream;
 
 import rq.common.latices.LaticeFactory;
 
@@ -22,5 +23,9 @@ public class ProductAnd extends BiLogicalCondition {
 				.append(this.right)
 				.toString();
 	}
-
+	
+	/** Creates and expression for n conditiions */
+	public static ProductAnd and(SelectionCondition ...conds) {
+		return (ProductAnd) Stream.of(conds).reduce((c1, c2) -> new ProductAnd(c1, c2)).get();		
+	}
 }

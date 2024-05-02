@@ -139,8 +139,8 @@ public class VideoGameSales extends Experiment {
 	
 	@Override
 	protected Path folder() {
-		//return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales");
-		return Path.of("./VideoGameSales");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales");
+		//return Path.of("./VideoGameSales");
 	}
 	@Override
 	protected String primaryDataFileName() {

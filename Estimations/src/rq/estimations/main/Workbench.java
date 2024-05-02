@@ -436,7 +436,10 @@ public class Workbench {
 		var start = System.currentTimeMillis();
 		for(var ds : datasets) {
 			System.out.println(ds.getClass().getSimpleName());
-			ds.experiment();
+			//ds.experiment();
+			ds.reloadPreparedData();
+			ds.projection.estimate();
+			ds.projection.gather();
 		}
 		var end = System.currentTimeMillis();
 		

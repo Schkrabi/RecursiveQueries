@@ -123,7 +123,7 @@ class LazyRecursiveTopKTest {
 											new OnEquals(a, a)), 
 									new Projection.To(new Attribute("right.A", Integer.class), a),
 									new Projection.To(new Attribute("right.B", String.class), b));
-					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
+					} catch (OnOperatornNotApplicableToSchemaException e) {
 						throw new RuntimeException(e);
 					}
 				},
@@ -181,18 +181,14 @@ class LazyRecursiveTopKTest {
 				new LazyFacade(MemoryTable.of(r1)), 
 				(Table table) ->
 					{
-						try {
-							return LazyProjection.factory(
-									LazyJoin.factory(
-											new LazyFacade(table), 
-											new LazyFacade(t), 
-											new OnNotEquals(a, a),
-											new OnEquals(f, f)),
-									new Projection.To(Join.right(a), a),
-									new Projection.To(Join.left(f), f));
-						} catch (OnOperatornNotApplicableToSchemaException | DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-							throw new RuntimeException(e);
-						}
+						return LazyProjection.factory(
+								LazyJoin.factory(
+										new LazyFacade(table), 
+										new LazyFacade(t), 
+										new OnNotEquals(a, a),
+										new OnEquals(f, f)),
+								new Projection.To(Join.right(a), a),
+								new Projection.To(Join.left(f), f));
 					}, 
 				2,
 				new rq.common.tools.AlgorithmMonitor());
@@ -205,18 +201,14 @@ class LazyRecursiveTopKTest {
 				new LazyFacade(MemoryTable.of(r1)), 
 				(Table table) ->
 				{
-					try {
-						return LazyProjection.factory(
-								LazyJoin.factory(
-										new LazyFacade(table), 
-										new LazyFacade(t), 
-										new OnNotEquals(a, a),
-										new OnEquals(f, f)),
-								new Projection.To(Join.right(a), a),
-								new Projection.To(Join.left(f), f));
-					} catch (OnOperatornNotApplicableToSchemaException | DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-						throw new RuntimeException(e);
-					}
+					return LazyProjection.factory(
+							LazyJoin.factory(
+									new LazyFacade(table), 
+									new LazyFacade(t), 
+									new OnNotEquals(a, a),
+									new OnEquals(f, f)),
+							new Projection.To(Join.right(a), a),
+							new Projection.To(Join.left(f), f));
 				},
 				new rq.common.tools.AlgorithmMonitor());
 		

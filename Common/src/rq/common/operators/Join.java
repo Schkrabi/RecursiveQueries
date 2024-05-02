@@ -215,11 +215,10 @@ public class Join extends AbstractJoin implements TabularExpression {
 		return new StringBuilder()
 				.append("(")
 				.append(this.argument1.toString())
-				.append(" JOIN ")
-				.append(this.argument2)
-				.append(" ON ")
-				.append(this.onClause.stream().map(p -> p.toString()).reduce((s1, s2) -> s1 + " AND " + s2))
-				.append(")")
+				.append(") JOIN (")
+				.append(this.argument2.toString())
+				.append(") WHERE ")
+				.append(this.onClause.stream().map(p -> p.toString()).reduce((s1, s2) -> s1 + " /\\ " + s2))
 				.toString();
 	}
 

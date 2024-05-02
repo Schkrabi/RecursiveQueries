@@ -130,14 +130,17 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	LazyJoin factory(
 			T leftArg,
 			U rightArg,
-			OnOperator... ons) 
-		throws OnOperatornNotApplicableToSchemaException {
+			OnOperator... ons) {
+		try {
 		return LazyJoin.factory(
 				leftArg, 
 				rightArg, 
 				Arrays.asList(ons),
 				LaticeFactory.instance().getProduct(),
 				LaticeFactory.instance().getInfimum());
+		}catch(Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	@Override
@@ -183,13 +186,21 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	/** Crossjoin */
 	public static <T extends LazyExpression & SchemaProvider, U extends LazyExpression & SchemaProvider> 
 		LazyJoin crossJoin(T left, U right) {
-		try {
-			return LazyJoin.factory(
-					left, 
-					right, 
-					new rq.common.onOperators.OnEquals(new Constant<Boolean>(true), new Constant<Boolean>(true)));
-		} catch (OnOperatornNotApplicableToSchemaException e) {
-			throw new RuntimeException(e);
-		}
+		return LazyJoin.factory(
+				left, 
+				right, 
+				new rq.common.onOperators.OnEquals(new Constant<Boolean>(true), new Constant<Boolean>(true)));
+	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("(")
+				.append(this.leftArg.toString())
+				.append(") JOIN (")
+				.append(this.rightArg.toString())
+				.append(") WHERE ")
+				.append(this.onClause.stream().map(p -> p.toString()).reduce((s1, s2) -> s1 + " /\\ " + s2))
+				.toString();
 	}
 }

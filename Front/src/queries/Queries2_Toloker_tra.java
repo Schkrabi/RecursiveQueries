@@ -8,74 +8,64 @@ import annotations.QueryParameter;
 import annotations.QueryParameterGetter;
 import data.Toloker;
 import rq.common.algorithms.LazyRecursive;
-import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
-import rq.common.latices.Goguen;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnSimilar;
+import rq.common.operators.AbstractJoin;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
+import rq.common.operators.LazySelection;
+import rq.common.restrictions.Equals;
+import rq.common.restrictions.InfimumAnd;
+import rq.common.onOperators.Constant;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
+import rq.common.table.MemoryTable;
 import rq.common.tools.AlgorithmMonitor;
 
 @CallingArg("tolokerTra")
-public class Queries2_Toloker_tra extends Queries2 {
+public class Queries2_Toloker_tra extends Queries2 {	
+	private int _startNode = 64;//9;
 	
-	private  double APPROVED_RATE_MAX = 0.5d;
-	
-	@QueryParameter("approvedRateMax")
-	public void setApprovedRateMax(String approvedRateMax) {
-		this.APPROVED_RATE_MAX = Double.parseDouble(approvedRateMax);
+	@QueryParameter("startNode")
+	public void setStartNode(String source) {
+		this._startNode = Integer.parseInt(source);
 	}
 	
-	@QueryParameterGetter("approvedRateMax")
-	public String getApprovedRateMax() {
-		return Double.toString(APPROVED_RATE_MAX);
+	@QueryParameterGetter("startNode")
+	public String getStartNode() {
+		return Integer.toString(this._startNode);
 	}
 	
-	private int BANNED = 1;
+	private double _approvedRateSimilarity = 1.0d;
+	private BiFunction<Object, Object, Double> approvedRateSimilarity = 
+			LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
 	
-	@QueryParameter("banned")
-	public void setBanned(String banned) {
-		this.BANNED = Integer.parseInt(banned);
+	@QueryParameter("approvedRateSimilarity")
+	public void setApprovedRateSimilarity(String rateSimilarity) {
+		this._approvedRateSimilarity = Double.parseDouble(rateSimilarity);
+		this.approvedRateSimilarity = 
+				LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
 	}
 	
-	@QueryParameterGetter("banned")
-	public String getBanned() {
-		return Integer.toString(this.BANNED);
+	@QueryParameterGetter("approvedRateSimilarity")
+	public String getApprovedRateSimilarity() {
+		return Double.toString(this._approvedRateSimilarity);
 	}
 	
-	private int SOURCE = 9;
+	private int _isBanned = 0;
 	
-	@QueryParameter("source")
-	public void setSource(String source) {
-		this.SOURCE = Integer.parseInt(source);
+	@QueryParameter("isBanned")
+	public void setIsBanned(String isBanned) {
+		this._isBanned = Integer.parseInt(isBanned);
 	}
 	
-	@QueryParameterGetter("source")
-	public String getSource() {
-		return Integer.toString(this.SOURCE);
+	@QueryParameterGetter("isBanned")
+	public String getIsBanned() {
+		return Integer.toString(this._isBanned);
 	}
-	
-	private double RATE_SIMILARITY = 1.0d;
-	
-	@QueryParameter("rateSimilarity")
-	public void setRateSimilarity(String rateSimilarity) {
-		this.RATE_SIMILARITY = Double.parseDouble(rateSimilarity);
-	}
-	
-	@QueryParameterGetter("rateSimilarity")
-	public String getRateSimilarity() {
-		return Double.toString(this.RATE_SIMILARITY);
-	}
-	
-	private final BiFunction<Object, Object, Double> rateSimilarity = LinearSimilarity.doubleSimilarityUntil(RATE_SIMILARITY);
 	
 	private rq.common.table.Record rec = null;
 
@@ -94,23 +84,20 @@ public class Queries2_Toloker_tra extends Queries2 {
 	@Override
 	protected Function<Table, LazyExpression> initialProvider() throws Exception {
 		return (Table iTable) -> {
-			try {
-				return LazyProjection.factory(
-						LazyRestriction.factory(
-								new LazyFacade(iTable), 
-								r -> (int)r.getNoThrow(Toloker.source) == SOURCE ? r.rank : 0.0d),
-						new Projection.To(Toloker.source, Toloker.source),
-						new Projection.To(Toloker.sourceApprovedRate, Toloker.approvedRate),
-						new Projection.To(Toloker.sourceRejectedRate, Toloker.rejectedRate),
-						new Projection.To(Toloker.sourceExpiredRate, Toloker.expiredRate),
-						new Projection.To(Toloker.sourceSkippedRate, Toloker.skippedRate),
-						new Projection.To(Toloker.sourceEductation, Toloker.education),
-						new Projection.To(Toloker.sourceEnglishProfile, Toloker.englishProfile),
-						new Projection.To(Toloker.sourceEnglishTested, Toloker.englishTested),
-						new Projection.To(Toloker.sourceBanned, Toloker.banned));
-			} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-				throw new RuntimeException(e);
-			}
+			return LazyProjection.factory(
+					new LazySelection(
+							new LazyFacade(iTable),
+							new Equals(Toloker.source, new Constant<Integer>(_startNode))),
+					new Projection.To(Toloker.source, Toloker.source),
+					new Projection.To(Toloker.sourceApprovedRate, Toloker.approvedRate),
+//					new Projection.To(Toloker.sourceRejectedRate, Toloker.rejectedRate),
+//					new Projection.To(Toloker.sourceExpiredRate, Toloker.expiredRate),
+//					new Projection.To(Toloker.sourceSkippedRate, Toloker.skippedRate),
+					new Projection.To(Toloker.sourceEductation, Toloker.education)
+//					new Projection.To(Toloker.sourceEnglishProfile, Toloker.englishProfile),
+//					new Projection.To(Toloker.sourceEnglishTested, Toloker.englishTested),
+//					new Projection.To(Toloker.sourceBanned, Toloker.banned)
+					);
 		};
 	}
 
@@ -119,25 +106,25 @@ public class Queries2_Toloker_tra extends Queries2 {
 		return (Table iTable) -> {
 			return (Table t) ->
 			{
-				try {
-					return LazyProjection.factory(
-							LazyJoin.factory(
-								new LazyFacade(t), 
-								new LazyFacade(iTable), 
-								new OnEquals(Toloker.source, Toloker.source),
-								new OnSimilar(Toloker.education, Toloker.targetEductation, Toloker.educationSimilarity)),
-							new Projection.To(Toloker.target, Toloker.source),
-							new Projection.To(Toloker.targetApprovedRate, Toloker.approvedRate),
-							new Projection.To(Toloker.targetRejectedRate, Toloker.rejectedRate),
-							new Projection.To(Toloker.targetSkippedRate, Toloker.skippedRate),
-							new Projection.To(Toloker.targetExpiredRate, Toloker.expiredRate),
-							new Projection.To(Toloker.targetEductation, Toloker.education),
-							new Projection.To(Toloker.targetEnglishProfile, Toloker.englishProfile),
-							new Projection.To(Toloker.targetEnglishTested, Toloker.englishTested),
-							new Projection.To(Toloker.targetBanned, Toloker.banned));
-				} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
-					throw new RuntimeException(e);
-				}
+				return LazyProjection.factory(
+						LazyJoin.factory(
+							new LazyFacade(t), 
+							new LazyFacade(iTable), 
+							new OnEquals(Toloker.source, Toloker.source),
+							new OnSimilar(
+									Toloker.education, 
+									Toloker.targetEductation, 
+									Toloker.educationSimilarity)),
+						new Projection.To(Toloker.target, Toloker.source),
+						new Projection.To(Toloker.targetApprovedRate, Toloker.approvedRate),
+//						new Projection.To(Toloker.targetRejectedRate, Toloker.rejectedRate),
+//						new Projection.To(Toloker.targetSkippedRate, Toloker.skippedRate),
+//						new Projection.To(Toloker.targetExpiredRate, Toloker.expiredRate),
+						new Projection.To(Toloker.targetEductation, Toloker.education)
+//						new Projection.To(Toloker.targetEnglishProfile, Toloker.englishProfile),
+//						new Projection.To(Toloker.targetEnglishTested, Toloker.englishTested),
+//						new Projection.To(Toloker.targetBanned, Toloker.banned)
+						);
 			};
 		};
 	}
@@ -145,29 +132,15 @@ public class Queries2_Toloker_tra extends Queries2 {
 	@Override
 	protected Function<Table, LazyExpression> postprocessProvider() throws Exception {
 		return (Table iTable) -> {
-			return LazyRestriction.factory(
-					new LazyFacade(iTable), 
-					(rq.common.table.Record r) -> {
-						double approvedRate = (double)r.getNoThrow(Toloker.approvedRate);
-						double skippedRate = (double)r.getNoThrow(Toloker.skippedRate);
-						double rejectedRate = (double)r.getNoThrow(Toloker.rejectedRate);
-						double expiredRate = (double)r.getNoThrow(Toloker.expiredRate);
-						
-						double sourceApprovedRate = (double)this.rec.getNoThrow(Toloker.sourceApprovedRate);
-						double sourceSkippedRate = (double)this.rec.getNoThrow(Toloker.sourceSkippedRate);
-						double sourceRejectedRate = (double)this.rec.getNoThrow(Toloker.sourceRejectedRate);
-						double sourceExpiredRate = (double)this.rec.getNoThrow(Toloker.sourceExpiredRate);
-						
-						return Goguen.PRODUCT.apply(
-								rateSimilarity.apply(approvedRate, sourceApprovedRate), 
-								Goguen.PRODUCT.apply(
-										rateSimilarity.apply(skippedRate, sourceSkippedRate), 
-										Goguen.PRODUCT.apply(
-												rateSimilarity.apply(rejectedRate, sourceRejectedRate), 
-												Goguen.PRODUCT.apply(
-														rateSimilarity.apply(expiredRate, sourceExpiredRate), 
-														r.rank))));
-					});
+			return LazyProjection.factory( 
+				LazyJoin.factory(
+					new LazyFacade(MemoryTable.of(this.rec)), 
+					new LazyFacade(iTable),
+					new OnSimilar(
+							Toloker.sourceApprovedRate, 
+							Toloker.approvedRate, 
+							this.approvedRateSimilarity)),
+				new Projection.To(AbstractJoin.right(Toloker.source), Toloker.source));
 		};
 	}
 
@@ -177,22 +150,13 @@ public class Queries2_Toloker_tra extends Queries2 {
 		
 		//Selects the original source record used later in post processing
 		this.rec =
-				LazyRestriction.factory(
-						iTable, 
-						(rq.common.table.Record r) -> (int)r.getNoThrow(Toloker.source) == SOURCE ? 1.0d : 0.0d)
+				new LazySelection(iTable, new Equals(Toloker.source, new Constant<Integer>(this._startNode)))
 				.next();
 		
-		exp = LazyRestriction.factory(
-				iTable, 
-				(rq.common.table.Record r) -> {
-					int sourceBanned = (int)r.getNoThrow(Toloker.sourceBanned);
-					int targetBanned = (int)r.getNoThrow(Toloker.targetBanned);
-					if(sourceBanned != this.BANNED || targetBanned != this.BANNED) {
-						return 0.0d;
-					}
-					
-					return r.rank;
-				});
+		exp = new LazySelection(
+				iTable,
+				new InfimumAnd(	new Equals(Toloker.sourceBanned, new Constant<Integer>(this._isBanned)),
+								new Equals(Toloker.targetBanned, new Constant<Integer>(this._isBanned))));
 		
 		return exp;
 	}

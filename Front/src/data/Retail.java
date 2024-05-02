@@ -9,7 +9,7 @@ public class Retail {
 	public static final Attribute invoice = new Attribute("Invoice", Str10.class);
 	public static final Attribute stockCode = new Attribute("StockCode", Str10.class);
 	public static final Attribute description = new Attribute("Description", Str50.class);
-	public static final Attribute quantity = new Attribute("Quantity", Integer.class);
+	public static final Attribute quantity = new Attribute("Quantity", Double.class);
 	public static final Attribute invoiceDate = new Attribute("InvoiceDate", DateTime.class);
 	public static final Attribute price = new Attribute("Price", Double.class);
 	public static final Attribute customerId = new Attribute("Customer ID", Str10.class);

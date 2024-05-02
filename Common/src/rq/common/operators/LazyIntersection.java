@@ -89,4 +89,14 @@ public class LazyIntersection implements LazyExpression, SchemaProvider {
 		return rec;
 	}
 
+	 @Override
+	 public String toString() {
+		 return new StringBuilder()
+				 .append("(")
+				 .append(this.leftTable.toString())
+				 .append(") /\\ (")
+				 .append(this.rightTable.toString())
+				 .append(")")
+				 .toString();
+	 }
 }

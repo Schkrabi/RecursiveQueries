@@ -121,9 +121,9 @@ public class Union implements TabularExpression {
 	@Override
 	public String toString() {
 		return new StringBuilder()
-				.append("UNION(")
+				.append("(")
 				.append(this.argument1.toString())
-				.append(", ")
+				.append(") \\/ (")
 				.append(this.argument2.toString())
 				.append(")")
 				.toString();

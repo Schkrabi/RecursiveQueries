@@ -116,9 +116,9 @@ public class Intersection implements TabularExpression {
 	@Override
 	public String toString() {
 		return new StringBuilder()
-				.append("INTERSECT (")
+				.append("(")
 				.append(this.argument1.toString())
-				.append(", ")
+				.append(") /\\ (")
 				.append(this.argument2.toString())
 				.append(")")
 				.toString();
@@ -133,5 +133,4 @@ public class Intersection implements TabularExpression {
 	public boolean hasStatistics() {
 		return false;
 	}
-
 }

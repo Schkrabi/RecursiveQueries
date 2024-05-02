@@ -145,8 +145,8 @@ public class AnimeDataset2023 extends Experiment {
 
 	@Override
 	protected Path folder() {
-		//return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Anime_Dataset_2023");
-		return Path.of("./Anime_Dataset_2023");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Anime_Dataset_2023");
+		//return Path.of("./Anime_Dataset_2023");
 	}
 
 	@Override

@@ -98,27 +98,18 @@ class LazyRecursiveTransformedTest {
 		this.lrt = LazyRecursiveTransformed.factory(
 				LazyRestriction.factory(new LazyFacade(t), r -> r.getNoThrow(a).equals(1) ? r.rank : 0.0d), 
 				(Table table) -> {
-					try {
-						return 
-							LazyProjection.factory(
-									LazyJoin.factory(
-											new LazyFacade(table), 
-											new LazyFacade(t),  
-											new OnEquals(new PlusInteger(a, new Constant<Integer>(1)), a)), 
-									new Projection.To(Join.right(a), a),
-									new Projection.To(Join.right(b), b));
-					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
-						throw new RuntimeException(e);
-					}
+					return 
+						LazyProjection.factory(
+								LazyJoin.factory(
+										new LazyFacade(table), 
+										new LazyFacade(t),  
+										new OnEquals(new PlusInteger(a, new Constant<Integer>(1)), a)), 
+								new Projection.To(Join.right(a), a),
+								new Projection.To(Join.right(b), b));
 				}, 
 				2, 
 				(Record r) -> {
-					try {
-						return LazyProjection.factory(new LazyFacade(MemoryTable.of(r)), new Projection.To(b, b));
-					} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-						// Unlikely
-						throw new RuntimeException(e);
-					}
+					return LazyProjection.factory(new LazyFacade(MemoryTable.of(r)), new Projection.To(b, b));
 				},
 				new rq.common.tools.AlgorithmMonitor());
 	}

@@ -167,15 +167,19 @@ public class Projection implements TabularExpression {
 			while(r != null) {
 				var p = this.project(r);
 				if(!q.isEmpty()) {
-					var p1 = this.project(q.peek());
+					var q1 = q.peek();
 					
-					while(p.equalsNoRank(p1)) {
-						p = new Record(p, this.supremum.apply(p.rank, p1.rank));
-						q.poll();
-						if(q.isEmpty()) {
-							break;
+					if(q1 != null) {
+						var p1 = this.project(q.peek());
+						
+						while(p.equalsNoRank(p1)) {
+							p = new Record(p, this.supremum.apply(p.rank, p1.rank));
+							q.poll();
+							if(q.isEmpty()) {
+								break;
+							}
+							p1 = this.project(q.peek());
 						}
-						p1 = this.project(q.peek());
 					}
 				}
 				
@@ -197,11 +201,26 @@ public class Projection implements TabularExpression {
 	@Override
 	public String toString() {
 		return new StringBuilder()
-				.append("PROJECT(")
-				.append(this.argument)
-				.append(")")
-				.append(" TO ")
-				.append(this.schema.toString())
+				.append("[")
+				.append(this.projection.entrySet().stream()
+						.map(e -> {
+							if(e.getKey().equals(e.getValue())) {
+								return e.getKey();
+							}
+							return new StringBuilder()
+									.append(e.getValue())
+									.append(" AS ")
+									.append(e.getKey())
+									.toString();
+						})
+						.reduce((s1, s2) -> new StringBuilder()
+											.append(s1)
+											.append(", ")
+											.append(s2)
+											.toString()))
+				.append(" FROM (")
+				.append(this.argument.toString())
+				.append(")]")
 				.toString();
 	}
 

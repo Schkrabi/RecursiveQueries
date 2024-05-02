@@ -97,9 +97,12 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 		return new LazyProjection(schema, projection, argument, argument, LaticeFactory.instance().getSupremum());
 	}
 	
-	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To... tos)
-			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
-		return LazyProjection.factory(argument, Arrays.asList(tos));
+	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To... tos) {
+		try {
+			return LazyProjection.factory(argument, Arrays.asList(tos));
+		}catch(DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -108,6 +111,9 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 	}
 	
 	private Record project(Record record) {
+		if(record == null) {
+			return null;
+		}
 		try {
 			return 
 					Record.factory(
@@ -144,11 +150,22 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 				return p;
 			}
 			
-			var p1 = this.project(this.queue.peek());
+			var q1 = this.queue.peek();
+			if(q1 == null) {
+				return p;
+			}
+			var p1 = this.project(q1);
 			while(p.equalsNoRank(p1)) {
 				p = new Record(p, this.supremum.apply(p.rank, p1.rank));
 				this.queue.poll();
-				p1 = this.project(this.queue.peek());
+				
+				var q2 = this.queue.peek();
+				if(q2 != null) {
+					p1 = this.project(q2);
+				}
+				else {
+					p1 = null;
+				}
 			}
 			
 			return p;
@@ -166,4 +183,29 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 		return false;
 	}
 
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("[")
+				.append(this.projection.entrySet().stream()
+						.map(e -> {
+							if(e.getKey().equals(e.getValue())) {
+								return e.getKey();
+							}
+							return new StringBuilder()
+									.append(e.getValue())
+									.append(" AS ")
+									.append(e.getKey())
+									.toString();
+						})
+						.reduce((s1, s2) -> new StringBuilder()
+											.append(s1)
+											.append(", ")
+											.append(s2)
+											.toString()))
+				.append(" FROM (")
+				.append(this.argExp.toString())
+				.append(")]")
+				.toString();
+	}
 }

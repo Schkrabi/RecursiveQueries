@@ -9,21 +9,21 @@ import annotations.QueryParameter;
 import annotations.QueryParameterGetter;
 import data.Electricity;
 import rq.common.algorithms.LazyRecursive;
-import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
-import rq.common.latices.Goguen;
 import rq.common.onOperators.Constant;
+import rq.common.onOperators.DivDouble;
 import rq.common.onOperators.OnLesserThan;
 import rq.common.onOperators.OnSimilar;
 import rq.common.onOperators.PlusDateTime;
 import rq.common.onOperators.PlusInteger;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRestriction;
+import rq.common.operators.LazySelection;
 import rq.common.operators.Projection;
+import rq.common.restrictions.GreaterThanOrEquals;
+import rq.common.restrictions.Or;
+import rq.common.restrictions.Similar;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
 import rq.common.tools.AlgorithmMonitor;
@@ -31,52 +31,60 @@ import rq.common.tools.AlgorithmMonitor;
 @CallingArg("electricityNoCustTop")
 public class Queries2_Electricity_NoCust_top extends Queries2 {
 
-	private  Duration timeStep = Duration.ofDays(365);
+	private  Duration _step = Duration.ofDays(365);
 	
-	@QueryParameter("timeStep")
+	@QueryParameter("step")
 	public void setTimeStep(String timeStep) {
-		this.timeStep = Duration.ofDays(Integer.parseInt(timeStep));
+		this._step = Duration.ofDays(Integer.parseInt(timeStep));
 	}
 	
-	@QueryParameterGetter("timeStep")
+	@QueryParameterGetter("step")
 	public String getTimeStep() {
-		return this.timeStep.toString();
+		return this._step.toString();
 	}
 	
-	private  Duration similarityScale = Duration.ofDays(30);
+	private  Duration _stepSimilarity = Duration.ofDays(30);
+	private BiFunction<Object, Object, Double> stepSimilarity =
+			LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	
-	@QueryParameter("similarityScale")
-	public void setSimilarityScale(String similarityScale) {
-		this.similarityScale = Duration.ofDays(Integer.parseInt(similarityScale));
+	@QueryParameter("stepSimilarity")
+	public void setStepSimilarity(String similarityScale) {
+		this._stepSimilarity = Duration.ofDays(Integer.parseInt(similarityScale));
+		stepSimilarity =
+				LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	}
 	
-	@QueryParameterGetter("similarityScale")
-	public String getSimilarityScale() {
-		return this.similarityScale.toString();
+	@QueryParameterGetter("stepSimilarity")
+	public String getStepSimilarity() {
+		return this._stepSimilarity.toString();
 	}
 	
-	private Double peakMultiplier = 1.45d;
+	private Double _threshold = 1.45d;
 	
-	@QueryParameter("peakMultiplier")
-	public void setPeakMultiplier(String peakMultiplier) {
-		this.peakMultiplier = Double.parseDouble(peakMultiplier);
+	@QueryParameter("threshold")
+	public void setThreshold(String threshold) {
+		this._threshold = Double.parseDouble(threshold);
 	}
 	
-	@QueryParameterGetter("peakMultiplier")
-	public String getPeakMultiplier() {
-		return Double.toString(this.peakMultiplier);
+	@QueryParameterGetter("threshold")
+	public String getThreshold() {
+		return Double.toString(this._threshold);
 	}
 	
-	private Double peakSim = 0.2d; // I am still somewhat interested in peaks of 1.3 of moving avg
+	private Double _thresholdSimilarity = 0.2d; 
+	private BiFunction<Object, Object, Double> thresholdSimilarity =
+			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
 	
-	@QueryParameter("peakSimilarity")
-	public void setPeakSimilarity(String peakSimilarity) {
-		this.peakSim = Double.parseDouble(peakSimilarity);
+	@QueryParameter("thresholdSimilarity")
+	public void setThresholdSimilarity(String peakSimilarity) {
+		this._thresholdSimilarity = Double.parseDouble(peakSimilarity);
+		this.thresholdSimilarity =
+			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
 	}
 	
-	@QueryParameterGetter("peakSimilarity")
-	public String getPeakSimilarity() {
-		return Double.toString(this.peakSim);
+	@QueryParameterGetter("thresholdSimilarity")
+	public String getThresholdSimilarity() {
+		return Double.toString(this._thresholdSimilarity);
 	}
 	
 	public Queries2_Electricity_NoCust_top(Class<? extends LazyRecursive> algorithm, AlgorithmMonitor monitor) {
@@ -95,15 +103,11 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 	@Override
 	protected Function<Table, LazyExpression> initialProvider() throws Exception {
 		return (Table iTable) -> {
-			try {
-				return LazyProjection.factory(
-						new LazyFacade(iTable),  
-						new Projection.To(Electricity.time, Electricity.fromTime),
-						new Projection.To(Electricity.time, Electricity.toTime),
-						new Projection.To(new Constant<Integer>(1), Electricity.peaks));
-			} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-				throw new RuntimeException(e);
-			}
+			return LazyProjection.factory(
+					new LazyFacade(iTable),  
+					new Projection.To(Electricity.time, Electricity.fromTime),
+					new Projection.To(Electricity.time, Electricity.toTime),
+					new Projection.To(new Constant<Integer>(1), Electricity.peaks));
 		};
 	}
 
@@ -111,23 +115,18 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 	protected Function<Table, Function<Table, LazyExpression>> recursiveStepProvider() throws Exception {
 		return (Table iTable) -> {
 			return (Table t) -> {
-				try {
-					return LazyProjection.factory(
-							LazyJoin.factory(
-									new LazyFacade(t), 
-									new LazyFacade(iTable),
-									new OnLesserThan(Electricity.toTime, Electricity.time),
-									new OnSimilar(
-											new PlusDateTime(Electricity.toTime, timeStep), 
-											Electricity.time, 
-											LinearSimilarity.dateTimeSimilarityUntil(similarityScale.toSeconds()))), 
-							new Projection.To(Electricity.fromTime, Electricity.fromTime),
-							new Projection.To(Electricity.time, Electricity.toTime),
-							new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
-				} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException
-						| OnOperatornNotApplicableToSchemaException e) {
-					throw new RuntimeException(e);
-				}
+				return LazyProjection.factory(
+						LazyJoin.factory(
+								new LazyFacade(t), 
+								new LazyFacade(iTable),
+								new OnLesserThan(Electricity.toTime, Electricity.time),
+								new OnSimilar(
+										new PlusDateTime(Electricity.toTime, _step), 
+										Electricity.time, 
+										this.stepSimilarity)), 
+						new Projection.To(Electricity.fromTime, Electricity.fromTime),
+						new Projection.To(Electricity.time, Electricity.toTime),
+						new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
 			};
 		};
 	}
@@ -140,24 +139,11 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 	@Override
 	public LazyExpression preprocess(LazyExpression iTable) {
 		LazyExpression le =
-				LazyRestriction.factory(
-						iTable, 
-						peakRanker);
+				new LazySelection(
+						iTable,
+						new Or(	new Similar(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold), this.thresholdSimilarity),
+								new GreaterThanOrEquals(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold))));
 		
 		return le;
 	}
-	
-	private final BiFunction<Object, Object, Double> peakSimilarity = 
-			LinearSimilarity.doubleSimilarityUntil(peakSim);
-	private final Function<rq.common.table.Record, Double> peakRanker =
-			(rq.common.table.Record r) -> {
-				double value = (double)r.getNoThrow(Electricity.value);
-				double moving_avg = (double)r.getNoThrow(Electricity.movingAvg);
-				double div = value/moving_avg;
-				if(div >= peakMultiplier) {
-					return r.rank;
-				}
-				return Goguen.PRODUCT.apply(r.rank, peakSimilarity.apply(peakSim, div));
-			};
-
 }

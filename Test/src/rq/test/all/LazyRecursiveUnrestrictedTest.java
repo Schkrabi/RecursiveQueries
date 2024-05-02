@@ -104,7 +104,7 @@ class LazyRecursiveUnrestrictedTest {
 											new OnEquals(a, a)), 
 									new Projection.To(new Attribute("right.A", Integer.class), a),
 									new Projection.To(new Attribute("right.B", String.class), b));
-					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
+					} catch (OnOperatornNotApplicableToSchemaException e) {
 						throw new RuntimeException(e);
 					}
 				},

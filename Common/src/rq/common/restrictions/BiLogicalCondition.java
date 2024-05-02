@@ -30,5 +30,4 @@ abstract class BiLogicalCondition implements SelectionCondition {
 		
 		return this.combiner.apply(leftValue, rightValue);
 	}
-
 }

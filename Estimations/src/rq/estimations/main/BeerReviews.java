@@ -24,8 +24,8 @@ import rq.files.io.TableWriter;
 
 public class BeerReviews extends Experiment {
 	
-	//Path folder = Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Beer Reviews\\");
-	Path folder = Path.of("./Beer_Reviews");
+	Path folder = Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Beer Reviews\\");
+	//Path folder = Path.of("./Beer_Reviews");
 	String beer_reviews_csv = "beer_reviews.nona.csv";
 	Path beer_reviews_path = folder.resolve(beer_reviews_csv);
 	String query1 = "q1";

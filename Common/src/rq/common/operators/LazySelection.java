@@ -22,8 +22,8 @@ public class LazySelection extends AbstractSelection implements LazyExpression, 
 	private final LazyExpression argExp;
 	private final SchemaProvider argSch;
 	
-	public <T extends LazyExpression & SchemaProvider> LazySelection(
-			T arg,
+	public LazySelection(
+			LazyExpression arg,
 			SelectionCondition condition,
 			BinaryOperator<Double> product) {
 		super(condition, product);
@@ -34,8 +34,8 @@ public class LazySelection extends AbstractSelection implements LazyExpression, 
 		this.argSch = arg;
 	}
 	
-	public <T extends LazyExpression & SchemaProvider> LazySelection(
-			T arg,
+	public LazySelection(
+			LazyExpression arg,
 			SelectionCondition condition){
 		super(condition, LaticeFactory.instance().getProduct());
 		if(!condition.isApplicableToSchema(arg.schema())) {
@@ -72,6 +72,17 @@ public class LazySelection extends AbstractSelection implements LazyExpression, 
 	@Override
 	public boolean hasStatistics() {
 		return false;
+	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("(")
+				.append(this.argExp.toString())
+				.append(")")
+				.append(" WHERE ")
+				.append(this.condition.toString())
+				.toString();
 	}
 
 }

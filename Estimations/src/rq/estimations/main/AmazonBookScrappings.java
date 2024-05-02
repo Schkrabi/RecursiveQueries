@@ -89,8 +89,8 @@ public class AmazonBookScrappings extends Experiment {
 
 	@Override
 	protected Path folder() {
-		//return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Amazon_Books_Scraping");
-		return Path.of("./Amazon_Books_Scraping");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Amazon_Books_Scraping");
+		//return Path.of("./Amazon_Books_Scraping");
 	}
 
 	@Override

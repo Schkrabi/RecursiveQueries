@@ -26,4 +26,8 @@ public class Constant<T> implements RecordValue {
 		return this.value.getClass();
 	}
 
+	@Override
+	public String toString() {
+		return this.value.toString();
+	}
 }

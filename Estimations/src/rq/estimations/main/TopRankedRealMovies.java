@@ -103,8 +103,8 @@ public class TopRankedRealMovies extends Experiment {
 
 	@Override
 	protected Path folder() {
-		//return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\TopRankedRealMoviesDataset");
-		return Path.of("./TopRankedRealMoviesDataset");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\TopRankedRealMoviesDataset");
+		//return Path.of("./TopRankedRealMoviesDataset");
 	}
 
 	@Override

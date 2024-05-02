@@ -251,6 +251,9 @@ public class Record implements Comparable<Record>{
 	 * @return true or false
 	 */
 	public boolean equalsNoRank(Record other) {
+		if(other == null) {
+			return false;
+		}
 		if (!this.schema.equals(other.schema)) {
 			return false;
 		}

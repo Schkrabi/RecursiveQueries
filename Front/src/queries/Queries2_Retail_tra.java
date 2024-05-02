@@ -9,13 +9,10 @@ import annotations.QueryParameter;
 import annotations.QueryParameterGetter;
 import data.Retail;
 import rq.common.algorithms.LazyRecursive;
-import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
-import rq.common.latices.Goguen;
 import rq.common.onOperators.Constant;
+import rq.common.onOperators.DivDouble;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnLesserThan;
 import rq.common.onOperators.OnSimilar;
@@ -24,86 +21,93 @@ import rq.common.onOperators.PlusInteger;
 import rq.common.operators.Join;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazyRestriction;
+import rq.common.operators.LazySelection;
 import rq.common.operators.Projection;
+import rq.common.restrictions.GreaterThanOrEquals;
+import rq.common.restrictions.Or;
+import rq.common.restrictions.Similar;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.LazyFacade;
-import rq.common.table.Record;
 import rq.common.tools.AlgorithmMonitor;
 
 @CallingArg("retailTra")
 public class Queries2_Retail_tra extends Queries2 {
 
-	private Double MAX_QTY_MULT = 2.5d;
+	private Double _threshold = 2.5d;
+	private Double _thresholdSimilarity = 1.d;
+	private BiFunction<Object, Object, Double> thresholdSimilarity =
+			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
+	private Duration _step = Duration.ofDays(365);
+	private Duration _stepSimilarity = Duration.ofDays(14);
+	private BiFunction<Object, Object, Double> stepSimilarity =
+			LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+	private int _peaks = 3;
+	private int _peaksSimilarity = 2;
+	private BiFunction<Object, Object, Double> peaksSimilarity = 
+			LinearSimilarity.integerSimilarityUntil(_peaksSimilarity);
 	
-	@QueryParameter("maxQtyMult")
-	public void setMaxQtyMult(String maxQtyMult) {
-		this.MAX_QTY_MULT = Double.parseDouble(maxQtyMult);
+	@QueryParameter("threshold")
+	public void setTreshold(String threshold) {
+		this._threshold = Double.parseDouble(threshold);
 	}
 	
-	@QueryParameterGetter("maxQtyMult")
-	public String getMaxQtyMult() {
-		return Double.toString(this.MAX_QTY_MULT);
+	@QueryParameter("thresholdSimilarity")
+	public void setThresholdSimilarity(String thresholdSimilarity) {
+		this._thresholdSimilarity = Double.parseDouble(thresholdSimilarity);
+		this.thresholdSimilarity = LinearSimilarity.doubleSimilarityUntil(this._thresholdSimilarity);
 	}
-	
-	private Double MIN_QTY_MULT = 1.5d;
-	
-	@QueryParameter("minQtyMult")
-	public void setMinQtyMult(String mixQtyMult) {
-		this.MIN_QTY_MULT = Double.parseDouble(mixQtyMult);
-	}
-	
-	@QueryParameterGetter("minQtyMult")
-	public String getMinQtyMult() {
-		return Double.toString(this.MIN_QTY_MULT);
-	}
-	
-	private Duration STEP = Duration.ofDays(365);
 	
 	@QueryParameter("step")
 	public void setStep(String step) {
-		this.STEP = Duration.ofDays(Integer.parseInt(step));
+		this._step = Duration.ofDays(Integer.parseInt(step));
 	}
 	
-	@QueryParameterGetter("step")
-	public String getStep() {
-		return this.STEP.toString();
-	}
-
-	private Duration SIMILARITY_SCALE = Duration.ofDays(14);
-	
-	@QueryParameter("similarityScale")
+	@QueryParameter("stepSimilarity")
 	public void setSimilarityScale(String similarityScale) {
-		this.SIMILARITY_SCALE = Duration.ofDays(Integer.parseInt(similarityScale));
+		this._stepSimilarity = Duration.ofDays(Integer.parseInt(similarityScale));
+		this.stepSimilarity = LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds()); 
 	}
-	
-	@QueryParameterGetter("similarityScale")
-	public String getSimilarityScale() {
-		return this.SIMILARITY_SCALE.toString();
-	}
-	
-	private int PEAKS = 3;
 	
 	@QueryParameter("peaks")
 	public void setPeaks(String peaks) {
-		this.PEAKS = Integer.parseInt(peaks);
+		this._peaks = Integer.parseInt(peaks);
+	}
+	
+	@QueryParameter("peaksSimilarity")
+	public void setPeaksSimilarUntil(String peaksSimilarUntil) {
+		this._peaksSimilarity = Integer.parseInt(peaksSimilarUntil);
+		this.peaksSimilarity =
+			LinearSimilarity.integerSimilarityUntil(_peaksSimilarity);				
+	}
+	
+	@QueryParameterGetter("threshold")
+	public String getThreshold() {
+		return Double.toString(this._threshold);
+	}
+	
+	@QueryParameterGetter("thresholdSimilarity")
+	public String getThresholdSimilarity() {
+		return Double.toString(this._thresholdSimilarity);
+	}
+		
+	@QueryParameterGetter("step")
+	public String getStep() {
+		return this._step.toString();
+	}
+	
+	@QueryParameterGetter("stepSimilarity")
+	public String getSimilarityScale() {
+		return this._stepSimilarity.toString();
 	}
 	
 	@QueryParameterGetter("peaks")
 	public String getPeaks() {
-		return Integer.toString(this.PEAKS);
+		return Integer.toString(this._peaks);
 	}
 	
-	private int PEAKS_SIMILAR_UNTIL = 2;
-	
-	@QueryParameter("peaksSimlarUntil")
-	public void setPeaksSimilarUntil(String peaksSimilarUntil) {
-		this.PEAKS_SIMILAR_UNTIL = Integer.parseInt(peaksSimilarUntil);
-	}
-	
-	@QueryParameterGetter("peaksSimilarUntil")
+	@QueryParameterGetter("peaksSimilarity")
 	public String getPeaksSimilarUntil() {
-		return Integer.toString(this.PEAKS_SIMILAR_UNTIL);
+		return Integer.toString(this._peaksSimilarity);
 	}
 	
 	public Queries2_Retail_tra(Class<? extends LazyRecursive> algorithm, AlgorithmMonitor monitor) {
@@ -121,16 +125,12 @@ public class Queries2_Retail_tra extends Queries2 {
 	@Override
 	protected Function<Table, LazyExpression> initialProvider() throws Exception {
 		return (Table iTable) -> {
-			try {
-				return LazyProjection.factory(
-						new LazyFacade(iTable), 
-						new Projection.To(Retail.invoiceDate, Retail.fromTime),
-						new Projection.To(Retail.invoiceDate, Retail.toTime),
-						new Projection.To(new Constant<Integer>(1), Retail.peaks),
-						new Projection.To(Retail.stockCode, Retail.stockCode));
-			} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
-				throw new RuntimeException(e);
-			}
+			return LazyProjection.factory(
+					new LazyFacade(iTable), 
+					new Projection.To(Retail.invoiceDate, Retail.fromTime),
+					new Projection.To(Retail.invoiceDate, Retail.toTime),
+					new Projection.To(new Constant<Integer>(1), Retail.peaks),
+					new Projection.To(Retail.stockCode, Retail.stockCode));
 		};
 	}
 
@@ -138,25 +138,20 @@ public class Queries2_Retail_tra extends Queries2 {
 	protected Function<Table, Function<Table, LazyExpression>> recursiveStepProvider() throws Exception {
 		return (Table iTable) -> {
 			return (Table t) ->{
-				try {
-					return
-					LazyProjection.factory(
-							LazyJoin.factory(
-									new LazyFacade(t), 
-									new LazyFacade(iTable), 
-									new OnEquals(Retail.stockCode, Retail.stockCode),
-									new OnLesserThan(Retail.toTime, Retail.invoiceDate),
-									new OnSimilar(new PlusDateTime(Retail.toTime, STEP), 
-											Retail.invoiceDate,
-											LinearSimilarity.dateTimeSimilarityUntil(SIMILARITY_SCALE.toSeconds()))), 
-							new Projection.To(Join.left(Retail.stockCode), Retail.stockCode),
-							new Projection.To(Retail.fromTime, Retail.fromTime),
-							new Projection.To(Retail.invoiceDate, Retail.toTime),
-							new Projection.To(new PlusInteger(Retail.peaks, new Constant<Integer>(1)), Retail.peaks));
-				} catch (DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException
-						| OnOperatornNotApplicableToSchemaException e) {
-					throw new RuntimeException(e);
-				}
+				return
+				LazyProjection.factory(
+						LazyJoin.factory(
+								new LazyFacade(t), 
+								new LazyFacade(iTable), 
+								new OnEquals(Retail.stockCode, Retail.stockCode),
+								new OnLesserThan(Retail.toTime, Retail.invoiceDate),
+								new OnSimilar(new PlusDateTime(Retail.toTime, _step), 
+										Retail.invoiceDate,
+										this.stepSimilarity)), 
+						new Projection.To(Join.left(Retail.stockCode), Retail.stockCode),
+						new Projection.To(Retail.fromTime, Retail.fromTime),
+						new Projection.To(Retail.invoiceDate, Retail.toTime),
+						new Projection.To(new PlusInteger(Retail.peaks, new Constant<Integer>(1)), Retail.peaks));
 			};
 		};
 	}
@@ -164,21 +159,10 @@ public class Queries2_Retail_tra extends Queries2 {
 	@Override
 	protected Function<Table, LazyExpression> postprocessProvider() throws Exception {
 		return (Table iTable) -> {
-			return LazyRestriction.factory(
-					 new LazyFacade(iTable), 
-					(Record r) -> {
-						int peaks = (int)r.getNoThrow(Retail.peaks);
-						
-						if(peaks <= 1) {
-							return 0.0d;
-						}
-						
-						if(peaks >= PEAKS) {
-							return r.rank;
-						}
-						
-						return Goguen.PRODUCT.apply(r.rank, peakSimilarity.apply(peaks, PEAKS));
-					});
+			return new LazySelection(
+					new LazyFacade(iTable),
+					new Or(	new Similar(Retail.peaks, new Constant<Integer>(_peaks), this.peaksSimilarity),
+							new GreaterThanOrEquals(Retail.peaks, new Constant<Integer>(_peaks))));
 		};
 	}
 
@@ -186,26 +170,17 @@ public class Queries2_Retail_tra extends Queries2 {
 	public LazyExpression preprocess(LazyExpression iTable) {
 		LazyExpression le = null;
 		
-		final BiFunction<Object, Object, Double> ratioSim = LinearSimilarity.doubleSimilarityUntil(MAX_QTY_MULT - MIN_QTY_MULT);
-		
-		le = LazyRestriction.factory(
-				iTable, 
-				(Record r) -> {
-					int qty = (int) r.getNoThrow(Retail.quantity);
-					double qtyMovAvg = (double) r.getNoThrow(Retail.qtyMovAvg);
-					if(qty < qtyMovAvg) {
-						return 0.0d;
-					}
-					double ratio = qty/qtyMovAvg;
-					if(ratio >= MAX_QTY_MULT) {
-						return 1.0d;
-					}
-					return ratioSim.apply(MAX_QTY_MULT, ratio);
-				});
+		le = new LazySelection(
+				iTable,
+				new Or(	new Similar(
+							new DivDouble(Retail.quantity, Retail.qtyMovAvg), 
+							new Constant<Double>(this._threshold), 
+							this.thresholdSimilarity),
+						new GreaterThanOrEquals(
+								new DivDouble(Retail.quantity, Retail.qtyMovAvg), 
+								new Constant<Double>(this._threshold))));
 		
 		return le;
 	}
-	
-	private final BiFunction<Object, Object, Double> peakSimilarity = LinearSimilarity.integerSimilarityUntil(PEAKS_SIMILAR_UNTIL);
 
 }

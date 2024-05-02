@@ -86,4 +86,14 @@ public class LazyUnion implements LazyExpression, SchemaProvider {
 		return this.right.poll();
 	}
 
+	@Override
+	public String toString() {
+		return new StringBuilder()
+				.append("(")
+				.append(this.leftTable.toString())
+				.append(") \\/ (")
+				.append(this.rightTable.toString())
+				.append(")")
+				.toString();
+	}
 }
