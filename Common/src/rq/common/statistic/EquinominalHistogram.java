@@ -7,10 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import rq.common.estimations.SignatureProvider;
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class EquinominalHistogram extends DataSlicedHistogram {
+public class EquinominalHistogram extends DataSlicedHistogram implements SignatureProvider  {
 
 	public EquinominalHistogram(Attribute observed, int n) {
 		super(observed, n);
@@ -56,12 +57,22 @@ public class EquinominalHistogram extends DataSlicedHistogram {
 		return hist;
 	}
 	
-	public static EquinominalHistogram readFile(String path) throws ClassNotFoundException, IOException {
+	public static EquinominalHistogram readFile(String path) {
 		return readFile(Path.of(path));
 	}
 	
-	public static EquinominalHistogram readFile(Path path) throws ClassNotFoundException, IOException {
-		var hist = deserialize(Files.readString(path));
+	public static EquinominalHistogram readFile(Path path) {
+		EquinominalHistogram hist;
+		try {
+			hist = deserialize(Files.readString(path));
+		} catch (ClassNotFoundException | IOException e) {
+			throw new RuntimeException(e);
+		}
 		return hist;
+	}
+
+	@Override
+	public String signature() {
+		return "Eqn";
 	}
 }

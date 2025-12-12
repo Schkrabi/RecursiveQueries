@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.table.Attribute;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.helpers.ValueParser;
 
 public class NominalSimilarity {

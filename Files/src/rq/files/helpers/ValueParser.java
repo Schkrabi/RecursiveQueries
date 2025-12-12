@@ -1,8 +1,8 @@
 package rq.files.helpers;
 
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueParserContext;
 import rq.common.table.Attribute;
-import rq.files.exceptions.ClassNotInContextException;
-import rq.files.io.ValueParserContext;
 
 /**
  * Object for parsing an attribute value

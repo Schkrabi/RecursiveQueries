@@ -1,7 +1,7 @@
 package rq.files.helpers;
 
-import rq.files.exceptions.ClassNotInContextException;
-import rq.files.io.ValueSerializerContext;
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueSerializerContext;
 
 /**
  * Serializes a single value

@@ -2,6 +2,7 @@ package rq.estimations.main;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
 import rq.common.restrictions.Equals;
@@ -22,7 +24,6 @@ import rq.common.restrictions.Similar;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.Attribute;
 import rq.common.types.Str50;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 
@@ -45,8 +46,8 @@ public class AmazonBookScrappings extends Experiment {
 	private BiFunction<Object, Object, Double> ratingSimilarity_2 = LinearSimilarity.doubleSimilarityUntil(2d);
 	private BiFunction<Object, Object, Double> NoOfPeopleRatedSimilarity_1000 = LinearSimilarity.doubleSimilarityUntil(1_000d);
 	
-	private List<Integer> slices = List.of(8, 3);
-	private List<Integer> probes = List.of(0, 3, 5);
+	private List<Integer> slices = List.of(/*8, 3,*/5);
+	private List<Integer> probes = List.of(/*0, 3,*/ 5);
 	
 	private List<Attribute> numericalAttributes = 
 			List.of(Price, Rating, No_of_People_rated);
@@ -62,25 +63,29 @@ public class AmazonBookScrappings extends Experiment {
 					No_of_People_rated, 10_000d);
 	
 	private Map<Attribute, List<Integer>> intervals = 
-			Map.of( Price, List.of(35, 70, 140),
-					Rating, List.of(3, 5, 10),
-					No_of_People_rated, List.of(5, 20, 80));
+			Map.of( Price, List.of(/*35, 70,*/ 140),
+					Rating, List.of(/*3, 5,*/ 10),
+					No_of_People_rated, List.of(/*5, 20,*/ 80));
 	
-	private Map<Attribute, BiFunction<Object, Object, Double>> similarities =
-			Map.of( Price, this.priceSimilarity_50,
-					Rating, this.ratingSimilarity_2,
-					No_of_People_rated, this.NoOfPeopleRatedSimilarity_1000);
+	private Map<Attribute, Double> similarities =
+			Map.of( Price, 50.0d,
+					Rating, 2.0d,
+					No_of_People_rated, 1000.0d);
 	
 	private Map<Attribute, List<Integer>> estSamples = 
-			Map.of( Price, List.of(50, 100, 300),
-					Rating, List.of(2, 3, 5),
-					No_of_People_rated, List.of(100, 500, 1000));
-	
-	private Map<Attribute, List<Object>> queryValues = 
-			Map.of( Price, Stream.concat(Stream.of(50d, 100d, 500d), Stream.iterate(1000d, x -> x + 2000d).limit(17)).collect(Collectors.toList()),
-					Rating, List.of(1d, 2d, 3d, 4d, 5d),
-					No_of_People_rated, Stream.iterate(0d, x -> x + 10_000d).limit(50).collect(Collectors.toList()));
+			Map.of( Price, List.of(/*50, 100,*/ 300),
+					Rating, List.of(/*2, 3,*/ 5),
+					No_of_People_rated, List.of(/*100, 500,*/ 1000));
 
+	private Map<Attribute, Collection<Integer>> _nmbOfCnsVls =
+			Map.of(Price, List.of(20),
+					Rating, List.of(20),
+					No_of_People_rated, List.of(20));
+	private Map<Attribute, Collection<Double>> _prtRts = 
+			Map.of(Price, List.of(0.8d/*, 0.6d, 0.5d*/),
+					Rating, List.of(0.8d/*, 0.6d, 0.5d*/),
+					No_of_People_rated, List.of(0.8d/*, 0.6d, 0.5d*/));
+	
 	private AmazonBookScrappings() {}
 	private static AmazonBookScrappings singleton = new AmazonBookScrappings();
 	public static AmazonBookScrappings instance() {
@@ -89,8 +94,8 @@ public class AmazonBookScrappings extends Experiment {
 
 	@Override
 	protected Path folder() {
-		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Amazon_Books_Scraping");
-		//return Path.of("./Amazon_Books_Scraping");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\private-r.skrabal\\Java\\RecursiveQueries\\estimation_experiments\\Amazon_Books_Scraping");
+		//return Path.of("./estimation_experiments/Amazon_Books_Scraping");
 	}
 
 	@Override
@@ -136,8 +141,9 @@ public class AmazonBookScrappings extends Experiment {
 		return this.intervals.get(a);
 	}
 
+	
 	@Override
-	protected BiFunction<Object, Object, Double> similarity(Attribute a) {
+	protected double similarUntil(Attribute a) {
 		return this.similarities.get(a);
 	}
 
@@ -149,11 +155,6 @@ public class AmazonBookScrappings extends Experiment {
 	@Override
 	protected List<Integer> estSamples(Attribute a) {
 		return this.estSamples.get(a);
-	}
-
-	@Override
-	protected List<Object> queryValues(Attribute a) {
-		return this.queryValues.get(a);
 	}
 
 	@Override
@@ -233,5 +234,15 @@ public class AmazonBookScrappings extends Experiment {
 	@Override
 	protected long seed() {
 		return 863522926;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+		return this._nmbOfCnsVls;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Double>> paretRatios() {
+		return this._prtRts;
 	}
 }

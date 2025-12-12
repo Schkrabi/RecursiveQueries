@@ -21,6 +21,7 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.latices.Lukasiewitz;
 import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnNotEquals;
@@ -37,7 +38,6 @@ import rq.common.table.MemoryTable;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.TopKTable;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.LazyTable;
 

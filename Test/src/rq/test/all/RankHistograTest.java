@@ -93,4 +93,19 @@ class RankHistograTest {
 		assertEquals(3, rh.get(i3));
 	}
 
+	@Test
+	void testSerialization() {
+		RankHistogram rh = new RankHistogram(3);
+		
+		Set<SlicedHistogram.RankInterval> slices = rh.getSlices();
+		assertEquals(3, slices.size());
+		
+		assertAll(() -> {
+			rh.gather(this.t1);
+		});
+		
+		var s = rh.serialize();
+		var ds = RankHistogram.deserialize(s);
+		assertEquals(rh, ds);
+	}
 }

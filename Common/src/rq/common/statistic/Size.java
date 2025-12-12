@@ -2,7 +2,7 @@ package rq.common.statistic;
 
 import rq.common.interfaces.Table;
 
-public class Size extends AbstractStatistic {
+public class Size implements IStatistic {
 
 	private int size = 0;
 

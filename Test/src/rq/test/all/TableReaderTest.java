@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import com.opencsv.exceptions.CsvValidationException;
 
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.io.TableReader;
 import rq.common.exceptions.AttributeNotInSchemaException;
@@ -22,6 +21,7 @@ import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.interfaces.Table;
+import rq.common.io.contexts.ClassNotInContextException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

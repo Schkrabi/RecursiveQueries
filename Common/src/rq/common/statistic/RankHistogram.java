@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 
 import rq.common.interfaces.Table;
+import rq.common.util.Pair;
 
 /**
  * Histogram of ranks in the table
@@ -39,7 +41,23 @@ public class RankHistogram extends SlicedStatistic {
 	
 	public RankHistogram(Map<RankInterval, Double> rawHistogram) {
 		super(rawHistogram.keySet());
+		
+		for(var e : rawHistogram.entrySet()) {
+			if(e.getValue() < 0) {
+				throwNegativeValue(e.getKey(), e.getValue());
+			}
+		}
+		
 		this.rankHistogram = new HashMap<RankInterval, Double>(rawHistogram);
+	}
+	
+	private static void throwNegativeValue(RankInterval i, double value) {
+		throw new RuntimeException(new StringBuilder()
+				.append("Rank histogram cannot have negative value, got ")
+				.append(i.toString())
+				.append(" = ")
+				.append(value)
+				.toString());
 	}
 	
 	protected void initData() {
@@ -52,6 +70,11 @@ public class RankHistogram extends SlicedStatistic {
 	public void gather(Table table) {
 		this.initData();
 		table.stream().forEach(r -> this.addRank(r.rank));
+	}
+	
+	/** Returns true if this histogram measures given interval*/
+	public boolean contains(SlicedStatistic.RankInterval slice) {
+		return this.rankHistogram.get(slice) != null;
 	}
 	
 	/**
@@ -144,18 +167,54 @@ public class RankHistogram extends SlicedStatistic {
 		
 		return new RankHistogram(rslt);
 	}
+	/** Computes the weighted average of the rank histogram */
+	public static RankHistogram weightedAvg(Map<RankHistogram, Double> hists) {
+		return weightedAvg(
+				hists.entrySet().stream().map(e -> Pair.of(e.getKey(), e.getValue())).collect(Collectors.toList()));
+	}
+	
+	
+	/** Computes the weighted average of the rank histogram */
+	public static RankHistogram weightedAvg(Collection<Pair<RankHistogram, Double>> hists) {
+		Set<RankInterval> slices = null;
+		for(var hist : hists) {
+			if(slices == null) {
+				slices = hist.first.getSlices();
+			}
+			else {
+				if(!slices.equals(hist.first.getSlices())) {
+					throw new RuntimeException("Only rank histograms with equal slices can be averaged.");
+				}
+			}
+		}
+		
+		RankHistogram agg = new RankHistogram(slices);
+		for(var p : hists) {
+			var mem = RankHistogram.mult(p.first, p.second);
+			agg = RankHistogram.add(agg, mem);
+		}
+		return agg;
+	}
 	
 	public Map<RankInterval, Double> get(){
 		return new HashMap<RankInterval, Double>(this.rankHistogram);
 	}
 	
 	public void setIntervalValue(RankInterval interval, double value) {
+		if(value < 0) {
+			throwNegativeValue(interval, value);
+		}
+		
 		if(this.slices.contains(interval)) {
 			this.rankHistogram.put(interval, Double.valueOf(value));
 		}
 	}
 	
 	public void addIntervalValue(RankInterval interval, double value) {
+		if(value < 0) {
+			throwNegativeValue(interval, value);
+		}
+		
 		if(this.slices.contains(interval)) {
 			this.rankHistogram.put(interval, this.rankHistogram.get(interval) + value);
 		}
@@ -190,16 +249,21 @@ public class RankHistogram extends SlicedStatistic {
 		return hist;
 	}
 	
+	private static final String csvHeader = "from,to,closedFrom,closedTo,count\n";
+	
 	public String serialize() {
-		var sb = new StringBuilder();
+		var sb = new StringBuilder(csvHeader);
 		
-		for(var e : this.rankHistogram.entrySet()) {
-			sb.append(e.getKey().start)
-				.append(";")
-				.append(e.getKey().end)
-				.append(";")
-				.append(e.getValue())
-				.append("\n");
+		for(var e : this.rankHistogram.entrySet().stream()
+				.sorted((e1, e2) -> Double.compare(e1.getKey().start, e2.getKey().start))
+				.toList()) {
+			var itv = e.getKey();
+			var cnt = e.getValue();
+			sb.append(itv.start).append(",")
+				.append(itv.end).append(",")
+				.append(false).append(",")
+				.append(true).append(",")
+				.append(cnt).append("\n");
 			
 		}
 		
@@ -209,11 +273,17 @@ public class RankHistogram extends SlicedStatistic {
 	public static RankHistogram deserialize(String data) {
 		var hist = new LinkedHashMap<RankInterval, Double>();
 		
+		var hdrSkipped = false;
 		for(var line : data.split("\n")) {
-			var vls = line.split(";");
+			if(!hdrSkipped) {
+				hdrSkipped = true;
+				continue;
+			}
+			
+			var vls = line.split(",");
 			var start = Double.parseDouble(vls[0]);
 			var end = Double.parseDouble(vls[1]);
-			var count = Double.parseDouble(vls[2]);
+			var count = Double.parseDouble(vls[4]);
 			hist.put(new RankInterval(start, end), count);
 		}
 		
@@ -228,11 +298,29 @@ public class RankHistogram extends SlicedStatistic {
 		Files.write(path, this.serialize().getBytes());
 	}
 	
-	public static RankHistogram readFile(Path path) throws IOException {
-		return deserialize(Files.readString(path));
+	public static RankHistogram readFile(Path path) {
+		try {
+			return deserialize(Files.readString(path));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public static RankHistogram readFile(String path) throws IOException {
 		return readFile(Path.of(path));
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if(other instanceof RankHistogram) {
+			var rh = (RankHistogram)other;
+			return this.rankHistogram.equals(rh.rankHistogram);
+		}
+		return false;
+	}
+	
+	/** Returns copy of the histogram in LinkedHashMap*/
+	public LinkedHashMap<RankInterval, Double> asLinkedHashMap(){
+		return new LinkedHashMap<>(this.rankHistogram);
 	}
 }

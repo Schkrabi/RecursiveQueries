@@ -13,11 +13,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 

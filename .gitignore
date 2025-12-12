@@ -30,8 +30,9 @@ replay_pid*
 *.stat
 *.hist
 *.est
+*.bak
 experiments
-./estimation_experiments
+estimation_experiments
 
 # data aggregation scripts
 *.R

@@ -5,6 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -14,10 +18,8 @@ import java.util.stream.Stream;
 
 import com.opencsv.exceptions.CsvValidationException;
 
-import rq.common.estimations.IntervalCenterEquidistant;
-import rq.common.estimations.IntervalCenterEquinominal;
-import rq.common.estimations.IntervalEquidistant;
-import rq.common.estimations.IntervalEquinominal;
+import rq.common.estimations.IEstimation;
+import rq.common.estimations.IntervalEstimation;
 import rq.common.estimations.Numerical;
 import rq.common.estimations.Numerical_domainPruning;
 import rq.common.estimations.Numerical_stochastic;
@@ -30,15 +32,16 @@ import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
 import rq.common.restrictions.Similar;
+import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 import rq.common.table.Attribute;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableReader;
@@ -137,6 +140,19 @@ public class Workbench {
 				.toString();
 	}
 	
+	public static String mcvName(String dataFileName, String attName) {
+		return new StringBuilder()
+				.append(dataFileName).append(".")
+				.append(attName)
+				.append(".mcv")
+				.toString();
+	}
+	
+	public static Path mcvFile(Path dataFile, Attribute a) {
+		return Workbench.histFolder(dataFile)
+				.resolve(Workbench.mcvName(dataFile.getFileName().toString(), a.name));
+	}
+	
 	public static String eqdHistName(String dataFileName, String attName, int intervals) {
 		return new StringBuilder()
 				.append(dataFileName).append(".")
@@ -161,53 +177,8 @@ public class Workbench {
 		return new StringBuilder()
 				.append(dataFileName).append(".")
 				.append(attName)
-				.append(".hist")
+				.append(".sampled.hist")
 				.toString();
-	}
-	
-	public static void estimates_numerical(
-			String path, 
-			Attribute attribute, 
-			String qName, 
-			String dataFileName,
-			BiFunction<Object, Object, Double> similarity) throws Exception{
-		var slices = List.of(3, 8);
-		var intervals = List.of(3, 5);
-		var probes = List.of(2, 0);
-		var samples = List.of(5, 2);
-		
-		var fileNamePrefix = dataFileName + "." + attribute.name;
-		
-		for(var sli : slices) {
-			var hist = RankHistogram.readFile(Paths.get(path, "hist", rankHistFileName(dataFileName, sli)));
-			for(var i : intervals) {
-				var eqd = EquidistantHistogram.readFile(Paths.get(path, "hist", eqdHistName(dataFileName, attribute.name, i)));
-				eqd(sli, similarity, eqd, hist, path, fileNamePrefix);
-				
-				var eqn = EquinominalHistogram.readFile(Paths.get(path, "hist", eqnHistName(dataFileName, attribute.name, i)));
-				eqn(sli, similarity, eqn, hist, path, fileNamePrefix);
-			}
-		}
-		
-		var reader = TableReader.open(Paths.get(path, dataFileName));
-		var data = reader.read();
-		reader.close();
-		var selection = new Selection(data,	new Similar(attribute, new Constant<Double>(0.d), similarity));
-		
-		var attHist = SampledHistogram.readFile(Paths.get(path, "hist", sampledHistName(dataFileName, attribute.name)));
-		
-		for(var sli : slices) {
-			var hist = RankHistogram.readFile(Paths.get(path, "hist", rankHistFileName(dataFileName, sli)));
-			for(var probe : probes) {
-				num(selection, sli, probe, attHist, hist, path, fileNamePrefix);
-				numP(selection, sli, probe, attHist, hist, path, fileNamePrefix);
-				
-				for(var sample : samples) {
-					numS(selection, sli, probe, sample, attHist, hist, path, fileNamePrefix);
-					numPS(selection, sli, probe, sample, attHist, hist, path, fileNamePrefix);
-				}
-			}
-		}
 	}
 	
 	public static String estFileNamePrefix(String baseFileName, String attributeName) {
@@ -235,72 +206,60 @@ public class Workbench {
 		Files.writeString(Paths.get(path, fileName), sb.toString());
 	}
 	
-	public static void eqd(int slices, BiFunction<Object, Object, Double> similarity, EquidistantHistogram eqdHist, RankHistogram hist, String path, String namePrefix) throws IOException {
-		var est = IntervalEquidistant.estimate(slices, eqdHist, similarity);
-		est = ReintroduceRanks.recalculate(est, hist);
-		est.writeFile(Path.of(path, eqdEstName(namePrefix, slices, eqdHist.n)));
+	public static Path restrictionEstimationDir(Path base, Attribute a) {
+		var path = base.resolve(a.name);
+		if(!Files.exists(path)) {
+			try {
+				Files.createDirectories(path);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return path;
 	}
 	
-	public static String eqdEstName(String namePrefix, int slices, int n) {
-		return new StringBuilder()
-				.append(namePrefix)
-				.append(".eqd.")
-				.append(slices)
-				.append(".")
-				.append(n)
-				.append(".est")
-				.toString();
+	public static Path restrictionEstimationPath(Path base, Attribute a, IEstimation est) {
+		return restrictionEstimationDir(base, a).resolve(est.filename());
 	}
 	
-	public static void eqdC(int slices, BiFunction<Object, Object, Double> similarity, EquidistantHistogram eqdHist, RankHistogram hist, String path, String namePrefix) throws IOException {
-		var est = IntervalCenterEquidistant.estimate(slices, eqdHist, similarity);
-		est = ReintroduceRanks.recalculate(est, hist);
-		est.writeFile(Path.of(path, eqdCEstName(namePrefix, slices, eqdHist.n)));
+	public static Path resultDir(Path base) {
+		var path = base.getParent().resolve("result");
+		if(!Files.exists(path)) {
+			try {
+				Files.createDirectories(path);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}			
+		}
+		return path;
 	}
 	
-	public static String eqdCEstName(String namePrefix, int slices, int n) {
-		return new StringBuilder()
-				.append(namePrefix)
-				.append(".eqdc.")
-				.append(slices)
-				.append(".")
-				.append(n)
-				.append(".est")
-				.toString();
+	public static Path restrictionResultFile(Path base) {
+		return resultDir(base).resolve(base.getFileName().toString() + ".restrictions.stat.csv");
 	}
 	
-	public static void eqn(int slices, BiFunction<Object, Object, Double> similarity, EquinominalHistogram eqnHist, RankHistogram hist, String path, String namePrefix) throws IOException {
-		var est = IntervalEquinominal.estimate(slices, eqnHist, similarity);
-		est = ReintroduceRanks.recalculate(est, hist);
-		est.writeFile(Path.of(path, eqnEstName(namePrefix, slices, eqnHist.n)));
+	public static Path histFolder(Path dataFile) {
+		var fld = dataFile.getParent().resolve("hist");
+		if(!Files.exists(fld)) {
+			try {
+				Files.createDirectories(fld);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return fld;
 	}
 	
-	public static String eqnEstName(String namePrefix, int slices, int n) {
-		return new StringBuilder()
-				.append(namePrefix)
-				.append(".eqn.")
-				.append(slices)
-				.append(".")
-				.append(n)
-				.append(".est")
-				.toString();
-	}
-	
-	public static void eqnC(int slices, BiFunction<Object, Object, Double> similarity, EquinominalHistogram eqnHist, RankHistogram hist, String path, String namePrefix) throws IOException {
-		var est = IntervalCenterEquinominal.estimate(slices, eqnHist, similarity);
-		est = ReintroduceRanks.recalculate(est, hist);
-		est.writeFile(Path.of(path, eqnCEstName(namePrefix, slices, eqnHist.n)));
-	}
-	
-	public static String eqnCEstName(String namePrefix, int slices, int n) {
-		return new StringBuilder()
-				.append(namePrefix)
-				.append(".eqnc.")
-				.append(slices)
-				.append(".")
-				.append(n)
-				.append(".est")
-				.toString();
+	public static Path estFolder(Path dataFile) {
+		var fld = dataFile.getParent().resolve("est");
+		if(!Files.exists(fld)) {
+			try {
+				Files.createDirectories(fld);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return fld;
 	}
 	
 	public static void num(Selection selection, int slices, int probes, SampledHistogram attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
@@ -375,6 +334,28 @@ public class Workbench {
 				.toString();
 	}
 	
+	public static Path backupPath(Path filePath) {
+		var p = filePath.getParent().resolve("backup");
+		try {
+			Files.createDirectories(p);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return p;
+	}
+	
+	public static Path backupDest(Path base, Path backed) {
+		var timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+		
+		return backupPath(base)
+				.resolve(new StringBuilder()
+						.append(backed.getFileName().toString())
+						.append(".")
+						.append(timestamp)
+						.append(".bck")
+						.toString());
+	}
+	
 	public static String statHeader = "accuracy, inaccuracy, estimation, histogram";
 	
 	public static String statLine(Path estPath, Path histPath, int dataSize) throws IOException {
@@ -427,19 +408,23 @@ public class Workbench {
 	public static void main(String[] args) throws CsvValidationException, ClassNotFoundException, IOException, DuplicateAttributeNameException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, OnOperatornNotApplicableToSchemaException {
 		var datasets = List.of(
 				VideoGameSales.instance()
-				, AnimeDataset2023.instance()
-				, TopRankedRealMovies.instance()
-				, AmazonBookScrappings.instance()
-				, BeerReviews.instance()
+				,
+				AnimeDataset2023.instance()
+				, 
+				TopRankedRealMovies.instance()
+				, 
+				AmazonBookScrappings.instance()
+				, 
+				BeerReviews.instance()
 				);
 		
 		var start = System.currentTimeMillis();
 		for(var ds : datasets) {
 			System.out.println(ds.getClass().getSimpleName());
-			//ds.experiment();
-			ds.reloadPreparedData();
-			ds.projection.estimate();
-			ds.projection.gather();
+			ds.experiment();
+//			ds.reloadPreparedData();
+//			ds.projection.estimate();
+//			ds.gatherData();
 		}
 		var end = System.currentTimeMillis();
 		

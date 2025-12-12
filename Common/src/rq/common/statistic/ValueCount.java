@@ -15,7 +15,7 @@ import rq.common.table.Record;
 /**
  * Value Count of attributes of a table
  */
-public class ValueCount extends AbstractStatistic {
+public class ValueCount implements IStatistic {
 
 	private Map<Attribute, Integer> valueCounts = new HashMap<Attribute, Integer>();
 

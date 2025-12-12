@@ -1,12 +1,9 @@
-package rq.files.io;
+package rq.common.io.contexts;
 
 import java.util.Map;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.function.Function;
-
-import rq.files.exceptions.ClassNotInContextException;
-import rq.files.helpers.DateTimeFormatterProvider;
 
 /**
  * Context for parsing values

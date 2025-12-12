@@ -7,7 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import rq.common.interfaces.Table;
-import rq.files.exceptions.ClassNotInContextException;
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueSerializerContext;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.common.table.Record;
 

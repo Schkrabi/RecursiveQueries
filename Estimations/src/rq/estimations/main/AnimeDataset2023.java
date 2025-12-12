@@ -2,6 +2,7 @@ package rq.estimations.main;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
 import rq.common.restrictions.Equals;
@@ -22,7 +24,6 @@ import rq.common.restrictions.Similar;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.Attribute;
 import rq.common.types.Str50;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 
@@ -63,7 +64,7 @@ public class AnimeDataset2023 extends Experiment {
 	private BiFunction<Object, Object, Double> scoredBySimilarity_200_000 = LinearSimilarity.doubleSimilarityUntil(200_000d);
 	private BiFunction<Object, Object, Double> membersSimilarity_200_000 = LinearSimilarity.doubleSimilarityUntil(200_000d);
 	
-	private List<Integer> probes = List.of(0, 3, 5);
+	private List<Integer> probes = List.of(/*0, 3,*/ 5);
 	
 	private List<Attribute> numericalAttributes = 
 			List.of(Score,
@@ -99,43 +100,51 @@ public class AnimeDataset2023 extends Experiment {
 					Scored_By, 100_000d,
 					Members, 100_000d);
 	
-	private Map<Attribute, List<Integer>> intervals =
-			Map.of( Score, List.of(5, 10, 20),
-					Episodes, List.of(15, 30, 60),
-					Rank, List.of(20, 40, 80),
-					Popularity, List.of(10, 20, 40),
-					Favorites, List.of(10, 20, 40),
-					Scored_By, List.of(12, 25, 50),
-					Members, List.of(18, 35, 70));
+	private Map<Attribute, Collection<Integer>> _nOfCnsVls =
+			Map.of(Score, List.of(20),
+					Episodes, List.of(20),
+					Rank, List.of(20),
+					Popularity, List.of(20),
+					Favorites, List.of(20),
+					Scored_By, List.of(20),
+					Members, List.of(20));
 	
-	private Map<Attribute, BiFunction<Object, Object, Double>> similarities =
-			Map.of( Score, this.scoreSimilarity_2,
-					Episodes, this.episodesSimilarity_100,
-					Rank, this.rankSimilarity_2000,
-					Popularity, this.popularitySimilarity_2000,
-					Favorites, this.favoritesSimilarity_20_000,
-					Scored_By, this.scoredBySimilarity_200_000,
-					Members, this.membersSimilarity_200_000);
+	private Map<Attribute, Collection<Double>> _prtRts = 
+			Map.of(Score, List.of(.8d/*, .6d, .5d*/),
+					Episodes, List.of(.8d/*, .6d, .5d*/),
+					Rank, List.of(.8d/*, .6d, .5d*/),
+					Popularity, List.of(.8d/*, .6d, .5d*/),
+					Favorites, List.of(.8d/*, .6d, .5d*/),
+					Scored_By, List.of(.8d/*, .6d, .5d*/),
+					Members, List.of(.8d/*, .6d, .5d*/));
+	
+	private Map<Attribute, List<Integer>> intervals =
+			Map.of( Score, List.of(/*5, 10,*/ 20),
+					Episodes, List.of(/*15, 30,*/ 60),
+					Rank, List.of(/*20, 40,*/ 80),
+					Popularity, List.of(/*10, 20,*/ 40),
+					Favorites, List.of(/*10, 20,*/ 40),
+					Scored_By, List.of(/*12, 25,*/ 50),
+					Members, List.of(/*18, 35,*/ 70));
+	
+	private Map<Attribute, Double> similarities =
+			Map.of( Score, 2.0d,
+					Episodes, 150.0d,
+					Rank, 2000.0d,
+					Popularity, 2000.0d,
+					Favorites, 20000.0d,
+					Scored_By, 200000.0d,
+					Members, 200000.0d);
 	
 	private Map<Attribute, List<Integer>> estSamples =
-			Map.of( Score, List.of(3, 5, 10),
-					Episodes, List.of(7, 15, 30),
-					Rank, List.of(10, 20, 40),
-					Popularity, List.of(5, 10, 20),
-					Favorites, List.of(5, 10, 20),
-					Scored_By, List.of(6, 12, 25),
-					Members, List.of(9, 18, 35));
+			Map.of( Score, List.of(/*3, 5,*/ 10),
+					Episodes, List.of(/*7, 15,*/ 30),
+					Rank, List.of(/*10, 20,*/ 40),
+					Popularity, List.of(/*5, 10,*/ 20),
+					Favorites, List.of(/*5, 10,*/ 20),
+					Scored_By, List.of(/*6, 12,*/ 25),
+					Members, List.of(/*9, 18,*/ 35));
 	
-	private Map<Attribute, List<Object>> querySamples =
-			Map.of( Score, Stream.iterate(1d, x -> x + 1d).limit(10).collect(Collectors.toList()),
-					Episodes, Stream.concat(
-								Stream.of(-1d, 10d, 25d, 50d), 
-								Stream.iterate(100d, x -> x + 100d).limit(30)).collect(Collectors.toList()),
-					Rank, Stream.iterate(0d, x -> x + 1000d).limit(20).collect(Collectors.toList()),
-					Popularity, Stream.iterate(0d, x -> x + 1000d).limit(20).collect(Collectors.toList()),
-					Favorites, Stream.concat(Stream.of(5d, 10d, 25d, 50d, 100d, 250d, 500d, 1000d, 2500d, 5000d), Stream.iterate(10_000d, x -> x + 10_000d).limit(30)).collect(Collectors.toList()),
-					Scored_By, Stream.iterate(0d, x -> x + 100_000d).limit(26).collect(Collectors.toList()),
-					Members, Stream.iterate(0d, x -> x + 100_000d).limit(37).collect(Collectors.toList()));
 	
 	private AnimeDataset2023() {}
 	private static AnimeDataset2023 singleton = new AnimeDataset2023();
@@ -145,8 +154,8 @@ public class AnimeDataset2023 extends Experiment {
 
 	@Override
 	protected Path folder() {
-		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Anime_Dataset_2023");
-		//return Path.of("./Anime_Dataset_2023");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\private-r.skrabal\\Java\\RecursiveQueries\\estimation_experiments\\Anime_Dataset_2023");
+		//return Path.of("./estimation_experiments/Anime_Dataset_2023");
 	}
 
 	@Override
@@ -168,7 +177,7 @@ public class AnimeDataset2023 extends Experiment {
 
 	@Override
 	protected List<Integer> slices() {
-		return List.of(3, 8);
+		return List.of(5/*, 3, 8*/);
 	}
 
 	@Override
@@ -192,7 +201,7 @@ public class AnimeDataset2023 extends Experiment {
 	}
 
 	@Override
-	protected BiFunction<Object, Object, Double> similarity(Attribute a) {
+	protected double similarUntil(Attribute a) {
 		return this.similarities.get(a);
 	}
 
@@ -204,11 +213,6 @@ public class AnimeDataset2023 extends Experiment {
 	@Override
 	protected List<Integer> estSamples(Attribute a) {
 		return this.estSamples.get(a);
-	}
-
-	@Override
-	protected List<Object> queryValues(Attribute a) {
-		return this.querySamples.get(a);
 	}
 
 	@Override
@@ -287,5 +291,15 @@ public class AnimeDataset2023 extends Experiment {
 	@Override
 	protected long seed() {
 		return 114115395;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+		return this._nOfCnsVls;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Double>> paretRatios() {
+		return this._prtRts;
 	}
 }

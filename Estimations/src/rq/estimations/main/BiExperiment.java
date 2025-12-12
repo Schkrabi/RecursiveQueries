@@ -10,10 +10,10 @@ import rq.common.estimations.IntersectionEstimation;
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.operators.LazyIntersection;
 import rq.common.operators.LazyUnion;
 import rq.common.statistic.RankHistogram;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 
 public abstract class BiExperiment {

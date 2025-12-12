@@ -12,13 +12,13 @@ import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
 import rq.common.exceptions.SchemaNotEqualException;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.operators.Projection;
 import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.table.FileMappedTable;
 import rq.common.table.Schema;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 
 public class ProjectionExperiment {

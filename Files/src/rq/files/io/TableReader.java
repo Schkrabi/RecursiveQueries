@@ -13,12 +13,13 @@ import com.opencsv.exceptions.CsvValidationException;
 import rq.common.table.Schema;
 import rq.common.table.FileMappedTable;
 import rq.common.table.MemoryTable;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.table.Record;
 import rq.common.interfaces.Table;
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueParserContext;
 
 /**
  * Class for reading table from a file

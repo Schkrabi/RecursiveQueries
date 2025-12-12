@@ -2,6 +2,7 @@ package rq.estimations.main;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -9,7 +10,6 @@ import rq.common.similarities.LinearSimilarity;
 import rq.common.table.Attribute;
 import rq.common.types.Str10;
 import rq.common.types.Str50;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 import rq.common.onOperators.Constant;
@@ -23,10 +23,11 @@ import rq.common.restrictions.LesserThanOrEquals;
 import rq.common.restrictions.ProductAnd;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 
 public class VideoGameSales extends Experiment {	
-	List<Integer> slices = List.of(3, 8);
-	List<Integer> probes = List.of(5, 2, 0);
+	List<Integer> slices = List.of(5/*, 3, 8*/);
+	List<Integer> probes = List.of(5/*, 2, 0*/);
 	
 	Attribute name = new Attribute("Name", Str50.class);
 	Attribute platform = new Attribute("Platform", Str10.class);
@@ -83,53 +84,65 @@ public class VideoGameSales extends Experiment {
 					user_score, 5d,
 					user_count, 10d);
 	
+	Map<Attribute, Collection<Integer>> _nOfCnsVls =
+			Map.of( year_of_release, List.of(20),
+					na_sales, List.of(20),
+					eu_sales, List.of(20),
+					jp_sales, List.of(20),
+					other_sales, List.of(20),
+					global_sales, List.of(20),
+					critic_score, List.of(20),
+					critic_count, List.of(20),
+					user_score, List.of(20),
+					user_count, List.of(20));
+	
+	Map<Attribute, Collection<Double>> _prtRts =
+			Map.of( year_of_release, List.of(0.8d/*, 0.6d, 0.5d*/),
+					na_sales, List.of(0.8d/*, 0.6d, 0.5d*/),
+					eu_sales, List.of(0.8d/*, 0.6d, 0.5d*/),
+					jp_sales, List.of(0.8d/*, 0.6d, 0.5d*/),
+					other_sales, List.of(0.8d/*, 0.6d, 0.5d*/),
+					global_sales, List.of(0.8d/*, 0.6d, 0.5d*/),
+					critic_score, List.of(0.8d/*, 0.6d, 0.5d*/),
+					critic_count, List.of(0.8d/*, 0.6d, 0.5d*/),
+					user_score, List.of(0.8d/*, 0.6d, 0.5d*/),
+					user_count, List.of(0.8d/*, 0.6d, 0.5d*/));
+	
 	Map<Attribute, List<Integer>> intervals = 
-			Map.of( year_of_release, List.of(7, 14),
-					na_sales, List.of(20, 40),
-					eu_sales, List.of(20, 40),
-					jp_sales, List.of(20, 40),
-					other_sales, List.of(20, 40),
-					global_sales, List.of(20, 40),
-					critic_score, List.of(20, 40),
-					critic_count, List.of(20, 40),
-					user_score, List.of(20, 40),
-					user_count, List.of(40, 80));
+			Map.of( year_of_release, List.of(/*7,*/ 14),
+					na_sales, List.of(/*20,*/ 40),
+					eu_sales, List.of(/*20,*/ 40),
+					jp_sales, List.of(/*20,*/ 40),
+					other_sales, List.of(/*20,*/ 40),
+					global_sales, List.of(/*20,*/ 40),
+					critic_score, List.of(/*20,*/ 40),
+					critic_count, List.of(/*20,*/ 40),
+					user_score, List.of(/*20,*/ 40),
+					user_count, List.of(/*40,*/ 80));
 	
 	Map<Attribute, List<Integer>> samples = 
-			Map.of( year_of_release, List.of(17, 8),
-					na_sales, List.of(40, 20),
-					eu_sales, List.of(40, 20),
-					jp_sales, List.of(40, 20),
-					other_sales, List.of(40, 20),
-					global_sales, List.of(40, 20),
-					critic_score, List.of(20, 4),
-					critic_count, List.of(40, 10),
-					user_score, List.of(20, 4),
-					user_count, List.of(40, 10));
+			Map.of( year_of_release, List.of(17/*, 8*/),
+					na_sales, List.of(40/*, 20*/),
+					eu_sales, List.of(40/*, 20*/),
+					jp_sales, List.of(40/*, 20*/),
+					other_sales, List.of(40/*, 20*/),
+					global_sales, List.of(40/*, 20*/),
+					critic_score, List.of(40/*, 20*/),
+					critic_count, List.of(40/*, 20*/),
+					user_score, List.of(40/*, 20*/),
+					user_count, List.of(40/*, 20*/));
 			
-	Map<Attribute, BiFunction<Object, Object, Double>> similarities = 
-			Map.of(	year_of_release, yearSimilarity_3,
-					na_sales, salesSimilarity,
-					eu_sales, salesSimilarity,
-					jp_sales, salesSimilarity,
-					other_sales, salesSimilarity,
-					global_sales, salesSimilarity,
-					critic_score, scoreSimilarity_30,
-					critic_count, countSimilarity,
-					user_score, scoreSimilarity_30,
-					user_count, countSimilarity);
-	
-	Map<Attribute, List<Object>> numericalSelValues = 
-			Map.of( year_of_release, List.of(1980d, 1985d, 1990d, 1995d, 2000d, 2005d, 2010d, 2015d, 2020d),
-					na_sales, List.of(0.5d, 1d, 3d, 6d, 9d, 12d, 15d, 18d, 20d),
-					eu_sales, List.of(0.5d, 1d, 3d, 6d, 9d, 12d, 15d, 18d, 20d),
-					jp_sales, List.of(0.5d, 1d, 3d, 6d, 9d, 12d, 15d, 18d, 20d),
-					other_sales, List.of(0.5d, 1d, 3d, 6d, 9d, 12d, 15d, 18d, 20d),
-					global_sales, List.of(0.5d, 2d, 6d, 12d, 18d, 24d, 30d, 36d, 40d),
-					critic_score, List.of(5d, 15d, 50d, 70d, 75d, 80d, 85d, 90d, 95d),
-					critic_count, List.of(10d, 30d, 50d, 70d, 100d, 150d, 200d),
-					user_score, List.of(5d, 15d, 50d, 70d, 75d, 80d, 85d, 90d, 95d),
-					user_count, List.of(10d, 30d, 50d, 70d, 100d, 150d, 200d));
+	Map<Attribute, Double> similarities = 
+			Map.of(	year_of_release, 3.0d,
+					na_sales, 2.0d,
+					eu_sales, 2.0d,
+					jp_sales, 2.0d,
+					other_sales, 2.0d,
+					global_sales, 2.0d,
+					critic_score, 30.0d,
+					critic_count, 50.0d,
+					user_score, 30.0d,
+					user_count, 50.0d);
 
 	private VideoGameSales() {};
 	private static VideoGameSales singleton = new VideoGameSales();
@@ -139,8 +152,8 @@ public class VideoGameSales extends Experiment {
 	
 	@Override
 	protected Path folder() {
-		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales");
-		//return Path.of("./VideoGameSales");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\private-r.skrabal\\Java\\RecursiveQueries\\estimation_experiments\\VideoGameSales\\");
+		//return Path.of("./estimation_experiments/VideoGameSales");
 	}
 	@Override
 	protected String primaryDataFileName() {
@@ -186,7 +199,7 @@ public class VideoGameSales extends Experiment {
 	}
 
 	@Override
-	protected BiFunction<Object, Object, Double> similarity(Attribute a) {
+	protected double similarUntil(Attribute a) {
 		return this.similarities.get(a);
 	}
 
@@ -198,11 +211,6 @@ public class VideoGameSales extends Experiment {
 	@Override
 	protected List<Integer> estSamples(Attribute a) {
 		return this.samples.get(a);
-	}
-
-	@Override
-	protected List<Object> queryValues(Attribute a) {
-		return this.numericalSelValues.get(a);
 	}
 
 	@Override
@@ -281,5 +289,15 @@ public class VideoGameSales extends Experiment {
 	@Override
 	protected long seed() {
 		return 113266111;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+		return this._nOfCnsVls;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Double>> paretRatios() {
+		return this._prtRts;
 	}
 }

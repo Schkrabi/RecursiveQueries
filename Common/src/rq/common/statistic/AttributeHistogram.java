@@ -3,18 +3,23 @@ package rq.common.statistic;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import rq.common.table.Attribute;
 import rq.common.table.Record;
-import rq.common.types.Str50;
 import rq.common.interfaces.Table;
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueParserContext;
 
 /**
  * Histogram of values of an attribute
  */
-public class AttributeHistogram extends AbstractStatistic {
+public class AttributeHistogram implements IStatistic {
 	
 	private final Map<Object, Integer> counts = new HashMap<Object, Integer>();
 	public final Attribute counted;
@@ -23,7 +28,7 @@ public class AttributeHistogram extends AbstractStatistic {
 		this.counted = attribute;
 	}
 	
-	private AttributeHistogram(Attribute attribute, LinkedHashMap<Str50, Integer> data) {
+	private AttributeHistogram(Attribute attribute, LinkedHashMap<Object, Integer> data) {
 		this.counted = attribute;
 		this.counts.putAll(data);
 	}
@@ -73,6 +78,18 @@ public class AttributeHistogram extends AbstractStatistic {
 		return this.counts.size();
 	}
 	
+	private List<Object> _vlsByFrq = null;
+	
+	/** Gets the values of the attribute sorted by frequency of occurrence, descending */
+	public List<Object> valuesByFrequency(){
+		if(_vlsByFrq == null) {
+			var l = new ArrayList<>(this.counts.entrySet());
+			l.sort(Map.Entry.comparingByValue((x1, x2) -> -Integer.compare((Integer)x1, (Integer)x2)));
+			_vlsByFrq = l.stream().map(e->e.getKey()).collect(Collectors.toList());
+		}
+		return _vlsByFrq;
+	}
+	
 	@Override
 	public String toString() {
 		return new StringBuilder()
@@ -102,14 +119,18 @@ public class AttributeHistogram extends AbstractStatistic {
 	
 	public static AttributeHistogram deserialize(String serialized) throws ClassNotFoundException {
 		Attribute attribute = null;
-		var data = new LinkedHashMap<Str50, Integer>();
+		var data = new LinkedHashMap<Object, Integer>();
 		for(var line : serialized.split("\n")) {
 			if(attribute == null) {
 				attribute = Attribute.parse(line);
 				continue;
 			}
 			var vls = line.split(";");
-			data.put(Str50.factory(vls[0]), Integer.parseInt(vls[1]));
+			try {
+				data.put(ValueParserContext.DEFAULT.parseValue(attribute.domain(), vls[0]), Integer.parseInt(vls[1]));
+			} catch (NumberFormatException | ClassNotInContextException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		return new AttributeHistogram(attribute, data);
 	}

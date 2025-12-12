@@ -15,7 +15,7 @@ import rq.common.table.Attribute;
  * Holds statistics for a specific table
  */
 public class Statistics {
-	private final List<AbstractStatistic> statistics = new LinkedList<AbstractStatistic>();
+	private final List<IStatistic> statistics = new LinkedList<IStatistic>();
 	private final Table table;
 	
 	public Statistics(Table table) {
@@ -26,7 +26,7 @@ public class Statistics {
 	 * Refreshes all statistics
 	 */
 	public void gather() {
-		for(AbstractStatistic statistic : this.statistics) {
+		for(IStatistic statistic : this.statistics) {
 			statistic.gather(this.table);
 		}
 	}
@@ -35,8 +35,8 @@ public class Statistics {
 	 * Gets all gathered statisics object
 	 * @return new LinkedList
 	 */
-	public List<AbstractStatistic> getAll(){
-		return new LinkedList<AbstractStatistic>(this.statistics);
+	public List<IStatistic> getAll(){
+		return new LinkedList<IStatistic>(this.statistics);
 	}
 	
 	/**
@@ -77,7 +77,7 @@ public class Statistics {
 	 * @return Optional
 	 */
 	public Optional<AttributeHistogram> getAttributeHistogram(Attribute attribute) {
-		Optional<AbstractStatistic> o = 
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 				.filter(s -> (s instanceof AttributeHistogram) && ((AttributeHistogram)s).counted.equals(attribute))
 				.findAny();
@@ -101,7 +101,7 @@ public class Statistics {
 	 * @return value count statistic
 	 */
 	public Optional<ValueCount> getValueCounts(){
-		Optional<AbstractStatistic> o = 
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 				.filter(s -> (s instanceof ValueCount))
 				.findAny();
@@ -117,7 +117,7 @@ public class Statistics {
 	 * @return Optional of Rank Histogram statistics
 	 */
 	public Optional<RankHistogram> getRankHistogram(int slices) {
-		Optional<AbstractStatistic> o = 
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 					.filter(x -> x instanceof RankHistogram && ((RankHistogram)x).getSlices().size() == slices)
 					.findAny();
@@ -129,8 +129,8 @@ public class Statistics {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T extends AbstractStatistic> Optional<T> getStatisticByFilter(Predicate<AbstractStatistic> predicate){
-		Optional<AbstractStatistic> o = 
+	public <T extends IStatistic> Optional<T> getStatisticByFilter(Predicate<IStatistic> predicate){
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 					.filter(predicate)
 					.findAny();
@@ -167,7 +167,7 @@ public class Statistics {
 	 * @return
 	 */
 	public Optional<SlicedHistogram> getSlicedHistogram(Attribute attribute, int slices){
-		Optional<AbstractStatistic> o = 
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 					.filter(x -> x instanceof SlicedHistogram 
 							&& ((SlicedHistogram)x).attribute.equals(attribute)
@@ -191,7 +191,7 @@ public class Statistics {
 	}
 	
 	public Optional<Size> getSize(){
-		Optional<AbstractStatistic> o = 
+		Optional<IStatistic> o = 
 				this.statistics.stream()
 					.filter(x -> x instanceof Size)
 					.findAny();
@@ -208,7 +208,7 @@ public class Statistics {
 	}
 	
 	public Optional<SampledHistogram> getSampledHistogram(Attribute attribute, double sampleSize){
-		Optional<AbstractStatistic> o =
+		Optional<IStatistic> o =
 				this.statistics.stream()
 					.filter(x -> (x instanceof SampledHistogram)
 							&& 	((SampledHistogram)x).observed.equals(attribute)
@@ -265,6 +265,21 @@ public class Statistics {
 	public void addEquidistantHistogram(Attribute a, int n) {
 		if(this.getEquidistantHistogram(a, n).isEmpty()) {
 			this.statistics.add(new EquidistantHistogram(a, n));
+		}
+	}
+	
+	public Optional<MostCommonValues> getMostCommonValues(Attribute a) {
+		var mcv = this.getStatisticByFilter(s -> (s instanceof MostCommonValues)
+				&& ((MostCommonValues)(s)).observed.equals(a));
+		if(mcv.isPresent()) {
+			return Optional.of((MostCommonValues)mcv.get());
+		}
+		return Optional.empty();
+	}
+	
+	public void addMostCommonValues(Attribute a) {
+		if(this.getMostCommonValues(a).isEmpty()) {
+			this.statistics.add(new MostCommonValues(a));
 		}
 	}
 	

@@ -1,6 +1,7 @@
 package rq.estimations.main;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +42,8 @@ public class TopRankedRealMovies extends Experiment {
 	private BiFunction<Object, Object, Double> votesSimilarity_5000 = LinearSimilarity.doubleSimilarityUntil(5000d);
 	private BiFunction<Object, Object, Double> grossSimilarity_10 = LinearSimilarity.doubleSimilarityUntil(10d);
 	
-	private List<Integer> slices = List.of(3, 8);
-	private List<Integer> probes = List.of(5, 2, 0);
+	private List<Integer> slices = List.of(5/*, 3, 8*/);
+	private List<Integer> probes = List.of(5/*, 2, 0*/);
 	
 	private List<Attribute> numericAttributes = 
 			List.of(Year_of_Release, 
@@ -62,38 +63,57 @@ public class TopRankedRealMovies extends Experiment {
 					Votes, 100_000d,
 					Gross, 50d);
 	
-	Map<Attribute, List<Integer>> intervals =
-			Map.of( Year_of_Release, List.of(20, 40, 60),
-					Watch_Time, List.of(30, 60, 120),
-					Movie_Rating, List.of(3, 5, 10),
-					Meatscore_of_movie, List.of(3, 5, 10),
-					Votes, List.of(25, 50, 75),
-					Gross, List.of(20, 40, 60));
+	Map<Attribute, Collection<Integer>> nConsVls =
+			Map.of(Year_of_Release, List.of(/*3, 4,*/ 5),
+					Watch_Time, List.of(/*3, 4,*/ 5),
+					Movie_Rating, List.of(/*1,*/ 2),
+					Meatscore_of_movie, List.of(/*2, 3,*/ 4),
+					Votes, List.of(/*1, 2,*/ 3),
+					Gross, List.of(/*1, 2,*/ 3));
 	
-	Map<Attribute, BiFunction<Object, Object, Double>> similarities = 
-			Map.of( Year_of_Release, this.yearOfReleaseSimilarity_5,
-					Watch_Time, this.watchTimeSimilarity_30,
-					Movie_Rating, this.ratingSimilarity_2,
-					Meatscore_of_movie, this.metaScoreSimilarity_20,
-					Votes, this.votesSimilarity_5000,
-					Gross, this.grossSimilarity_10);
+	Map<Attribute, Collection<Double>> _prtVls =
+			Map.of(Year_of_Release, List.of(0.8d, 0.6d, 0.5d),
+					Watch_Time, List.of(0.8d, 0.6d, 0.5d),
+					Movie_Rating, List.of(0.8d, 0.6d, 0.5d),
+					Meatscore_of_movie, List.of(0.8d, 0.6d, 0.5d),
+					Votes, List.of(0.8d, 0.6d, 0.5d),
+					Gross, List.of(0.8d, 0.6d, 0.5d));
+	
+	Map<Attribute, List<Integer>> intervals =
+			Map.of( Year_of_Release, List.of(/*20, 40,*/ 60),
+					Watch_Time, List.of(/*30, 60,*/ 120),
+					Movie_Rating, List.of(/*3, 5,*/ 10),
+					Meatscore_of_movie, List.of(/*3, 5,*/ 10),
+					Votes, List.of(/*25, 50,*/ 75),
+					Gross, List.of(/*20, 40,*/ 60));
+	
+	Map<Attribute, Double> similarities = 
+//			Map.of( Year_of_Release, 5.0d,
+//					Watch_Time, 30.0d,
+//					Movie_Rating, 2.0d,
+//					Meatscore_of_movie, 20.0d,
+//					Votes, 5000.0d,
+//					Gross, 10.0d);
+//			Map.of( Year_of_Release, 2.5d,
+//					Watch_Time, 5.0d,
+//					Movie_Rating, 0.5d,
+//					Meatscore_of_movie, 5.0d,
+//					Votes, 5000.0d,
+//					Gross, 10.0d);
+			Map.of( Year_of_Release, 10d,
+					Watch_Time, 20d,
+					Movie_Rating, 0.2d,
+					Meatscore_of_movie, 20d,
+					Votes, 200_000d,
+					Gross, 100.0d);
 	
 	Map<Attribute, List<Integer>> estSamples =
-			Map.of( Year_of_Release, List.of(3, 5, 8),
-					Watch_Time, List.of(3, 5, 8),
-					Movie_Rating, List.of(3, 5, 8),
-					Meatscore_of_movie, List.of(3, 5, 8),
-					Votes, List.of(3, 5, 8),
-					Gross, List.of(3, 5, 8));
-					
-	Map<Attribute, List<Object>> queryValues =
-			Map.of( Year_of_Release, Stream.iterate(1920d, x -> x + 5d).limit(20).collect(Collectors.toList()),
-					Watch_Time, Stream.iterate(45d, x -> x + 15d).limit(19).collect(Collectors.toList()),
-					Movie_Rating, List.of(1d, 2d, 3d, 4d, 5d, 6d, 7d, 8d, 9d, 10d),
-					Meatscore_of_movie, List.of(10d, 20d, 30d, 40d, 50d, 60d, 70d, 80d, 90d, 100d),
-					Votes, Stream.iterate(0d, x -> x + 100_000d).limit(25).collect(Collectors.toList()),
-					Gross, Stream.concat(Stream.of(1d, 5d, 10d, 25d), Stream.iterate(50d, x -> x + 50d).limit(18)).collect(Collectors.toList())
-					);
+			Map.of( Year_of_Release, List.of(/*3, 5,*/ 8),
+					Watch_Time, List.of(/*3, 5,*/ 8),
+					Movie_Rating, List.of(/*3, 5,*/ 8),
+					Meatscore_of_movie, List.of(/*3, 5,*/ 8),
+					Votes, List.of(/*3, 5,*/ 8),
+					Gross, List.of(/*3, 5,*/ 8));
 	
 	private TopRankedRealMovies() {}
 	private static TopRankedRealMovies singleton = new TopRankedRealMovies();
@@ -103,8 +123,8 @@ public class TopRankedRealMovies extends Experiment {
 
 	@Override
 	protected Path folder() {
-		return Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\TopRankedRealMoviesDataset");
-		//return Path.of("./TopRankedRealMoviesDataset");
+		return Path.of("C:\\Users\\r.skrabal\\Documents\\private-r.skrabal\\Java\\RecursiveQueries\\estimation_experiments\\TopRankedRealMoviesDataset");
+		//return Path.of("./estimation_experiments/TopRankedRealMoviesDataset");
 	}
 
 	@Override
@@ -151,7 +171,7 @@ public class TopRankedRealMovies extends Experiment {
 	}
 
 	@Override
-	protected BiFunction<Object, Object, Double> similarity(Attribute a) {
+	protected double similarUntil(Attribute a) {
 		return this.similarities.get(a);
 	}
 
@@ -163,11 +183,6 @@ public class TopRankedRealMovies extends Experiment {
 	@Override
 	protected List<Integer> estSamples(Attribute a) {
 		return this.estSamples.get(a);
-	}
-
-	@Override
-	protected List<Object> queryValues(Attribute a) {
-		return this.queryValues.get(a);
 	}
 
 	@Override
@@ -211,6 +226,16 @@ public class TopRankedRealMovies extends Experiment {
 	@Override
 	protected long seed() {
 		return 547341576;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+		return nConsVls;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Double>> paretRatios() {
+		return _prtVls;
 	}
 
 }

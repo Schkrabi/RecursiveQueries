@@ -2,11 +2,13 @@ package rq.estimations.main;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
 import rq.common.restrictions.Equals;
@@ -18,14 +20,13 @@ import rq.common.restrictions.Similar;
 import rq.common.similarities.LinearSimilarity;
 import rq.common.table.Attribute;
 import rq.common.types.Str50;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 
 public class BeerReviews extends Experiment {
 	
-	Path folder = Path.of("C:\\Users\\r.skrabal\\Documents\\Mine\\Java\\RecursiveQueries\\estimation_experiments\\Beer Reviews\\");
-	//Path folder = Path.of("./Beer_Reviews");
+	Path folder = Path.of("C:\\Users\\r.skrabal\\Documents\\private-r.skrabal\\Java\\RecursiveQueries\\estimation_experiments\\Beer Reviews");
+	//Path folder = Path.of("./estimation_experiments/Beer_Reviews");
 	String beer_reviews_csv = "beer_reviews.nona.csv";
 	Path beer_reviews_path = folder.resolve(beer_reviews_csv);
 	String query1 = "q1";
@@ -58,20 +59,20 @@ public class BeerReviews extends Experiment {
 			List.of(brewery_name, beer_style, review_profilename);
 	
 	//Estimation setup
-	List<Integer> slices = List.of(3, 8);
-	List<Integer> probes = List.of(0, 2);
+	List<Integer> slices = List.of(5/*3, 8*/);
+	List<Integer> probes = List.of(/*0,*/ 2);
 	Map<Attribute, List<Integer>> intervals =
-			Map.of( review_taste, List.of(3, 5),
-					review_aroma, List.of(3, 5),
-					review_overall, List.of(3, 5),
-					review_appearance, List.of(3, 5),
-					review_palate, List.of(3, 5));
+			Map.of( review_taste, List.of(3),
+					review_aroma, List.of(3),
+					review_overall, List.of(3),
+					review_appearance, List.of(3),
+					review_palate, List.of(3));
 	Map<Attribute, List<Integer>> samples = 
-			Map.of( review_taste, List.of(3, 5),
-					review_aroma, List.of(3, 5),
-					review_overall, List.of(3, 5),
-					review_appearance, List.of(3, 5),
-					review_palate, List.of(3, 5));
+			Map.of( review_taste, List.of(3),
+					review_aroma, List.of(3),
+					review_overall, List.of(3),
+					review_appearance, List.of(3),
+					review_palate, List.of(3));
 	Map<Attribute, Double> histSampleSizes = 
 			Map.of( review_taste, 1d,
 					review_aroma, 1d,
@@ -83,18 +84,25 @@ public class BeerReviews extends Experiment {
 	BiFunction<Object, Object, Double> reviewSimilarity_2 = LinearSimilarity.doubleSimilarityUntil(2d);
 	BiFunction<Object, Object, Double> reviewSimilarity_5 = LinearSimilarity.doubleSimilarityUntil(5d);
 	
-	Map<Attribute, BiFunction<Object, Object, Double>> similarities = 
-			Map.of( review_taste, reviewSimilarity_2,
-					review_aroma, reviewSimilarity_2,
-					review_overall, reviewSimilarity_2,
-					review_appearance, reviewSimilarity_2,
-					review_palate, reviewSimilarity_2);
-	Map<Attribute, List<Object>> numericalSelValues = 
-			Map.of( review_taste, List.of(1.d, 2d, 3d, 4d, 5d),
-					review_aroma, List.of(1.d, 2d, 3d, 4d, 5d),
-					review_overall, List.of(1.d, 2d, 3d, 4d, 5d),
-					review_appearance, List.of(1.d, 2d, 3d, 4d, 5d),
-					review_palate, List.of(1.d, 2d, 3d, 4d, 5d));
+	Map<Attribute, Double> similarities = 
+			Map.of( review_taste, 2.0d,
+					review_aroma, 2.0d,
+					review_overall, 2.0d,
+					review_appearance, 2.0d,
+					review_palate, 2.0d);
+	Map<Attribute, Collection<Integer>> _nOfCnsVls =
+			Map.of( review_taste, List.of(20),
+					review_aroma, List.of(20),
+					review_overall, List.of(20),
+					review_appearance, List.of(20),
+					review_palate, List.of(20));
+	
+	Map<Attribute, Collection<Double>> _parRts = 
+			Map.of( review_taste, List.of(0.8d/*, 0.6d, 0.5d*/),
+					review_aroma, List.of(0.8d/*, 0.6d, 0.5d*/),
+					review_overall, List.of(0.8d/*, 0.6d, 0.5d*/),
+					review_appearance, List.of(0.8d/*, 0.6d, 0.5d*/),
+					review_palate, List.of(0.8d/*, 0.6d, 0.5d*/));
 	
 	//Singleton
 	private BeerReviews() {}
@@ -152,7 +160,7 @@ public class BeerReviews extends Experiment {
 	}
 
 	@Override
-	protected BiFunction<Object, Object, Double> similarity(Attribute a) {
+	protected double similarUntil(Attribute a) {
 		return this.similarities.get(a);
 	}
 
@@ -164,11 +172,6 @@ public class BeerReviews extends Experiment {
 	@Override
 	protected List<Integer> estSamples(Attribute a) {
 		return this.samples.get(a);
-	}
-
-	@Override
-	protected List<Object> queryValues(Attribute a) {
-		return this.numericalSelValues.get(a);
 	}
 
 	@Override
@@ -247,5 +250,15 @@ public class BeerReviews extends Experiment {
 	@Override
 	protected long seed() {
 		return 331226761;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+		return this._nOfCnsVls;
+	}
+
+	@Override
+	protected Map<Attribute, Collection<Double>> paretRatios() {
+		return this._parRts;
 	}
 }

@@ -14,10 +14,11 @@ import com.opencsv.CSVWriter;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.interfaces.LazyExpression;
+import rq.common.io.contexts.ClassNotInContextException;
+import rq.common.io.contexts.ValueSerializerContext;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
-import rq.files.exceptions.ClassNotInContextException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.helpers.AttributeSerializer;
 import rq.files.helpers.ValueSerializer;

@@ -9,14 +9,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import rq.common.estimations.SignatureProvider;
 import rq.common.interfaces.Table;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 import rq.common.table.Attribute;
+import rq.common.util.Pair;
 
-public abstract class DataSlicedHistogram extends AbstractStatistic {
+public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvider, SignatureProvider {
 
 	public final Attribute observed;
 	public final int n;
@@ -51,6 +55,26 @@ public abstract class DataSlicedHistogram extends AbstractStatistic {
 			return buf.toString();
 		}
 	
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof Interval i) {
+				return this.from == i.from
+						&& this.closedFrom == i.closedFrom
+						&& this.to == i.to
+						&& this.closedTo == i.closedTo;
+			}
+			return false;
+		}
+		
+		@Override
+		public int hashCode() {
+			return new StringBuilder()
+					.append(this.from)
+					.append(Boolean.hashCode(this.closedFrom))
+					.append(this.to)
+					.append(Boolean.hashCode(this.closedTo))
+					.toString().hashCode();
+		}
 	}
 
 	protected List<Double> values(Table table) {
@@ -124,23 +148,104 @@ public abstract class DataSlicedHistogram extends AbstractStatistic {
 		return counts.values().stream().mapToInt(a -> a).sum();
 	}
 	
+	private List<Interval> _vlsByFrq = null;
+	
+	/** Returns intervals in this histogram ordered by the frequency */
+	public List<Interval> valuesByFrequency(){
+		if(this._vlsByFrq == null) {
+			this._vlsByFrq =  this.counts.entrySet().stream()
+				.sorted((e1, e2) -> -Integer.compare(e1.getValue(), e2.getValue()))
+				.map(e -> e.getKey())
+				.collect(Collectors.toList());
+		}
+		return this._vlsByFrq;
+	}
+	
+	public Map<Interval, Integer> data(){
+		return new LinkedHashMap<>(this.counts);
+	}
+	
+	private Double _min = null;
+	/** Gets the minimum value in the effective domain*/
+	public double min() {
+		if(_min == null) {
+			_min = this.intervals().stream()
+					.mapToDouble(i -> i.from)
+					.min().getAsDouble();
+		}
+		return _min.doubleValue();
+	}
+	
+	private Double _max = null;
+	/**Gets te maximum value in the effective domain*/
+	public double max() {
+		if(_max == null) {
+			_max = this.intervals().stream()
+					.mapToDouble(i -> i.to)
+					.max().getAsDouble();
+		}
+		return _max.doubleValue();
+	}
+	
+	private Double _center = null;
+	/** Gets the center value in the active domain*/
+	public double center() {
+		if(this._center == null) {
+			var d = (this.max() - this.min()) / 2;
+			this._center = this.min() + d;
+		}
+		return this._center;
+	}
+	
+	@Override
+	public HistBasedRandom generator(Random rand) {
+		return HistBasedRandom.fromDataSLicedHist(this, rand);
+	}
+	
+	/** Subtracts values with its counts from the histogram effectively removing them from observation*/
+	public DataSlicedHistogram removeValueCount(Collection<Pair<Double, Integer>> valueCounts) {
+		var m = new HashMap<>(this.counts);
+		for(var p : valueCounts) {
+			var i = this.counts.entrySet().stream()
+						.map(e -> e.getKey())
+						.filter(j -> j.contains(p.first))
+						.findFirst().get();
+			m.put(i, m.get(i) - p.second);
+		}
+		return new DataSlicedHistogram(this.observed, this.n, m) {
+			
+			@Override
+			public void gather(Table table) {}
+
+			@Override
+			public String signature() {
+				return "itv";
+			}
+		};
+	}
+	
 	@Override
 	public String toString() {
 		return this.counts.toString();
 	}
 	
 	public String serialize() {
-		var sb = new StringBuilder();
+		var sb = new StringBuilder()
+				.append("att,from,closedFrom,to,closedTo,count\n");
 		
-		sb.append(this.n).append("\n");
-		sb.append(this.observed.serialize()).append("\n");
+		var i = this.counts.entrySet().iterator();
 		
-		for(var e : this.counts.entrySet()) {
-			sb.append(e.getKey().from).append(";")
-				.append(e.getKey().closedFrom).append(";")
-				.append(e.getKey().to).append(";")
-				.append(e.getKey().closedTo).append(";")
-				.append(e.getValue()).append("\n");
+		while(i.hasNext()) {
+			var e = i.next();
+			sb.append(this.observed.serialize()).append(",")
+				.append(e.getKey().from).append(",")
+				.append(e.getKey().closedFrom).append(",")
+				.append(e.getKey().to).append(",")
+				.append(e.getKey().closedTo).append(",")
+				.append(e.getValue());
+			if(i.hasNext()) {
+				sb.append("\n");
+			}
 		}
 		
 		return sb.toString();
@@ -169,29 +274,49 @@ public abstract class DataSlicedHistogram extends AbstractStatistic {
 	
 	protected static HistArgs doDeserialize(String serialized) throws ClassNotFoundException{
 		Attribute observed = null;
-		Integer n = null;
 		var counts = new LinkedHashMap<Interval, Integer>();
 		
+		int lines = 0;
 		for(var line : serialized.split("\n")) {
-			if(n == null) {
-				n = Integer.parseInt(line);
-				continue;
-			}
-			if(observed == null) {
-				observed = Attribute.parse(line);
+			lines++;
+			if(lines == 1) { //Skip header
 				continue;
 			}
 			
-			var parts = line.split(";");
-			var from = Double.parseDouble(parts[0]);
-			var closedFrom = Boolean.parseBoolean(parts[1]);
-			var to = Double.parseDouble(parts[2]);
-			var closedTo = Boolean.parseBoolean(parts[3]);
-			var count = Integer.parseInt(parts[4]);
+			var vls = line.split(",");
+			
+			if(observed == null) {
+				observed = Attribute.parse(vls[0]);
+			}
+			
+			var from = Double.parseDouble(vls[1]);
+			var closedFrom = Boolean.parseBoolean(vls[2]);
+			var to = Double.parseDouble(vls[3]);
+			var closedTo = Boolean.parseBoolean(vls[4]);
+			var count = Integer.parseInt(vls[5]);
 			
 			counts.put(new Interval(from, to, closedFrom, closedTo), count);
 		}
 		
-		return new HistArgs(observed, n, counts);
+		return new HistArgs(observed, lines - 1, counts);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof DataSlicedHistogram dsh) {
+			return this.observed.equals(dsh.observed)
+					&& this.n == dsh.n
+					&& this.counts.equals(dsh.counts);
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return new StringBuilder()
+				.append(this.n)
+				.append(this.observed.hashCode())
+				.append(this.counts.hashCode())
+				.toString().hashCode();
 	}
 }

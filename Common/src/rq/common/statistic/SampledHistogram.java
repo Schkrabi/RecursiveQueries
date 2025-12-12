@@ -3,16 +3,20 @@ package rq.common.statistic;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class SampledHistogram extends AbstractStatistic {
+public class SampledHistogram implements IStatistic, IGeneratorProvider {
 
 	public final double sampleSize;
 	public final Attribute observed;
@@ -26,7 +30,7 @@ public class SampledHistogram extends AbstractStatistic {
 		this.sampleSize = sampleSize;
 	}
 	
-	private SampledHistogram(
+	public SampledHistogram(
 			Attribute observed,
 			double sampleSize,
 			Map<Double, Integer> data) {
@@ -56,6 +60,27 @@ public class SampledHistogram extends AbstractStatistic {
 		long mult = Math.round(value / this.sampleSize);
 		
 		return mult * this.sampleSize;
+	}
+	
+	private List<Double> _vlsByFrq = null;
+	
+	/** Gets the values of the attribute sorted by frequency of occurrence, descending */
+	public List<Double> valuesByFrequency(){
+		if(_vlsByFrq == null) {
+			var l = new ArrayList<>(this.data.entrySet());
+			l.sort(Map.Entry.comparingByValue((x1, x2) -> -Integer.compare((Integer)x1, (Integer)x2)));
+			_vlsByFrq = l.stream().map(e->e.getKey()).collect(Collectors.toList());
+		}
+		return _vlsByFrq;
+	}
+	
+	private Integer _vlsCount = null;
+	public int valuesCount() {
+		if(_vlsCount == null) {
+			_vlsCount = this.data.entrySet().stream()
+					.reduce(0, (agg, e) -> e.getValue() + agg, (x, y) -> x + y);
+		}
+		return _vlsCount.intValue();
 	}
 	
 	public Map<Double, Integer> getHistogram(){
@@ -150,6 +175,16 @@ public class SampledHistogram extends AbstractStatistic {
 	
 	public void writeFile(Path path) throws IOException {
 		Files.write(path, this.serialize().getBytes());
+	}
+	
+	@Override
+	public HistBasedRandom generator(Random base) {
+		return HistBasedRandom.fromSampledHist(this, base);
+	}
+	
+	/** size of the observed table*/
+	public int tableSize() {
+		return this.data.values().stream().reduce((x, y) -> x + y).get();
 	}
 	
 	public static SampledHistogram readFile(String path) throws IOException, ClassNotFoundException {

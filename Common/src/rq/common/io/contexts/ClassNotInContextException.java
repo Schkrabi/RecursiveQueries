@@ -1,4 +1,4 @@
-package rq.files.exceptions;
+package rq.common.io.contexts;
 
 public class ClassNotInContextException extends Exception {
 	/**

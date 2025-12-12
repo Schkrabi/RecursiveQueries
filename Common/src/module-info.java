@@ -17,4 +17,6 @@ module rq.common {
 	exports rq.common.statistic;
 	exports rq.common.restrictions;
 	exports rq.common.estimations;
+	exports rq.common.io.contexts;
+	exports rq.common.util;
 }

@@ -3,6 +3,7 @@ package rq.test.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,7 @@ class AttributeHistogramTest {
 		assertEquals(1, this.vc.getCount("bar"));
 		assertEquals(0, this.vc.getCount("baz"));
 		assertFalse(this.vc.getHistogram().isEmpty());
+		assertEquals(List.of("foo", "bar"), this.vc.valuesByFrequency());
 	}
 
 }
