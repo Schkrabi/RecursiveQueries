@@ -1,33 +1,30 @@
 package rq.estimations.main;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import rq.files.contracts.EstimationExperimentContract;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		//Just to remember default values
-//		final int SLICES = 3;
-//		final double DOMAIN_SAMPLE_SIZE = 0.05d;
-//		final int STOCHASTIC_SAMPLES = 6;
-//		final BiFunction<Object, Object, Double> SIMILARITY = LinearSimilarity.doubleSimilarityUntil(0.2);
-//		final int probes = 10;
+		if(args.length == 0) {
+			System.out.println("Usage est.jar <conf file>");
+			return;
+		}
+		var confName = args[0];
+		var confJson = Files.readString(Path.of(confName));
+		var cnt = EstimationExperimentContract.deserialize(confJson);
 		
-		//Usage:
-		// java -jar <jarname> (contract file) (table) (table...)
+		var experiment = new ParametrizedExperiment(cnt);
 		
-//		var contract = EstimationSetupContract.factory(Path.of(
-//				args[0]),
-//				Arrays.asList(args).stream().skip(1).collect(Collectors.toList()));
-//		
-//		var provider = EstimationProviders.get(contract.getEstimation()).apply(contract);
-//		
-//		var measurement = new Measurement(provider);
-//		
-//		var rslt = 
-//				measurement.measure();
-//		
-//		System.out.println(rslt);
+		var start = System.currentTimeMillis();
+		experiment.experiment();
+		var end = System.currentTimeMillis();
+		
+		System.out.println("Finished, time: " + Duration.ofMillis(end - start).toString());
 	}
 }

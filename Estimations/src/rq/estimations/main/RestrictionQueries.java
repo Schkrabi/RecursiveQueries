@@ -1,6 +1,7 @@
 package rq.estimations.main;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -172,5 +173,22 @@ public abstract class RestrictionQueries {
 			}).limit(this.count).collect(Collectors.toList());
 			return vls;
 		}
+	}
+	
+	/** Constant set values*/
+	public static final class FromValues extends RestrictionQueries {
+
+		private Collection<Double> values;
+		
+		public FromValues(Path dataPath, Attribute attribute, double similarUntil, Collection<Double> values) {
+			super(dataPath, attribute, values.size(), similarUntil);
+			this.values = values;
+		}
+
+		@Override
+		protected List<Double> generateValues() {
+			return new ArrayList<>(this.values);
+		}
+		
 	}
 }

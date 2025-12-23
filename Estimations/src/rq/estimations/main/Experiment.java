@@ -50,6 +50,8 @@ import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 import rq.common.table.Attribute;
 import rq.common.table.LazyFacade;
+import rq.files.contracts.EstimationExperimentContract;
+import rq.files.contracts.QueryGenerationStrategy;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableReader;
@@ -68,6 +70,13 @@ public abstract class Experiment {
 	/** Name of the prepared data. Used to build folder structure */
 	protected abstract String preparedDataName();
 	
+	protected Map<Attribute, Collection<Double>> getQueryValues(){
+		return Map.of();
+	}
+	protected QueryGenerationStrategy getQueryGenerationStrategy() {
+		return QueryGenerationStrategy.IntervalBasedParet;
+	}
+	
 	private RestrictionExperiment _restrictionExperiment = null;
 	protected RestrictionExperiment restrictionExperiment() {
 		if(this._restrictionExperiment == null) {
@@ -81,8 +90,10 @@ public abstract class Experiment {
 							this.paretRatios(),
 							this.IntervalsMany(this.numericAttributes()),
 							this.similarsUntil(this.numericAttributes()),
-							this.rand,
-							this.USE_RANKED_TABLE_AS_PRIMARY_DATA);
+							this.getRand(),
+							this.USE_RANKED_TABLE_AS_PRIMARY_DATA,
+							this.getQueryGenerationStrategy(),
+							this.getQueryValues());
 		}
 		return this._restrictionExperiment;
 	}
@@ -303,7 +314,14 @@ public abstract class Experiment {
 	}
 	
 	private Map<Attribute, List<Double>> _sampleQueryValues = new LinkedHashMap<Attribute, List<Double>>();
-	private Random rand = new Random(this.seed());
+	private Random rand = null;
+	
+	protected Random getRand() {
+		if(this.rand == null) {
+			this.rand = new Random(this.seed());
+		}
+		return this.rand;
+	}
 	
 	private List<Double> sampleQueryValues(Attribute a) throws ClassNotFoundException, IOException{
 		var vls = this._sampleQueryValues.get(a); 
@@ -328,7 +346,7 @@ public abstract class Experiment {
 
 			@Override
 			public Double get() {
-				return min + rand.nextDouble() * max;
+				return min + getRand().nextDouble() * max;
 			}
 			
 		}).limit(this.SAMPLE_QUERY_COUNT).collect(Collectors.toList());
@@ -663,5 +681,29 @@ public abstract class Experiment {
 		var end = System.currentTimeMillis();
 		System.out.println("Finished, time: " + java.time.Duration.ofMillis(end - start).toString());
 		
+	}
+	
+	public String makeContract() {
+		var atts = this.numericAttributes().stream()
+				.map(a -> new EstimationExperimentContract.AttributeContract(
+						a.name, 
+						a.domain.getName(), 
+						this.histSampleSize(a), 
+						this.nConsideredValues().get(a).stream().findFirst().get(), 
+						this.paretRatios().get(a).stream().findFirst().get(), 
+						this.intervals(a).get(0), 
+						this.similarUntil(a), 
+						List.of()))
+				.toList();
+		
+		var cnt = new EstimationExperimentContract(
+				this.preparedDataFileName(),
+				this.preparedDataFolder().toString(),
+				this.slices().get(0),
+				this.probes().get(0), 
+				this.seed(),
+				atts);
+		
+		return cnt.serialize();
 	}
 }

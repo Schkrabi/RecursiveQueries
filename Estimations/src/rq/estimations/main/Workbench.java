@@ -420,8 +420,9 @@ public class Workbench {
 		
 		var start = System.currentTimeMillis();
 		for(var ds : datasets) {
-			System.out.println(ds.getClass().getSimpleName());
-			ds.experiment();
+			System.out.println(ds.makeContract());
+//			System.out.println(ds.getClass().getSimpleName());
+//			ds.experiment();
 //			ds.reloadPreparedData();
 //			ds.projection.estimate();
 //			ds.gatherData();

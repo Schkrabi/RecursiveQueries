@@ -22,6 +22,7 @@ import rq.common.statistic.SlicedStatistic.RankInterval;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
 import rq.estimations.main.QueryHistogramHolder.RankHistogramInfo;
+import rq.files.contracts.QueryGenerationStrategy;
 
 public class RestrictionExperiment {
 
@@ -34,6 +35,8 @@ public class RestrictionExperiment {
 	public final Map<Attribute, Double> similarUntil;
 	public final Random random;	
 	
+	public final QueryGenerationStrategy queryGenerationStrategy;
+	
 	public final String dataFileName;
 	public final Map<Attribute, BiFunction<Object, Object, Double>> similarity = new HashMap<>();
 	private final Path histFolder;
@@ -43,6 +46,8 @@ public class RestrictionExperiment {
 	private final Map<Attribute, Collection<Double>> paretRatios;
 	
 	private final boolean USE_RANKED_TABLE_AS_PRIMARY_DATA;
+	
+	private final Map<Attribute, Collection<Double>> queryValues;
 	
 	public RestrictionExperiment(
 			Path dataPath,
@@ -54,7 +59,9 @@ public class RestrictionExperiment {
 			Map<Attribute, Collection<Integer>> intervals,
 			Map<Attribute, Double> similarUntil,
 			Random random,
-			boolean useRankedTableAsPrimaryData) {
+			boolean useRankedTableAsPrimaryData,
+			QueryGenerationStrategy queryGenerationStrategy,
+			Map<Attribute, Collection<Double>> queryValues) {
 		this.dataPath = dataPath;
 		this.dataFileName = this.dataPath.getFileName().toString();
 		this.similarUntil = similarUntil;
@@ -72,6 +79,8 @@ public class RestrictionExperiment {
 		this.histFolder = Workbench.histFolder(dataPath);
 		this.estFolder = Workbench.estFolder(dataPath);
 		this.USE_RANKED_TABLE_AS_PRIMARY_DATA = useRankedTableAsPrimaryData;
+		this.queryGenerationStrategy = queryGenerationStrategy;
+		this.queryValues = queryValues;
 	}
 	
 	private Map<Attribute, Map<Integer, NumericalEstimations>> _numericalEsts = 
@@ -148,18 +157,27 @@ public class RestrictionExperiment {
 	}
 	
 	private Map<Attribute, RestrictionQueries> _restrictionQueries = new HashMap<>();
+	
 	private RestrictionQueries getRestrictionQueries(Attribute a) {
 		var rq = this._restrictionQueries.get(a);
 		if(rq == null) {
-//			var hist = ResourceLoader.instance().getOrLoadSampledHistogram(dataPath, a);
-//			rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), hist);
-			
-			var eqn = ResourceLoader.instance().getOrLoadEqnHistogram(dataPath, a, 
-					this.intervals.get(a).stream().reduce(Math::max).get());
-			rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), eqn);
-			
-//			rq = new RestrictionQueries.Uniform(dataPath, a, queryCount, similarUntil.get(a), this.random);
-//			this._restrictionQueries.put(a, rq);
+			switch(this.queryGenerationStrategy){
+			case SampledBasedParet:
+				var hist = ResourceLoader.instance().getOrLoadSampledHistogram(dataPath, a);
+				rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), hist);
+				break;
+			case IntervalBasedParet:
+				var eqn = ResourceLoader.instance().getOrLoadEqnHistogram(dataPath, a, 
+						this.intervals.get(a).stream().reduce(Math::max).get());
+				rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), eqn);
+				break;
+			case Uniform:
+				rq = new RestrictionQueries.Uniform(dataPath, a, queryCount, similarUntil.get(a), this.random);
+				break;
+			case Values:
+				rq = new RestrictionQueries.FromValues(dataPath, a, queryCount, this.queryValues.get(a));
+			}
+			this._restrictionQueries.put(a, rq);
 		}
 		return rq;
 	}

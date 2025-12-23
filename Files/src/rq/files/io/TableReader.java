@@ -91,18 +91,23 @@ public class TableReader implements Closeable{
 	 * @throws ColumnOrderingNotInitializedException 
 	 * @throws ClassNotInContextException
 	 */
-	public Table read() throws CsvValidationException, ClassNotFoundException, DuplicateAttributeNameException,
-			IOException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch {
-		Schema schema = this.recordReader.schema();
-		Table table = this.tableSupplier.apply(schema);
-
-		Record record = this.recordReader.next();
-		while (record != null) {
-			table.insert(record);
-			record = this.recordReader.next();
+	public Table read() {
+		try {
+			Schema schema = this.recordReader.schema();
+			Table table = this.tableSupplier.apply(schema);
+		
+			Record record = this.recordReader.next();
+			while (record != null) {
+				table.insert(record);
+				record = this.recordReader.next();
+			}
+		
+			return table;
 		}
-
-		return table;
+		catch (CsvValidationException | ClassNotFoundException | DuplicateAttributeNameException | IOException
+				| ColumnOrderingNotInitializedException | ClassNotInContextException | TableRecordSchemaMismatch e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override

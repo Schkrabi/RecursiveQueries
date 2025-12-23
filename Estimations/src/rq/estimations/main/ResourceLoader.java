@@ -46,7 +46,7 @@ public class ResourceLoader {
 				var tr = TableReader.open(path);
 				t = tr.read();
 				cachedTables.put(path, t);
-			} catch (IOException | CsvValidationException | ClassNotFoundException | DuplicateAttributeNameException | ColumnOrderingNotInitializedException | ClassNotInContextException | TableRecordSchemaMismatch e) {
+			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		}
