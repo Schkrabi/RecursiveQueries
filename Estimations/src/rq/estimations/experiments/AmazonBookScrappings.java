@@ -1,13 +1,10 @@
-package rq.estimations.main;
+package rq.estimations.experiments;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
@@ -21,67 +18,69 @@ import rq.common.restrictions.LesserThanOrEquals;
 import rq.common.restrictions.Or;
 import rq.common.restrictions.ProductAnd;
 import rq.common.restrictions.Similar;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.Attribute;
 import rq.common.types.Str50;
+import rq.estimations.framework.Experiment;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 
 public class AmazonBookScrappings extends Experiment {
 	
-	private Attribute Id = new Attribute("Id", java.lang.Integer.class);
+	private Attribute<Integer> Id = new Attribute<>("Id", java.lang.Integer.class);
 //	private Attribute Title = new Attribute("Title", rq.common.types.Str50.class);
-	private Attribute Author = new Attribute("Author", rq.common.types.Str50.class);
-	private Attribute Main_Genre = new Attribute("Main Genre", rq.common.types.Str50.class);
-	private Attribute Sub_Genre = new Attribute("Sub Genre", rq.common.types.Str50.class);
-	private Attribute Type = new Attribute("Type", rq.common.types.Str50.class);
-	private Attribute Price = new Attribute("Price", java.lang.Double.class);
-	private Attribute Rating = new Attribute("Rating", java.lang.Double.class);
-	private Attribute No_of_People_rated = new Attribute("No. of People rated", java.lang.Double.class);
+	private Attribute<Str50> Author = new Attribute<>("Author", rq.common.types.Str50.class);
+	private Attribute<Str50> Main_Genre = new Attribute<>("Main Genre", rq.common.types.Str50.class);
+	private Attribute<Str50> Sub_Genre = new Attribute<>("Sub Genre", rq.common.types.Str50.class);
+	private Attribute<Str50> Type = new Attribute<>("Type", rq.common.types.Str50.class);
+	private Attribute<Double> Price = new Attribute<>("Price", java.lang.Double.class);
+	private Attribute<Double> Rating = new Attribute<>("Rating", java.lang.Double.class);
+	private Attribute<Double> No_of_People_rated = new Attribute<>("No. of People rated", java.lang.Double.class);
 //	private Attribute URLs = new Attribute("URLs", rq.common.types.Str50.class);
 	
-	private BiFunction<Object, Object, Double> priceSimilarity_20_000 = LinearSimilarity.doubleSimilarityUntil(20_000d);
-	private BiFunction<Object, Object, Double> priceSimilarity_50 = LinearSimilarity.doubleSimilarityUntil(100d);
-	private BiFunction<Object, Object, Double> ratingSimilarity_5 = LinearSimilarity.doubleSimilarityUntil(5d);
-	private BiFunction<Object, Object, Double> ratingSimilarity_2 = LinearSimilarity.doubleSimilarityUntil(2d);
-	private BiFunction<Object, Object, Double> NoOfPeopleRatedSimilarity_1000 = LinearSimilarity.doubleSimilarityUntil(1_000d);
+	private ISimilarity<Double> priceSimilarity_20_000 = LinearSimilarities.doubleSimilarityUntil(20_000d);
+//	private ISimilarity<Double> priceSimilarity_50 = LinearSimilarities.doubleSimilarityUntil(100d);
+	private ISimilarity<Double> ratingSimilarity_5 = LinearSimilarities.doubleSimilarityUntil(5d);
+//	private ISimilarity<Double> ratingSimilarity_2 = LinearSimilarities.doubleSimilarityUntil(2d);
+//	private ISimilarity<Double> NoOfPeopleRatedSimilarity_1000 = LinearSimilarities.doubleSimilarityUntil(1_000d);
 	
 	private List<Integer> slices = List.of(/*8, 3,*/5);
 	private List<Integer> probes = List.of(/*0, 3,*/ 5);
 	
-	private List<Attribute> numericalAttributes = 
+	private List<Attribute<Double>> numericalAttributes = 
 			List.of(Price, Rating, No_of_People_rated);
-	private List<Attribute> nominalAttributes = 
+	private List<Attribute<?>> nominalAttributes = 
 			List.of(Main_Genre, Sub_Genre, Type);
 	
-	private List<Attribute> projectionAttributes = 
+	private List<Attribute<?>> projectionAttributes = 
 			List.of(Id, Author, Main_Genre, Sub_Genre, Type);
 	
-	private Map<Attribute, Double> histSampleSizes = 
+	private Map<Attribute<Double>, Double> histSampleSizes = 
 			Map.of( Price, 500d,
 					Rating, 1d,
 					No_of_People_rated, 10_000d);
 	
-	private Map<Attribute, List<Integer>> intervals = 
+	private Map<Attribute<Double>, List<Integer>> intervals = 
 			Map.of( Price, List.of(/*35, 70,*/ 140),
 					Rating, List.of(/*3, 5,*/ 10),
 					No_of_People_rated, List.of(/*5, 20,*/ 80));
 	
-	private Map<Attribute, Double> similarities =
+	private Map<Attribute<Double>, Double> similarities =
 			Map.of( Price, 50.0d,
 					Rating, 2.0d,
 					No_of_People_rated, 1000.0d);
 	
-	private Map<Attribute, List<Integer>> estSamples = 
+	private Map<Attribute<Double>, List<Integer>> estSamples = 
 			Map.of( Price, List.of(/*50, 100,*/ 300),
 					Rating, List.of(/*2, 3,*/ 5),
 					No_of_People_rated, List.of(/*100, 500,*/ 1000));
 
-	private Map<Attribute, Collection<Integer>> _nmbOfCnsVls =
+	private Map<Attribute<Double>, Collection<Integer>> _nmbOfCnsVls =
 			Map.of(Price, List.of(20),
 					Rating, List.of(20),
 					No_of_People_rated, List.of(20));
-	private Map<Attribute, Collection<Double>> _prtRts = 
+	private Map<Attribute<Double>, Collection<Double>> _prtRts = 
 			Map.of(Price, List.of(0.8d/*, 0.6d, 0.5d*/),
 					Rating, List.of(0.8d/*, 0.6d, 0.5d*/),
 					No_of_People_rated, List.of(0.8d/*, 0.6d, 0.5d*/));
@@ -112,8 +111,8 @@ public class AmazonBookScrappings extends Experiment {
 	protected TabularExpression prepareDataQuery(Table primaryData) {
 		return new Selection(primaryData,
 				new ProductAnd(
-						new Similar(this.Price, new Constant<Double>(15_000d), this.priceSimilarity_20_000),
-						new Similar(this.Rating, new Constant<Double>(5d), this.ratingSimilarity_5)));
+						new Similar<>(this.Price, new Constant<Double>(15_000d), this.priceSimilarity_20_000),
+						new Similar<>(this.Rating, new Constant<Double>(5d), this.ratingSimilarity_5)));
 	}
 
 	@Override
@@ -122,28 +121,28 @@ public class AmazonBookScrappings extends Experiment {
 	}
 
 	@Override
-	protected List<Attribute> numericAttributes() {
+	protected List<Attribute<Double>> numericAttributes() {
 		return this.numericalAttributes;
 	}
 
 	@Override
-	protected List<Attribute> nominalAttributes() {
+	protected List<Attribute<?>> nominalAttributes() {
 		return this.nominalAttributes;
 	}
 
 	@Override
-	protected double histSampleSize(Attribute a) {
+	protected double histSampleSize(Attribute<Double> a) {
 		return this.histSampleSizes.get(a);
 	}
 
 	@Override
-	protected List<Integer> intervals(Attribute a) {
+	protected List<Integer> intervals(Attribute<?> a) {
 		return this.intervals.get(a);
 	}
 
 	
 	@Override
-	protected double similarUntil(Attribute a) {
+	protected double similarUntil(Attribute<Double> a) {
 		return this.similarities.get(a);
 	}
 
@@ -153,7 +152,7 @@ public class AmazonBookScrappings extends Experiment {
 	}
 
 	@Override
-	protected List<Integer> estSamples(Attribute a) {
+	protected List<Integer> estSamples(Attribute<?> a) {
 		return this.estSamples.get(a);
 	}
 
@@ -162,24 +161,24 @@ public class AmazonBookScrappings extends Experiment {
 		return Map.of(
 				"s1", new Selection(preparedData,
 						new InfimumAnd(
-								new GreaterThanOrEquals(Price, new Constant<Double>(750d)),
-								new LesserThanOrEquals(Price, new Constant<Double>(1000d)))),
+								new GreaterThanOrEquals<>(Price, new Constant<Double>(750d)),
+								new LesserThanOrEquals<>(Price, new Constant<Double>(1000d)))),
 				"s2", new Selection(preparedData,
 						new InfimumAnd(
-								new GreaterThanOrEquals(No_of_People_rated, new Constant<Double>(500d)),
-								new LesserThanOrEquals(No_of_People_rated, new Constant<Double>(1000d)))),
+								new GreaterThanOrEquals<>(No_of_People_rated, new Constant<Double>(500d)),
+								new LesserThanOrEquals<>(No_of_People_rated, new Constant<Double>(1000d)))),
 				"s3", new Selection(preparedData,
 						new InfimumAnd(
-								new GreaterThanOrEquals(Rating, new Constant<Double>(1d)),
-								new LesserThanOrEquals(Rating, new Constant<Double>(2d)))),
+								new GreaterThanOrEquals<>(Rating, new Constant<Double>(1d)),
+								new LesserThanOrEquals<>(Rating, new Constant<Double>(2d)))),
 				"s4", new Selection(preparedData,
 						new Or(
-								new Equals(Main_Genre, new Constant<Str50>(Str50.factory("Engineering"))),
-								new Equals(Main_Genre, new Constant<Str50>(Str50.factory("History"))))),
+								new Equals<>(Main_Genre, new Constant<Str50>(Str50.factory("Engineering"))),
+								new Equals<>(Main_Genre, new Constant<Str50>(Str50.factory("History"))))),
 				"s5", new Selection(preparedData,
 						new Or(
-								new Equals(Type, new Constant<Str50>(Str50.factory("Paperback"))),
-								new Equals(Type, new Constant<Str50>(Str50.factory("Hardcover")))))
+								new Equals<>(Type, new Constant<Str50>(Str50.factory("Paperback"))),
+								new Equals<>(Type, new Constant<Str50>(Str50.factory("Hardcover")))))
 				);
 	}
 	
@@ -187,7 +186,7 @@ public class AmazonBookScrappings extends Experiment {
 	
 	private void computerNtechnology() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.Sub_Genre, new Constant<Str50>(Str50.factory("Computers & Technology"))));
+				new Equals<>(this.Sub_Genre, new Constant<Str50>(Str50.factory("Computers & Technology"))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(computerNtechnology));
 	}
@@ -196,7 +195,7 @@ public class AmazonBookScrappings extends Experiment {
 	
 	private void romanticSuspense() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.Sub_Genre, new Constant<Str50>(Str50.factory("Romantic Suspense"))));
+				new Equals<>(this.Sub_Genre, new Constant<Str50>(Str50.factory("Romantic Suspense"))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(romanticSuspense));
 	}
@@ -205,13 +204,13 @@ public class AmazonBookScrappings extends Experiment {
 	
 	private void hobbiesNgames() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.Sub_Genre, new Constant<Str50>(Str50.factory("Hobbies & Games"))));
+				new Equals<>(this.Sub_Genre, new Constant<Str50>(Str50.factory("Hobbies & Games"))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(hobbiesNgames));
 	}
 
 	@Override
-	protected Map<String, List<Attribute>> smallData() {
+	protected Map<String, List<Attribute<?>>> smallData() {
 		try {
 			this.computerNtechnology();
 			this.romanticSuspense();
@@ -227,7 +226,7 @@ public class AmazonBookScrappings extends Experiment {
 	}
 
 	@Override
-	protected List<Attribute> projectionAttributes() {
+	protected List<Attribute<?>> projectionAttributes() {
 		return this.projectionAttributes;
 	}
 
@@ -237,12 +236,12 @@ public class AmazonBookScrappings extends Experiment {
 	}
 
 	@Override
-	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+	protected Map<Attribute<Double>, Collection<Integer>> nConsideredValues() {
 		return this._nmbOfCnsVls;
 	}
 
 	@Override
-	protected Map<Attribute, Collection<Double>> paretRatios() {
+	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._prtRts;
 	}
 }

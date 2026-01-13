@@ -23,40 +23,41 @@ import rq.common.table.TopKTable;
 class TopKTableTest {
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 	List<Record> rcrds;
 	TopKTable t;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.1d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.2d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"baz")), 
 				0.3d);
 		
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 4),
-						new Record.AttributeValuePair(b, "bah")), 
+						new Record.AttributeValuePair<>(a, 4),
+						new Record.AttributeValuePair<>(b, "bah")), 
 				0.4f);
 		
 		rcrds = Arrays.asList(r1, r2, r3, r4);
@@ -111,8 +112,8 @@ class TopKTableTest {
 		this.t = TopKTable.factory(schema, 3);
 		assertTrue(t.insert(
 					Arrays.asList(
-							new Record.AttributeValuePair(a, 2), 
-							new Record.AttributeValuePair(b,"bar")),
+							new Record.AttributeValuePair<>(a, 2), 
+							new Record.AttributeValuePair<>(b,"bar")),
 					0.3d));
 	}
 
@@ -201,14 +202,14 @@ class TopKTableTest {
 		this.t = TopKTable.factory(localSchema, 2);
 		
 		for(int i = 0; i < 5; i++) {
-			Record r = Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, i)), i < 3 ? 1.0d : 0.5d);
+			Record r = Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair<>(a, i)), i < 3 ? 1.0d : 0.5d);
 			this.t.insert(r);
 		}
 		
 		assertEquals(3, this.t.size());
-		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 0)), 1.0d)));
-		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 1)), 1.0d)));
-		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair(a, 2)), 1.0d)));
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair<>(a, 0)), 1.0d)));
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair<>(a, 1)), 1.0d)));
+		assertTrue(this.t.contains(Record.factory(localSchema, Arrays.asList(new Record.AttributeValuePair<>(a, 2)), 1.0d)));
 	}
 
 }

@@ -24,10 +24,10 @@ public class ValueParserContext {
 	 * @return parsed object
 	 * @throws ClassNotInContextException if this context does not have the parser for class specified
 	 */
-	public Object parseValue(Class<?> targetClass, String value) 
+	public <T> T parseValue(Class<T> targetClass, String value) 
 		throws ClassNotInContextException {
-		Function<String, Object> pFunction = this.getParsingFunction(targetClass);
-		Object parsed = pFunction.apply(value);
+		var pFunction = this.getParsingFunction(targetClass);
+		T parsed = pFunction.apply(value);
 		return parsed;
 		
 	}
@@ -38,13 +38,14 @@ public class ValueParserContext {
 	 * @return function
 	 * @throws ClassNotInContextException if function does not exists
 	 */
-	public Function<String, Object> getParsingFunction(Class<?> targetClass)
+	@SuppressWarnings("unchecked")
+	public <T> Function<String, T> getParsingFunction(Class<T> targetClass)
 		throws ClassNotInContextException {
-		Function<String, Object> pFunction = this.parsers.get(targetClass);
+		var pFunction = this.parsers.get(targetClass);
 		if(pFunction == null) {
 			throw new ClassNotInContextException(this, targetClass);
 		}
-		return pFunction;
+		return (Function<String, T>) pFunction;
 	}
 	
 	/**

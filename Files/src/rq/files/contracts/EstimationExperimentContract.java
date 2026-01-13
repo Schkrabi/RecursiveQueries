@@ -1,19 +1,15 @@
 package rq.files.contracts;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import rq.common.table.Attribute;
-import rq.common.util.ISerilazeable;
 
 /**Contract for experiment arguments*/
-public class EstimationExperimentContract
-	implements ISerilazeable<EstimationExperimentContract> {
+public class EstimationExperimentContract {
 
 	public EstimationExperimentContract() {}
 	public EstimationExperimentContract(
@@ -65,6 +61,7 @@ public class EstimationExperimentContract
 				.toString().hashCode();
 	}
 	
+	@JsonIgnore
 	public QueryGenerationStrategy getQueryGenerationStrategy() {
 		try {
 			return QueryGenerationStrategy.valueOf(this.queryValuesGenerationStrategy);
@@ -141,8 +138,9 @@ public class EstimationExperimentContract
 		}
 		
 		/**Gets type of the attribute*/
+		@JsonIgnore
 		public Class<?> getType(){
-			if(this.typeName == null || this.typeName == "") {
+			if(this.typeName == null) {
 				return null;
 			}
 			try {
@@ -153,38 +151,22 @@ public class EstimationExperimentContract
 		}
 		
 		/**Gets the atribute*/
-		public Attribute getAttribute() {
-			return new Attribute(this.name, this.getType());
+		@JsonIgnore
+		public Attribute<?> getAttribute() {
+			return new Attribute<>(this.name, this.getType());
 		}
-	}
-
-	private static Moshi moshi = null;
-	private static JsonAdapter<EstimationExperimentContract> adapter = null;
-	
-	protected static Moshi getMoshi() {
-		if(moshi == null) {
-			moshi = new Moshi.Builder().build();
+		
+		@JsonIgnore
+		public Attribute<Double> getDoubleAttribute(){
+			if(!this.isNumericAttribute()) {
+				throw new RuntimeException(this.getAttribute().toString() + " is not numeric attribute");
+			}
+			return new Attribute<Double>(this.name, Double.class);
 		}
-		return moshi;
-	}
-	
-	protected static JsonAdapter<EstimationExperimentContract> getAdapter(){
-		if(adapter == null) {
-			adapter = EstimationExperimentContract.getMoshi().adapter(EstimationExperimentContract.class);
-		}
-		return adapter;
-	}
-	
-	@Override
-	public String serialize() {
-		return EstimationExperimentContract.getAdapter().toJson(this);
-	}
-	
-	public static EstimationExperimentContract deserialize(String ser) {
-		try {
-			return EstimationExperimentContract.getAdapter().fromJson(ser);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+		
+		@JsonIgnore
+		public boolean isNumericAttribute() {
+			return this.getType().equals(Double.class);
 		}
 	}
 }

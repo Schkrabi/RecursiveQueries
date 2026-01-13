@@ -6,20 +6,20 @@ import rq.common.table.Schema;
 /**
  * Record value adding two subexpressions, only supports subexpressions from the same record
  */
-public class PlusDouble implements RecordValue {
+public class PlusDouble implements RecordValue<Double> {
 	
-	private final RecordValue left;
-	private final RecordValue right;
+	private final RecordValue<Double> left;
+	private final RecordValue<Double> right;
 	
-	public PlusDouble(RecordValue left, RecordValue right) {
+	public PlusDouble(RecordValue<Double> left, RecordValue<Double> right) {
 		this.left = left;
 		this.right = right;
 	}
 
 	@Override
 	public Double value(Record record) {
-		Double leftDouble = (Double)left.value(record);
-		Double rightDouble = (Double)right.value(record);
+		var leftDouble = left.value(record);
+		var rightDouble = right.value(record);
 		
 		return leftDouble + rightDouble;
 	}
@@ -39,7 +39,7 @@ public class PlusDouble implements RecordValue {
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<Double> domain() {
 		return Double.class;
 	}
 

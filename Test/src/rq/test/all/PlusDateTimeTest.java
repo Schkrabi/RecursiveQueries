@@ -19,7 +19,7 @@ import rq.common.types.DateTime;
 
 class PlusDateTimeTest {
 	
-	Attribute a = new Attribute("a", DateTime.class);
+	Attribute<DateTime> a = new Attribute<>("a", DateTime.class);
 	Schema s;
 	
 	PlusDateTime pd = new PlusDateTime(a, Duration.ofDays(1));
@@ -32,7 +32,7 @@ class PlusDateTimeTest {
 	@Test
 	void testValue() throws TypeSchemaMismatchException, AttributeNotInSchemaException {
 		Record record = Record.factory(s, 
-				Arrays.asList(new Record.AttributeValuePair(a, new DateTime(LocalDateTime.of(2023, 1, 1, 0, 0)))), 
+				Arrays.asList(new Record.AttributeValuePair<>(a, new DateTime(LocalDateTime.of(2023, 1, 1, 0, 0)))), 
 				1.0d);
 		
 		assertEquals(new DateTime(LocalDateTime.of(2023, 1, 2, 0, 0)), pd.value(record));

@@ -11,7 +11,7 @@ import rq.common.operators.Selection;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 
-public class Numerical extends ProbeableEstimation {
+public class Numerical extends ProbeableEstimation<Double> {
 
 	public final double domainMin;
 	public final double domainMax;
@@ -19,22 +19,22 @@ public class Numerical extends ProbeableEstimation {
 	public final int domainSamples;
 	public final double domainSampleSize;
 	
-	protected final SampledHistogram attributeHistogram;
+	protected final SampledHistogram<Double> attributeHistogram;
 	
 	public Numerical(
 			Selection selection,  
 			int resultSlices,
 			double domainSampleSize,
-			SampledHistogram h) {
+			SampledHistogram<Double> h) {
 		super(selection, resultSlices);
 		
 		var stats = this.argument.getStatistics();
 		this.domainSampleSize = domainSampleSize;
 		
-		SampledHistogram hist = null;
+		SampledHistogram<Double> hist = null;
 		if(h == null) {
 			hist = stats
-				.getSampledHistogram(this.attribute, domainSampleSize).get();
+				.<Double>getSampledHistogram(this.attribute, domainSampleSize).get();
 		}
 		else {
 			hist = h;
@@ -61,10 +61,10 @@ public class Numerical extends ProbeableEstimation {
 	}
 	
 	@Override
-	protected RankHistogram estimateProbability(Set<Object> histValues) {
+	protected RankHistogram estimateProbability(Set<Double> histValues) {
 		List<Double> rankList = new LinkedList<Double>();
 		
-		for(Object histValue : histValues) {
+		for(Double histValue : histValues) {
 			double count = (double)this.attributeHistogram.getCount((double)histValue) / this.domainSamples; 
 			//Full walk through domain
 			for(	double domValue = this.domainMin; 
@@ -82,8 +82,8 @@ public class Numerical extends ProbeableEstimation {
 	}
 
 	@Override
-	protected Map<Object, Integer> getHistogramData() {
-		return new HashMap<Object, Integer>(this.attributeHistogram.getHistogram());
+	protected Map<Double, Integer> getHistogramData() {
+		return new HashMap<Double, Integer>(this.attributeHistogram.getHistogram());
 	}
 
 	
@@ -91,7 +91,7 @@ public class Numerical extends ProbeableEstimation {
 			int resultSlices,
 			double domainSampleSize,
 			int probes,
-			SampledHistogram hist) {
+			SampledHistogram<Double> hist) {
 		var me = new Numerical(selection, resultSlices, domainSampleSize, hist);
 		me.setProbes(probes);
 		var est = me.estimate();

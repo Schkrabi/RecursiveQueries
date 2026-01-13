@@ -9,17 +9,17 @@ import rq.common.table.Attribute;
 /**
  * Sliced histogram statistic
  */
-public class SlicedHistogram extends SlicedStatistic {
+public class SlicedHistogram<T> extends SlicedStatistic {
 	
 	/**
 	 * Monitored attribute
 	 */
-	public final Attribute attribute;
+	public final Attribute<T> attribute;
 	
-	final Map<RankInterval, Integer> rankHistogram = new HashMap<RankInterval, Integer>();
-	private final Map<RankInterval, Map<Object, Integer>> histograms = new HashMap<RankInterval, Map<Object, Integer>>();
+	final Map<RankInterval, Integer> rankHistogram = new HashMap<>();
+	private final Map<RankInterval, Map<T, Integer>> histograms = new HashMap<>();
 	
-	public SlicedHistogram(Attribute attribute, int slices) {
+	public SlicedHistogram(Attribute<T> attribute, int slices) {
 		super(uniformSlices(slices));
 		this.attribute = attribute;
 		this.initHistograms();
@@ -30,13 +30,13 @@ public class SlicedHistogram extends SlicedStatistic {
 	 * @param interval slice
 	 * @return histogram map
 	 */
-	public Map<Object, Integer> histogramSlice(RankInterval interval){
-		Map<Object, Integer> histogram = this.histograms.get(interval);
+	public Map<T, Integer> histogramSlice(RankInterval interval){
+		var histogram = this.histograms.get(interval);
 		if(histogram == null) {
 			return null;
 		}
 		
-		return new HashMap<Object, Integer>(histogram);
+		return new HashMap<>(histogram);
 	}
 	
 	/**
@@ -45,7 +45,7 @@ public class SlicedHistogram extends SlicedStatistic {
 	 * @param end end of the slice
 	 * @return histogram map
 	 */
-	public Map<Object, Integer> histogramSlice(double start, double end){
+	public Map<T, Integer> histogramSlice(double start, double end){
 		return this.histogramSlice(new RankInterval(start, end));
 	}
 	
@@ -56,7 +56,7 @@ public class SlicedHistogram extends SlicedStatistic {
 	 * @return count of the value in the slice
 	 */
 	public int getCount(RankInterval interval, Object value) {
-		Map<Object, Integer> slice = this.histogramSlice(interval);
+		var slice = this.histogramSlice(interval);
 		
 		if(slice == null) {
 			return 0;
@@ -86,8 +86,8 @@ public class SlicedHistogram extends SlicedStatistic {
 	 */
 	private void initHistograms() {
 		this.histograms.clear();
-		for(RankInterval interval : this.slices) {
-			Map<Object, Integer> histogram = new HashMap<Object, Integer>();
+		for(var interval : this.slices) {
+			var histogram = new HashMap<T, Integer>();
 			this.histograms.put(interval, histogram);
 		}
 	}
@@ -109,13 +109,13 @@ public class SlicedHistogram extends SlicedStatistic {
 				this.rankHistogram.put(interval, count + 1);
 			}
 			
-			Map<Object, Integer> histogram = this.histograms.get(interval);
+			var histogram = this.histograms.get(interval);
 			if(histogram == null) {
-				histogram = new HashMap<Object, Integer>();
+				histogram = new HashMap<>();
 				this.histograms.put(interval, histogram);
 			}
 			
-			Object value = r.getNoThrow(attribute);
+			var value = r.getNoThrow(attribute);
 			Integer hCount = histogram.get(value);
 			if(hCount == null) {
 				histogram.put(value, 1);

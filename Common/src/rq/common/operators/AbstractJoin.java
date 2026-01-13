@@ -1,11 +1,10 @@
 package rq.common.operators;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BinaryOperator;
-import java.util.stream.Collectors;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
@@ -17,8 +16,8 @@ import rq.common.table.Schema;
 
 public class AbstractJoin {
 	
-	private static Attribute aliasAttribute(String prefix, Attribute a) {
-		return new Attribute(prefix + a.name, a.domain);
+	private static <U> Attribute<U> aliasAttribute(String prefix, Attribute<U> a) {
+		return new Attribute<>(prefix + a.name, a.domain);
 	}
 	
 	protected final static String LEFT = "left.";
@@ -26,18 +25,20 @@ public class AbstractJoin {
 	
 	/**
 	 * Aliases the attribute as left part of a join
+	 * @param <U>
 	 * @param a
 	 * @return
 	 */
-	public static Attribute left(Attribute a) {
+	public static <U> Attribute<U> left(Attribute<U> a) {
 		return aliasAttribute(LEFT, a);
 	}
 	/**
 	 * Aliases the attribute as right part of the join
+	 * @param <U>
 	 * @param a
 	 * @return
 	 */
-	public static Attribute right(Attribute a) {
+	public static <U> Attribute<U> right(Attribute<U> a) {
 		return aliasAttribute(RIGHT, a);
 	}
 
@@ -48,28 +49,28 @@ public class AbstractJoin {
 	 * @param tableAlias prefix in the joined table
 	 * @return a mapping from schema attributes to new joined table attributes
 	 */
-	protected static java.util.Map<Attribute, Attribute> makeProjection(Schema schema, Set<Attribute> intersection, String tableAlias) {
-		java.util.Map<Attribute, Attribute> m = new HashMap<Attribute, Attribute>();
+	protected static java.util.Map<Attribute<?>, Attribute<?>> makeProjection(Schema schema, Set<Attribute<?>> intersection, String tableAlias) {
+		java.util.Map<Attribute<?>, Attribute<?>> m = new HashMap<>();
 		schema.stream()
 			.filter(a -> !intersection.contains(a))
 			.forEach(a -> m.put(a, a));		
 		intersection.stream()
-			.forEach(a -> m.put(a, new Attribute(tableAlias + a.name, a.domain)));
+			.forEach(a -> m.put(a, new Attribute<>(tableAlias + a.name, a.domain)));
 		return m;
 	}
 
-	protected final List<OnOperator> onClause;
+	protected final List<OnOperator<?>> onClause;
 	protected final BinaryOperator<Double> product;
 	protected final BinaryOperator<Double> infimum;
-	protected final java.util.Map<Attribute, Attribute> leftProjection;
-	protected final java.util.Map<Attribute, Attribute> rightProjection;
+	protected final java.util.Map<Attribute<?>, Attribute<?>> leftProjection;
+	protected final java.util.Map<Attribute<?>, Attribute<?>> rightProjection;
 	protected final Schema schema;
 	
-	protected AbstractJoin(List<OnOperator> onClause,
+	protected AbstractJoin(List<OnOperator<?>> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
-			java.util.Map<Attribute, Attribute> leftProjection,
-			java.util.Map<Attribute, Attribute> rightProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> leftProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> rightProjection,
 			Schema schema) {
 		this.onClause = onClause;
 		this.product = product;
@@ -88,7 +89,7 @@ public class AbstractJoin {
 	protected double joinClauseSatisfyDegree(Record record1, Record record2) {
 		double rank = 1.0d;
 		
-		for(OnOperator clause : this.onClause) {
+		for(var clause : this.onClause) {
 			double clauseRank = clause.eval(record1, record2);
 			rank = this.infimum.apply(rank, clauseRank);
 		}
@@ -115,12 +116,16 @@ public class AbstractJoin {
 	 */
 	protected Record joinRecords(Record record1, Record record2, Double rank) {
 		try {
-			Collection<AttributeValuePair> vls = record1.schema.stream()
-															.map((Attribute a) -> new AttributeValuePair(this.leftProjection.get(a), record1.getNoThrow(a)))
-															.collect(Collectors.toList());
-			record2.schema.stream()
-				.map(a -> new AttributeValuePair(this.rightProjection.get(a), record2.getNoThrow(a)))
-				.forEach(p -> vls.add(p));
+			var vls = new ArrayList<AttributeValuePair<?>>();
+			
+			for(var a : record1.schema) {
+				var avp = new AttributeValuePair<>(this.leftProjection.get(a), record1.getNoThrow(a));
+				vls.add(avp);
+			}
+			for(var a : record2.schema) {
+				var avp = new AttributeValuePair<>(this.rightProjection.get(a), record2.getNoThrow(a));
+				vls.add(avp);
+			}
 			
 			return Record.factory(
 					this.schema, 

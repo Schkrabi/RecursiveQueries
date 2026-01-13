@@ -9,17 +9,16 @@ import rq.common.table.Record;
 /**
  * 
  */
-public class GreaterThanOrEquals extends CompareCondition {
+public class GreaterThanOrEquals<T extends Comparable<T>> extends CompareCondition<T> {
 
-	public GreaterThanOrEquals(RecordValue left, RecordValue right) {
+	public GreaterThanOrEquals(RecordValue<T> left, RecordValue<T> right) {
 		super(left, right);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public double eval(Record record) {
-		Comparable<Object> leftValue = (Comparable<Object>)this.left.value(record);
-		Comparable<Object> rightValue = (Comparable<Object>)this.right.value(record);
+		var leftValue = this.left.value(record);
+		var rightValue = this.right.value(record);
 		
 		int cmp = leftValue.compareTo(rightValue); 
 		

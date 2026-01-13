@@ -2,7 +2,6 @@ package rq.common.estimations;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -15,23 +14,23 @@ import rq.common.statistic.RankHistogram;
 import rq.common.statistic.Size;
 import rq.common.statistic.Statistics;
 
-public class Nominal extends ProbeableEstimation {
+public class Nominal<T> extends ProbeableEstimation<T> {
 
 	public final int probedAttributes;
-	protected final Set<Object> attributeDomain;
+	protected final Set<T> attributeDomain;
 	
-	protected final AttributeHistogram argumentAttributeHistogram;
+	protected final AttributeHistogram<T> argumentAttributeHistogram;
 	protected final Size argumentSize;
 	
 	public Nominal(
 			Selection selection, 
 			int resultSlices,
 			int probedAttributes,
-			Set<Object> attributeDomain) {
+			Set<T> attributeDomain) {
 		super(selection, 
 				resultSlices);
 		this.probedAttributes = probedAttributes;
-		this.attributeDomain = new HashSet<Object>(attributeDomain);
+		this.attributeDomain = new HashSet<T>(attributeDomain);
 		
 		if(!(this.condition instanceof Similar)) {
 			throw new RuntimeException("Restriction condition must be Similarity");
@@ -39,7 +38,7 @@ public class Nominal extends ProbeableEstimation {
 		
 		Statistics stats = argument.getStatistics();
 		
-		Optional<AttributeHistogram> oah = stats.getAttributeHistogram(attribute); 
+		Optional<AttributeHistogram<T>> oah = stats.getAttributeHistogram(attribute); 
 		if(oah.isEmpty()) {
 			throw new RuntimeException("Argument must gather attribute histogram of the condition attribute.");
 		}
@@ -53,17 +52,17 @@ public class Nominal extends ProbeableEstimation {
 	}	
 
 	@Override
-	protected RankHistogram estimateProbability(Set<Object> histValues) {		
-		double size = this.argumentAttributeHistogram.getHistogram()
+	protected RankHistogram estimateProbability(Set<T> histValues) {		
+		var size = this.argumentAttributeHistogram.getHistogram()
 				.entrySet().stream()
 				.filter(e -> histValues.contains(e.getKey()))
 				.mapToDouble(e -> e.getValue())
 				.sum();
 		
-		List<Double> rankList = new LinkedList<Double>();
+		var rankList = new LinkedList<Double>();
 		
-		for(Object domValue : this.attributeDomain) {
-			for(Object histValue : histValues) {
+		for(T domValue : this.attributeDomain) {
+			for(T histValue : histValues) {
 				long value = (long)(this.argumentAttributeHistogram.getCount(histValue) / size);
 				double rank = this.similarity.apply(domValue, histValue);
 				
@@ -76,7 +75,7 @@ public class Nominal extends ProbeableEstimation {
 	}
 
 	@Override
-	protected Map<Object, Integer> getHistogramData() {
+	protected Map<T, Integer> getHistogramData() {
 		return this.argumentAttributeHistogram.getHistogram();
 	}
 	
@@ -85,7 +84,7 @@ public class Nominal extends ProbeableEstimation {
 			int resultSlices,
 			int probedAttributes,
 			Set<Object> attributeDomain) {
-		var me = new Nominal(selection, resultSlices, probedAttributes, attributeDomain);
+		var me = new Nominal<>(selection, resultSlices, probedAttributes, attributeDomain);
 		var rslt = me.estimate();
 		return rslt;
 	}

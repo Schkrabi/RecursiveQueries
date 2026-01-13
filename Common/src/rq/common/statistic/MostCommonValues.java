@@ -11,41 +11,30 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.interfaces.Table;
 import rq.common.statistic.DataSlicedHistogram.Interval;
 import rq.common.table.Attribute;
-import rq.common.util.DeserializerRegistry;
-import rq.common.util.IDeserializer;
 import rq.common.util.ISerilazeable;
+import rq.common.util.NumberDeserializer;
 import rq.common.util.Pair;
 
 /** Observes the most common values on an attribute*/
-public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonValues> {
-
-	static {
-		DeserializerRegistry.register(MostCommonValues.class, new IDeserializer<MostCommonValues>() {
-
-			@Override
-			public MostCommonValues deserialize(String serialized) {
-				return MostCommonValues.deserialize(serialized);
-			}
-		});
-	}
+public class MostCommonValues<T extends Number> implements IStatistic, ISerilazeable<MostCommonValues<T>> {
 	
-	private Map<Double, Integer> counts = new HashMap<Double, Integer>();
-	public final Attribute observed;
+	private Map<T, Integer> counts = new HashMap<>();
+	public final Attribute<T> observed;
 	
-	public MostCommonValues(Attribute observed) {
+	public MostCommonValues(Attribute<T> observed) {
 		if(observed.domain != Double.class) {
 			throw new RuntimeException("Must be Double attribute!");
 		}
 		this.observed = observed;
 	}	
 
-	private List<Pair<Double, Integer>> _mostCommon;
+	private List<Pair<T, Integer>> _mostCommon;
 	
 	@Override
 	public void gather(Table table) {
 		for(var r : table) {
 			try {
-				var v = (Double)r.get(this.observed);
+				var v = r.get(this.observed);
 				var cnt = this.counts.get(v);
 				if(cnt == null) {
 					cnt = 0;
@@ -67,7 +56,7 @@ public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonVal
 	}
 
 	/** Gets the list of most common values and their counts */
-	public List<Pair<Double, Integer>> mostCommon(int n){
+	public List<Pair<T, Integer>> mostCommon(int n){
 		return this._mostCommon.stream().limit(n).collect(Collectors.toList());
 	}
 	
@@ -81,8 +70,8 @@ public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonVal
 		return this._total.intValue();
 	}
 	
-	private double computeCenterOfGravity(Stream<Pair<Double, Integer>> vlCntPairs) {
-		return vlCntPairs.mapToDouble(p -> p.first * (p.second.doubleValue() / this.total())).sum();
+	private double computeCenterOfGravity(Stream<Pair<T, Integer>> vlCntPairs) {
+		return vlCntPairs.mapToDouble(p -> p.first.doubleValue() * (p.second.doubleValue() / this.total())).sum();
 	}
 	
 	//1 2 2 2 6 6 6 6
@@ -104,7 +93,7 @@ public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonVal
 		var cog = this._centersOfGravity.get(intv);
 		if(cog == null) {
 			cog = this.computeCenterOfGravity(this.counts.entrySet().stream()
-					.filter(e -> intv.contains(e.getKey()))
+					.filter(e -> intv.contains(e.getKey().doubleValue()))
 					.map(e -> Pair.of(e.getKey(), e.getValue())));
 			
 			this._centersOfGravity.put(intv, cog);
@@ -141,10 +130,10 @@ public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonVal
 		return sb.toString();
 	}
 	
-	public static MostCommonValues deserialize(String serialized) {
-		var data = new LinkedHashMap<Double, Integer>();
+	public static <T extends Number> MostCommonValues<T> deserialize(String serialized, Class<T> type) {
+		var data = new LinkedHashMap<T, Integer>();
 		
-		Attribute observed = null;
+		Attribute<T> observed = null;
 		
 		for(var line : serialized.split("\n")) {
 			if(observed == null) {
@@ -157,12 +146,12 @@ public class MostCommonValues implements IStatistic, ISerilazeable<MostCommonVal
 			}
 			
 			var vls = line.split(";");
-			var key = Double.parseDouble(vls[0]);
+			var key = NumberDeserializer.deserialize(vls[0], type);
 			var value = Integer.parseInt(vls[1]);
 			data.put(key, value);
 		}
 		
-		var r = new MostCommonValues(observed);
+		var r = new MostCommonValues<>(observed);
 		r.counts = data;
 		r.recalculateMostCommon();
 		return r;

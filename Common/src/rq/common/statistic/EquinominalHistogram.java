@@ -11,13 +11,13 @@ import rq.common.estimations.SignatureProvider;
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class EquinominalHistogram extends DataSlicedHistogram implements SignatureProvider  {
+public class EquinominalHistogram<T extends Number> extends DataSlicedHistogram<T> implements SignatureProvider  {
 
-	public EquinominalHistogram(Attribute observed, int n) {
+	public EquinominalHistogram(Attribute<T> observed, int n) {
 		super(observed, n);
 	}
 	
-	private EquinominalHistogram(Attribute observed, int n, Map<Interval, Integer> counts) {
+	private EquinominalHistogram(Attribute<T> observed, int n, Map<Interval, Integer> counts) {
 		super(observed, n, counts);
 	}
 
@@ -51,18 +51,18 @@ public class EquinominalHistogram extends DataSlicedHistogram implements Signatu
 		this.counts.put(new Interval(start.doubleValue(), next.doubleValue(), true, true), count);
 	}
 
-	public static EquinominalHistogram deserialize(String serialized) throws ClassNotFoundException {
-		var args = DataSlicedHistogram.doDeserialize(serialized);
-		var hist = new EquinominalHistogram(args.observed, args.n, args.counts);
+	public static <U extends Number> EquinominalHistogram<U> deserialize(String serialized) throws ClassNotFoundException {
+		HistArgs<U> args = DataSlicedHistogram.doDeserialize(serialized);
+		var hist = new EquinominalHistogram<>(args.observed, args.n, args.counts);
 		return hist;
 	}
 	
-	public static EquinominalHistogram readFile(String path) {
+	public static <U extends Number> EquinominalHistogram<U> readFile(String path) {
 		return readFile(Path.of(path));
 	}
 	
-	public static EquinominalHistogram readFile(Path path) {
-		EquinominalHistogram hist;
+	public static <U extends Number> EquinominalHistogram<U> readFile(Path path) {
+		EquinominalHistogram<U> hist;
 		try {
 			hist = deserialize(Files.readString(path));
 		} catch (ClassNotFoundException | IOException e) {

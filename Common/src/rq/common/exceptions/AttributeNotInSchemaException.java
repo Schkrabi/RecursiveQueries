@@ -16,11 +16,11 @@ public class AttributeNotInSchemaException extends Exception {
 	 * 
 	 */
 	private static final long serialVersionUID = 822959249214795413L;
-	public final Attribute attribute;
+	public final Attribute<?> attribute;
 	public final String attributeName;
 	public final Schema schema;
 	
-	public AttributeNotInSchemaException(Attribute attribute, Schema schema) {
+	public AttributeNotInSchemaException(Attribute<?> attribute, Schema schema) {
 		super(new StringBuilder()
 				.append("Attribute ")
 				.append(attribute)

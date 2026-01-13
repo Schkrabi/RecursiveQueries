@@ -2,10 +2,10 @@ package rq.common.estimations;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
+import rq.common.similarities.ISimilarity;
 import rq.common.statistic.DataSlicedHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.util.Pair;
@@ -13,18 +13,18 @@ import rq.common.util.Pair;
 public class WeightedCompositeEstimation implements IEstimation {
 	
 	public final int slices;
-	public final DataSlicedHistogram hist;
-	public final RepresentativeProvider representativeProvider;
+	public final DataSlicedHistogram<Double> hist;
+	public final RepresentativeProvider<Double> representativeProvider;
 	public final int consideredValues;
 	
-	private final BiFunction<Object, Object, Double> similarity;
+	private final ISimilarity<Double> similarity;
 
 	public WeightedCompositeEstimation(
 			int slices,
-			DataSlicedHistogram hist,
-			RepresentativeProvider representativeProvider,
+			DataSlicedHistogram<Double> hist,
+			RepresentativeProvider<Double> representativeProvider,
 			int consideredValues,
-			BiFunction<Object, Object, Double> similarity) {
+			ISimilarity<Double> similarity) {
 		this.slices = slices;
 		this.hist = hist;
 		this.representativeProvider = representativeProvider;
@@ -74,10 +74,10 @@ public class WeightedCompositeEstimation implements IEstimation {
 	}
 	
 	protected IEstimation getSubestimation(double representative) {
-		return new IntervalEstimation(this.slices, 
+		return new IntervalEstimation<Double>(this.slices, 
 				this.similarity, 
 				hist, 
-				new ConstantRepresentativeProvider(representative), 
+				new ConstantRepresentativeProvider<>(representative), 
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER, 
 				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
 	}

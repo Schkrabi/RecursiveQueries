@@ -1,7 +1,6 @@
 package queries;
 
 import java.time.Duration;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import annotations.CallingArg;
@@ -25,9 +24,11 @@ import rq.common.operators.LazySelection;
 import rq.common.restrictions.Similar;
 import rq.common.restrictions.GreaterThanOrEquals;
 import rq.common.restrictions.Or;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.LazyFacade;
 import rq.common.tools.AlgorithmMonitor;
+import rq.common.types.DateTime;
 
 @CallingArg("electricityWeekFuzzyTra")
 public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
@@ -45,14 +46,14 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 	}
 	
 	private Duration _stepSimilarity = Duration.ofDays(20);
-	private BiFunction<Object, Object, Double> stepSimilarity =
-			LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+	private ISimilarity<DateTime> stepSimilarity =
+			LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	
 	@QueryParameter("stepSimilarity")
 	public void setStepSimilarity(String similarityScale) {
 		this._stepSimilarity = Duration.ofDays(Integer.parseInt(similarityScale));
 		this.stepSimilarity =
-				LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+				LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	}
 	
 	@QueryParameterGetter("stepSimilarity")
@@ -73,13 +74,13 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 	}
 	
 	private Double _thresholdSimilarity = 0.2d;
-	private BiFunction<Object, Object, Double> thresholdSimilarity = 
-			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
+	private ISimilarity<Double> thresholdSimilarity = 
+			LinearSimilarities.doubleSimilarityUntil(_thresholdSimilarity);
 	
 	@QueryParameter("thresholdSimilarity")
 	public void setThresholdSimilarity(String peakSimilarity) {
 		this._thresholdSimilarity = Double.parseDouble(peakSimilarity);
-		this.thresholdSimilarity = LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
+		this.thresholdSimilarity = LinearSimilarities.doubleSimilarityUntil(_thresholdSimilarity);
 	}
 	
 	@QueryParameterGetter("thresholdSimilarity")
@@ -100,13 +101,13 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 	}
 	
 	private int _peaksSimilarity = 2;
-	private BiFunction<Object, Object, Double> peaksSimilarity = 
-			LinearSimilarity.integerSimilarityUntil(_peaksSimilarity);
+	private ISimilarity<Integer> peaksSimilarity = 
+			LinearSimilarities.integerSimilarityUntil(_peaksSimilarity);
 	
 	@QueryParameter("peaksSimilarity")
 	public void setPeaksSimilarity(String numberOfPeaksSimilarity) {
 		this._peaksSimilarity = Integer.parseInt(numberOfPeaksSimilarity);
-		this.peaksSimilarity = LinearSimilarity.integerSimilarityUntil(this._peaksSimilarity);
+		this.peaksSimilarity = LinearSimilarities.integerSimilarityUntil(this._peaksSimilarity);
 	}
 	@QueryParameterGetter("peaksSimilarity")
 	public String getPeaksSimilarity() {
@@ -133,10 +134,10 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 		return (Table iTable) -> {
 			return LazyProjection.factory(
 					new LazyFacade(iTable),  
-					new Projection.To(Electricity.customer, Electricity.customer),
-					new Projection.To(Electricity.time, Electricity.fromTime),
-					new Projection.To(Electricity.time, Electricity.toTime),
-					new Projection.To(new Constant<Integer>(1), Electricity.peaks));
+					new Projection.To<>(Electricity.customer, Electricity.customer),
+					new Projection.To<>(Electricity.time, Electricity.fromTime),
+					new Projection.To<>(Electricity.time, Electricity.toTime),
+					new Projection.To<>(new Constant<Integer>(1), Electricity.peaks));
 		};
 	}
 
@@ -148,15 +149,15 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 						LazyJoin.factory(
 								new LazyFacade(t), 
 								new LazyFacade(iTable),  
-								new OnEquals(Electricity.customer, Electricity.customer),
-								new OnSimilar(
+								new OnEquals<>(Electricity.customer, Electricity.customer),
+								new OnSimilar<>(
 										new PlusDateTime(Electricity.toTime, _step), 
 										Electricity.time, 
 										this.stepSimilarity)), 
-						new Projection.To(Join.left(Electricity.customer), Electricity.customer),
-						new Projection.To(Electricity.fromTime, Electricity.fromTime),
-						new Projection.To(Electricity.time, Electricity.toTime),
-						new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
+						new Projection.To<>(Join.left(Electricity.customer), Electricity.customer),
+						new Projection.To<>(Electricity.fromTime, Electricity.fromTime),
+						new Projection.To<>(Electricity.time, Electricity.toTime),
+						new Projection.To<>(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
 			};
 		};
 	}
@@ -166,8 +167,8 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 		return (Table iTable) -> {
 			return new LazySelection(
 					new LazyFacade(iTable),
-					new Or(	new Similar(Electricity.peaks, new Constant<Integer>(_peaks), this.peaksSimilarity),
-							new GreaterThanOrEquals(Electricity.peaks, new Constant<Integer>(_peaks))));
+					new Or(	new Similar<>(Electricity.peaks, new Constant<Integer>(_peaks), this.peaksSimilarity),
+							new GreaterThanOrEquals<>(Electricity.peaks, new Constant<Integer>(_peaks))));
 		};
 	}
 
@@ -176,11 +177,11 @@ public class Queries2_Electricity_Week_Fuzzy_tra extends Queries2 {
 		LazyExpression le = 	
 				new LazySelection(
 						iTable,
-						new Or(	new Similar(
+						new Or(	new Similar<>(
 									new DivDouble(Electricity.value, Electricity.movingAvg), 
 									new Constant<Double>(_threshold), 
 									this.thresholdSimilarity),
-								new GreaterThanOrEquals(
+								new GreaterThanOrEquals<>(
 										new DivDouble(Electricity.value, Electricity.movingAvg), 
 										new Constant<Double>(_threshold))));
 

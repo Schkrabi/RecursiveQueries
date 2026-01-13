@@ -6,12 +6,12 @@ import rq.common.table.Schema;
 /**
  * Abstract class for double valued selection conditions
  */
-public abstract class BiCondition implements SelectionCondition {
+public abstract class BiCondition<T> implements SelectionCondition {
 	
-	public final RecordValue left;
-	public final RecordValue right;
+	public final RecordValue<T> left;
+	public final RecordValue<T> right;
 	
-	public BiCondition(RecordValue left, RecordValue right) {
+	public BiCondition(RecordValue<T> left, RecordValue<T> right) {
 		this.left = left;
 		this.right = right;
 	}

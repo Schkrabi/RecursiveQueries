@@ -280,6 +280,7 @@ public class Main {
 			while(scanner.hasNextLine()) {
 				argMap = parseQueryArg(scanner.nextLine(), argMap);
 			}
+			scanner.close();			
 			return argMap;
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);

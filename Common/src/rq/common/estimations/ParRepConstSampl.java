@@ -1,7 +1,6 @@
 package rq.common.estimations;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
@@ -9,18 +8,18 @@ import rq.common.statistic.SampledHistogram;
 /**
  * Precisely estimates 
  */
-public class ParRepConstSampl implements IEstimation {
+public class ParRepConstSampl<T extends Number> implements IEstimation {
 
     public final int resultSlices;
 	public final double constant;
-	public final BiFunction<Object, Object, Double> similarity;
-	private SampledHistogram hist;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
+	private SampledHistogram<T> hist;
 	public final int numOfConsideredValues;
 	
 	public ParRepConstSampl(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity, 
-			SampledHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity, 
+			SampledHistogram<T> hist,
 			double constant,
 			int numOfConsideredValues) {
 		this.hist = hist;
@@ -32,8 +31,8 @@ public class ParRepConstSampl implements IEstimation {
 	
 	public ParRepConstSampl(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity, 
-			SampledHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity, 
+			SampledHistogram<T> hist,
 			double constant) {
 		this.hist = hist;
 		this.similarity = similarity;

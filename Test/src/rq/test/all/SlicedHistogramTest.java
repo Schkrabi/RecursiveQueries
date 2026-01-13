@@ -17,50 +17,51 @@ import rq.common.table.Schema;
 class SlicedHistogramTest {
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4, r5, r6;
 	MemoryTable t1;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.95d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.6d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 4), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 4), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.45d);
 		r5 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 5), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 5), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.2d);
 		r6 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 6), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 6), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.15d);
 		
 		t1 = new MemoryTable(this.schema);
@@ -74,7 +75,7 @@ class SlicedHistogramTest {
 
 	@Test
 	void testGather() {
-		SlicedHistogram sh = new SlicedHistogram(b, 3);
+		SlicedHistogram<String> sh = new SlicedHistogram<>(b, 3);
 		
 		Set<SlicedHistogram.RankInterval> slices = sh.getSlices(); 
 		assertEquals(3, slices.size());

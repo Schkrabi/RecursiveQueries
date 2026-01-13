@@ -17,12 +17,12 @@ import rq.common.table.Record;
  */
 public class ValueCount implements IStatistic {
 
-	private Map<Attribute, Integer> valueCounts = new HashMap<Attribute, Integer>();
+	private Map<Attribute<?>, Integer> valueCounts = new HashMap<>();
 
 	@Override
 	public void gather(Table table) {
-		Map<Attribute, Integer> m = new HashMap<Attribute, Integer>();
-		for(Attribute a : table.schema()) {
+		var m = new HashMap<Attribute<?>, Integer>();
+		for(var a : table.schema()) {
 			Set<Object> values = new HashSet<Object>();
 			for(Record r : table) {
 				Object v = r.getNoThrow(a);
@@ -38,7 +38,7 @@ public class ValueCount implements IStatistic {
 	 * @param attribute inspected attribute
 	 * @return value count of the attribute
 	 */
-	public int getValueCount(Attribute attribute) {
+	public int getValueCount(Attribute<?> attribute) {
 		Integer c = this.valueCounts.get(attribute);
 		if(c == null) {
 			return 0;

@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.util.List;
 import java.util.Map;
@@ -6,6 +6,7 @@ import java.util.function.BinaryOperator;
 
 import rq.common.interfaces.Table;
 import rq.common.latices.Goguen;
+import rq.estimations.main.BinaryOperators;
 import rq.files.io.TableReader;
 
 public class BinaryOperationContract extends EstimationSetupContract {

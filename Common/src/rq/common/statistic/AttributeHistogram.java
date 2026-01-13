@@ -1,11 +1,8 @@
 package rq.common.statistic;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,32 +10,31 @@ import java.util.stream.Collectors;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.interfaces.Table;
-import rq.common.io.contexts.ClassNotInContextException;
-import rq.common.io.contexts.ValueParserContext;
 
 /**
  * Histogram of values of an attribute
+ * @param <T>
  */
-public class AttributeHistogram implements IStatistic {
+public class AttributeHistogram<T> implements IStatistic {
 	
-	private final Map<Object, Integer> counts = new HashMap<Object, Integer>();
-	public final Attribute counted;
+	private final Map<T, Integer> counts = new HashMap<T, Integer>();
+	public final Attribute<T> counted;
 	
-	public AttributeHistogram(Attribute attribute) {
+	public AttributeHistogram(Attribute<T> attribute) {
 		this.counted = attribute;
 	}
 	
-	private AttributeHistogram(Attribute attribute, LinkedHashMap<Object, Integer> data) {
-		this.counted = attribute;
-		this.counts.putAll(data);
-	}
+//	private AttributeHistogram(Attribute<T> attribute, LinkedHashMap<T, Integer> data) {
+//		this.counted = attribute;
+//		this.counts.putAll(data);
+//	}
 
 	@Override
 	public void gather(Table table) {
 		this.counts.clear();
 		
 		for(Record r : table) {
-			Object value = r.getNoThrow(this.counted);
+			T value = (T)r.getNoThrow(this.counted);
 			if(value != null) {
 				Integer count = this.counts.get(value);
 				if(count == null) {
@@ -56,8 +52,8 @@ public class AttributeHistogram implements IStatistic {
 	 * Gets copy of this value count map
 	 * @return new Map<Object, Integer> instance
 	 */
-	public Map<Object, Integer> getHistogram(){
-		return new HashMap<Object,Integer>(this.counts);
+	public Map<T, Integer> getHistogram(){
+		return new HashMap<T,Integer>(this.counts);
 	}
 	
 	/**
@@ -99,55 +95,5 @@ public class AttributeHistogram implements IStatistic {
 				.append(this.counts.toString())
 				.toString();
 				
-	}
-	
-	public String serialize() {
-		var sb = new StringBuilder();
-		
-		sb.append(this.counted.serialize())
-			.append("\n");
-		
-		for(var e : this.counts.entrySet()) {
-			sb.append(e.getKey().toString())
-				.append(";")
-				.append(e.getValue())
-				.append("\n");
-		}
-		
-		return sb.toString();
-	}
-	
-	public static AttributeHistogram deserialize(String serialized) throws ClassNotFoundException {
-		Attribute attribute = null;
-		var data = new LinkedHashMap<Object, Integer>();
-		for(var line : serialized.split("\n")) {
-			if(attribute == null) {
-				attribute = Attribute.parse(line);
-				continue;
-			}
-			var vls = line.split(";");
-			try {
-				data.put(ValueParserContext.DEFAULT.parseValue(attribute.domain(), vls[0]), Integer.parseInt(vls[1]));
-			} catch (NumberFormatException | ClassNotInContextException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		return new AttributeHistogram(attribute, data);
-	}
-	
-	public void writeFile(String path) throws IOException {
-		Files.write(Path.of(path), this.serialize().getBytes());
-	}
-	
-	public void writeFile(Path path) throws IOException {
-		Files.write(path, this.serialize().getBytes());
-	}
-	
-	public static AttributeHistogram readFile(String path) throws ClassNotFoundException, IOException {
-		return readFile(Path.of(path));
-	}
-	
-	public static AttributeHistogram readFile(Path path) throws ClassNotFoundException, IOException {
-		return deserialize(Files.readString(path));
 	}
 }

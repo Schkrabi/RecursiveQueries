@@ -12,17 +12,15 @@ import rq.common.table.Record;
  * @author Mgr. Radomir Skrabal
  *
  */
-public class OnGreaterThan extends OnCompare {
+public class OnGreaterThan<T extends Comparable<T>> extends OnCompare<T> {
 
-	public OnGreaterThan(RecordValue left, RecordValue right) {
+	public OnGreaterThan(RecordValue<T> left, RecordValue<T> right) {
 		super(left, right);
 	}
 	
-	public static OnGreaterThan factory(RecordValue left, RecordValue right) 
+	public static <T extends Comparable<T>> OnGreaterThan<T> factory(RecordValue<T> left, RecordValue<T> right) 
 		throws NotComparableException, ComparableDomainMismatchException {
-		validateComparable(left, right);
-		
-		return new OnGreaterThan(left, right);
+		return new OnGreaterThan<>(left, right);
 	}
 
 	@SuppressWarnings("unchecked")

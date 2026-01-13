@@ -17,7 +17,7 @@ import rq.common.table.Schema;
 
 class TimesDoubleTest {
 	
-	Attribute a = new Attribute("a", Double.class);
+	Attribute<Double> a = new Attribute<>("a", Double.class);
 	Schema s;
 	
 	TimesDouble td = new TimesDouble(a, new Constant<Double>(3.0d));
@@ -29,7 +29,7 @@ class TimesDoubleTest {
 
 	@Test
 	void testValue() throws TypeSchemaMismatchException, AttributeNotInSchemaException {
-		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair(a, 2.0d)), 1.0d);
+		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair<>(a, 2.0d)), 1.0d);
 		assertEquals(6.0d, td.value(record));
 	}
 

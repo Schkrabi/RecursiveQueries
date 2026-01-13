@@ -3,20 +3,20 @@ package rq.common.onOperators;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 
-public class TimesDouble implements RecordValue {
+public class TimesDouble implements RecordValue<Double> {
 	
-	private final RecordValue left;
-	private final RecordValue right;
+	private final RecordValue<Double> left;
+	private final RecordValue<Double> right;
 	
-	public TimesDouble(RecordValue left, RecordValue right) {
+	public TimesDouble(RecordValue<Double> left, RecordValue<Double> right) {
 		this.left = left;
 		this.right = right;
 	}
 
 	@Override
 	public Double value(Record record) {
-		Double leftDouble = (Double)left.value(record);
-		Double rightDouble = (Double)right.value(record);
+		var leftDouble = left.value(record);
+		var rightDouble = right.value(record);
 		
 		return leftDouble * rightDouble;
 	}
@@ -36,7 +36,7 @@ public class TimesDouble implements RecordValue {
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<Double> domain() {
 		return Double.class;
 	}
 

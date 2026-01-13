@@ -33,13 +33,13 @@ import rq.common.table.Schema;
 public class LazyProjection implements LazyExpression, SchemaProvider {
 	
 	private final Schema schema;
-	private final java.util.Map<Attribute, RecordValue> projection;
+	private final java.util.Map<Attribute<?>, RecordValue<?>> projection;
 	private final LazyExpression argExp;
 	private final BinaryOperator<Double> supremum;
 	
 	private PriorityQueue<Record> queue = null;
 	
-	private LazyProjection(Schema schema, java.util.Map<Attribute, RecordValue> projection, LazyExpression argExp, SchemaProvider argSch, BinaryOperator<Double> supremum) {
+	private LazyProjection(Schema schema, java.util.Map<Attribute<?>, RecordValue<?>> projection, LazyExpression argExp, SchemaProvider argSch, BinaryOperator<Double> supremum) {
 		this.schema = schema;
 		this.projection = projection;
 		this.argExp = argExp;
@@ -61,7 +61,7 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 			throw new NotSubschemaException(argSch.schema(), schema);
 		}
 
-		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
+		java.util.Map<Attribute<?>, RecordValue<?>> projection = new java.util.HashMap<>();
 		schema.stream().forEach(a -> projection.put(a, a));
 
 		return new LazyProjection(schema, projection, argument, argument, LaticeFactory.instance().getSupremum());
@@ -77,10 +77,10 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 	 * @throws DuplicateAttributeNameException
 	 * @throws RecordValueNotApplicableOnSchemaException 
 	 */
-	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, Collection<To> mapping) 
+	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, Collection<To<?>> mapping) 
 			throws DuplicateAttributeNameException, RecordValueNotApplicableOnSchemaException {
 		Schema fromSchema = ((SchemaProvider)argument).schema();
-		for(To to : mapping) {
+		for(var to : mapping) {
 			if(!to.from.isApplicableToSchema(fromSchema)) {
 				throw new RecordValueNotApplicableOnSchemaException(to.from, fromSchema);
 			}
@@ -91,13 +91,13 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 				.map(to -> to.to)
 				.collect(Collectors.toList()));
 		
-		java.util.Map<Attribute, RecordValue> projection = new java.util.HashMap<Attribute, RecordValue>();
+		java.util.Map<Attribute<?>, RecordValue<?>> projection = new java.util.HashMap<>();
 		mapping.stream().forEach(t -> projection.put(t.to, t.from));
 		
 		return new LazyProjection(schema, projection, argument, argument, LaticeFactory.instance().getSupremum());
 	}
 	
-	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To... tos) {
+	public static <T extends LazyExpression & SchemaProvider> LazyProjection factory(T argument, To<?>... tos) {
 		try {
 			return LazyProjection.factory(argument, Arrays.asList(tos));
 		}catch(DuplicateAttributeNameException | RecordValueNotApplicableOnSchemaException e) {
@@ -120,7 +120,7 @@ public class LazyProjection implements LazyExpression, SchemaProvider {
 							this.schema,
 							this.projection.entrySet().stream()
 								.map(e -> {
-									return new Record.AttributeValuePair(
+									return new Record.AttributeValuePair<>(
 											e.getKey(), 
 											e.getValue().value(record));
 								}).collect(Collectors.toList()),

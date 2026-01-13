@@ -6,12 +6,12 @@ import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.types.DateTime;
 
-public class PlusDateTime implements RecordValue {
+public class PlusDateTime implements RecordValue<DateTime> {
 	
-	private final RecordValue left;
+	private final RecordValue<DateTime> left;
 	private final Duration right;
 	
-	public PlusDateTime(RecordValue left, Duration right) {
+	public PlusDateTime(RecordValue<DateTime> left, Duration right) {
 		this.left = left;
 		this.right = right;
 	}
@@ -34,7 +34,7 @@ public class PlusDateTime implements RecordValue {
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<DateTime> domain() {
 		return DateTime.class;
 	}
 

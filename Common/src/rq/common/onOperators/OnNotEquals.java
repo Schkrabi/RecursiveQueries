@@ -11,16 +11,16 @@ import rq.common.table.Record;
  * @author Mgr. Radomir Skrabal
  *
  */
-public class OnNotEquals extends OnOperator {
+public class OnNotEquals<T> extends OnOperator<T> {
 
-	public OnNotEquals(Attribute left, Attribute right) {
+	public OnNotEquals(Attribute<T> left, Attribute<T> right) {
 		super(left, right);
 	}
 
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Object leftValue = this.left.value(leftRecord);
-		Object rightValue = this.right.value(rightRecord);
+		var leftValue = this.left.value(leftRecord);
+		var rightValue = this.right.value(rightRecord);
 		return leftValue.equals(rightValue) ? 0.0d : 1.0d;
 	}
 

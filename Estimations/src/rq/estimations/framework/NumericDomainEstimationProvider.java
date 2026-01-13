@@ -1,15 +1,16 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
 import rq.common.restrictions.Similar;
 import rq.common.statistic.RankHistogram;
+import rq.estimations.main.UnaryOperationContract;
 
-public abstract class NumericDomainEstimationProvider extends EstimationProvider {
+public abstract class NumericDomainEstimationProvider<T extends Number> extends EstimationProvider {
 
-	private final UnaryOperationContract contract;
+	private final UnaryOperationContract<T> contract;
 	
-	public NumericDomainEstimationProvider(UnaryOperationContract contract) {
+	public NumericDomainEstimationProvider(UnaryOperationContract<T> contract) {
 		this.contract = contract;
 	}
 
@@ -17,9 +18,9 @@ public abstract class NumericDomainEstimationProvider extends EstimationProvider
 	public RankHistogram compute() {
 		var selection = new Selection(
 				this.contract.getTable(),
-				new Similar(
+				new Similar<>(
 						this.contract.getAttribute(),
-						new Constant<Double>(this.contract.getValue()),
+						new Constant<>(this.contract.getValue()),
 						this.contract.getSimilarity()));
 		
 		var rslt = selection.eval();

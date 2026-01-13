@@ -17,7 +17,7 @@ import rq.common.table.Schema;
 
 class PlusDoubleTest {
 	
-	Attribute a = new Attribute("a", Double.class);
+	Attribute<Double> a = new Attribute<>("a", Double.class);
 	Schema s;
 	
 	PlusDouble pd = new PlusDouble(a, new Constant<Double>(3.0d));
@@ -29,7 +29,7 @@ class PlusDoubleTest {
 
 	@Test
 	void testValue() throws TypeSchemaMismatchException, AttributeNotInSchemaException {
-		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair(a, 2.0d)), 1.0d);
+		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair<>(a, 2.0d)), 1.0d);
 		assertEquals(5.0d, pd.value(record));
 	}
 

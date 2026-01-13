@@ -18,7 +18,7 @@ public class Numerical_domainPruning extends Numerical {
 			Selection selection, 
 			int resultSlices, 
 			double domainSampleSize,
-			rq.common.statistic.SampledHistogram h) {
+			rq.common.statistic.SampledHistogram<Double> h) {
 		super(selection, resultSlices, domainSampleSize, h);
 		this.similarityDistance = this.similarityDistance();
 	}
@@ -66,7 +66,7 @@ public class Numerical_domainPruning extends Numerical {
 	}
 	
 	@Override
-	protected RankHistogram estimateProbability(Set<Object> histValues) {		
+	protected RankHistogram estimateProbability(Set<Double> histValues) {		
 		List<Double> rankList = new LinkedList<Double>();
 		
 		for(Object histValue : histValues) {
@@ -86,7 +86,7 @@ public class Numerical_domainPruning extends Numerical {
 			int resultSlices, 
 			double domainSampleSize,
 			int probes,
-			rq.common.statistic.SampledHistogram h) {
+			rq.common.statistic.SampledHistogram<Double> h) {
 		var me = new Numerical_domainPruning(selection, resultSlices, domainSampleSize, h);
 		me.setProbes(probes);
 		return me.estimate();

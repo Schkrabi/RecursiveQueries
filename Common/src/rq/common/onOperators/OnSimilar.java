@@ -3,8 +3,6 @@
  */
 package rq.common.onOperators;
 
-import java.util.function.BiFunction;
-
 import rq.common.table.Record;
 
 /**
@@ -12,19 +10,19 @@ import rq.common.table.Record;
  * @author Mgr. Radomir Skrabal
  *
  */
-public class OnSimilar extends OnOperator {
+public class OnSimilar<T> extends OnOperator<T> {
 	
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<T> similarity;
 
-	public OnSimilar(RecordValue left, RecordValue right, BiFunction<Object, Object, Double> similarity) {
+	public OnSimilar(RecordValue<T> left, RecordValue<T> right, rq.common.similarities.ISimilarity<T> similarity) {
 		super(left, right);
 		this.similarity = similarity;
 	}
 
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Object leftValue = this.left.value(leftRecord);
-		Object rightValue = this.right.value(rightRecord);
+		T leftValue = this.left.value(leftRecord);
+		T rightValue = this.right.value(rightRecord);
 		return similarity.apply(leftValue, rightValue);
 	}
 

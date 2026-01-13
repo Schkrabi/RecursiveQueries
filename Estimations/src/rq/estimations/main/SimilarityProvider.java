@@ -1,9 +1,8 @@
 package rq.estimations.main;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 
 public class SimilarityProvider {
 
@@ -11,21 +10,21 @@ public class SimilarityProvider {
 	private static SimilarityProvider instance = null;
 	
 	/** Name - Similarity map */
-	private Map<String, BiFunction<Object, Object, Double>> similarities
+	private Map<String, rq.common.similarities.ISimilarity<Double>> similarities
 	 	= Map.of(
-	 			"dl0_5", LinearSimilarity.doubleSimilarityUntil(0.5d)
+	 			"dl0_5", LinearSimilarities.doubleSimilarityUntil(0.5d)
 	 			);
 	
 	/** Singleton constructor */
 	private SimilarityProvider() {}
 	
 	/** Gets the similarity by given name, or null */
-	public BiFunction<Object, Object, Double> get(String name){
+	public rq.common.similarities.ISimilarity<Double> get(String name){
 		return this.similarities.get(name);
 	}
 	
 	/** Gets the similarity by given name, or null */
-	public static BiFunction<Object, Object, Double> gets(String name){
+	public static rq.common.similarities.ISimilarity<Double> gets(String name){
 		return instance().get(name);
 	}
 

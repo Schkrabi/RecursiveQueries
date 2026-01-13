@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,6 +14,7 @@ import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.operators.LazyIntersection;
 import rq.common.operators.LazyUnion;
 import rq.common.statistic.RankHistogram;
+import rq.estimations.main.Workbench;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 
 public abstract class BiExperiment {

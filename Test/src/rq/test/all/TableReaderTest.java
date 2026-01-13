@@ -51,7 +51,8 @@ class TableReaderTest {
 	TableReader reader, reader2;
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 
 	/**
 	 * @throws java.lang.Exception
@@ -59,8 +60,8 @@ class TableReaderTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		reader = TableReader.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		
 		reader2 = TableReader.open(new ByteArrayInputStream(this.data2.getBytes()));
@@ -84,22 +85,22 @@ class TableReaderTest {
 					Record.factory(
 							this.schema,
 							Arrays.asList(
-									new Record.AttributeValuePair(a, 1), 
-									new Record.AttributeValuePair(b, "foo")), 
+									new Record.AttributeValuePair<>(a, 1), 
+									new Record.AttributeValuePair<>(b, "foo")), 
 							1.0d)));
 		assertTrue(rcrds.contains(
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 2), 
-								new Record.AttributeValuePair(b, "bar")), 
+								new Record.AttributeValuePair<>(a, 2), 
+								new Record.AttributeValuePair<>(b, "bar")), 
 						1.0d)));
 		assertTrue(rcrds.contains(
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 3), 
-								new Record.AttributeValuePair(b, "baz")), 
+								new Record.AttributeValuePair<>(a, 3), 
+								new Record.AttributeValuePair<>(b, "baz")), 
 						1.0d)));
 		
 		table = reader2.read();
@@ -109,22 +110,22 @@ class TableReaderTest {
 					Record.factory(
 							this.schema,
 							Arrays.asList(
-									new Record.AttributeValuePair(a, 1), 
-									new Record.AttributeValuePair(b, "foo")), 
+									new Record.AttributeValuePair<>(a, 1), 
+									new Record.AttributeValuePair<>(b, "foo")), 
 							0.8d)));
 		assertTrue(rcrds.contains(
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 2), 
-								new Record.AttributeValuePair(b, "bar")), 
+								new Record.AttributeValuePair<>(a, 2), 
+								new Record.AttributeValuePair<>(b, "bar")), 
 						0.5d)));
 		assertTrue(rcrds.contains(
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 3), 
-								new Record.AttributeValuePair(b, "baz")), 
+								new Record.AttributeValuePair<>(a, 3), 
+								new Record.AttributeValuePair<>(b, "baz")), 
 						0.7d)));
 	}
 

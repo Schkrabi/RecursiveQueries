@@ -28,7 +28,7 @@ public interface Table extends TabularExpression, Iterable<Record> {
 	 * @throws TypeSchemaMismatchException 
 	 * @throws TableRecordSchemaMismatch 
 	 */
-	boolean insert(Collection<Record.AttributeValuePair> values, double rank)
+	boolean insert(Collection<Record.AttributeValuePair<?>> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException, TableRecordSchemaMismatch;
 
 	boolean delete(Record record) throws TableRecordSchemaMismatch;

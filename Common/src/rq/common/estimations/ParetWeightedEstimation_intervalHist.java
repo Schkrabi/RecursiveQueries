@@ -2,7 +2,6 @@ package rq.common.estimations;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.DataSlicedHistogram;
@@ -13,17 +12,17 @@ import rq.common.util.Pair;
 public class ParetWeightedEstimation_intervalHist implements IEstimation {
 
 	public final int slices;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final int numOfConsideredValues;
-	public final DataSlicedHistogram hist;
-	private final RepresentativeProvider representativeProvider;
+	public final DataSlicedHistogram<Double> hist;
+	private final RepresentativeProvider<Double> representativeProvider;
 	
 	public ParetWeightedEstimation_intervalHist(
 			int slices,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			int numOfConsideredValues,
-			DataSlicedHistogram hist,
-			RepresentativeProvider representativeProvider) {
+			DataSlicedHistogram<Double> hist,
+			RepresentativeProvider<Double> representativeProvider) {
 		this.slices = slices;
 		this.similarity = similarity;
 		this.numOfConsideredValues = numOfConsideredValues;

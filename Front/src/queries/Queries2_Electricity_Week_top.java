@@ -21,7 +21,7 @@ import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.LazyFacade;
 import rq.common.tools.AlgorithmMonitor;
 
@@ -87,10 +87,10 @@ public class Queries2_Electricity_Week_top extends Queries2 {
 					LazyRestriction.factory(
 							new LazyFacade(iTable), 
 							r -> (Double)r.getNoThrow(Electricity.value) > peakMultiplier * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
-					new Projection.To(Electricity.customer, Electricity.customer),
-					new Projection.To(Electricity.time, Electricity.fromTime),
-					new Projection.To(Electricity.time, Electricity.toTime),
-					new Projection.To(new Constant<Integer>(1), Electricity.peaks));
+					new Projection.To<>(Electricity.customer, Electricity.customer),
+					new Projection.To<>(Electricity.time, Electricity.fromTime),
+					new Projection.To<>(Electricity.time, Electricity.toTime),
+					new Projection.To<>(new Constant<Integer>(1), Electricity.peaks));
 		};
 	}
 
@@ -105,16 +105,16 @@ public class Queries2_Electricity_Week_top extends Queries2 {
 								LazyRestriction.factory(
 										new LazyFacade(iTable), 
 										r -> (Double)r.getNoThrow(Electricity.value) > peakMultiplierAfterFirst * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
-								new OnEquals(Electricity.customer, Electricity.customer),
-								new OnLesserThan(Electricity.toTime, Electricity.time),
-								new OnSimilar(
+								new OnEquals<>(Electricity.customer, Electricity.customer),
+								new OnLesserThan<>(Electricity.toTime, Electricity.time),
+								new OnSimilar<>(
 										new PlusDateTime(Electricity.toTime, timeStep), 
 										Electricity.time, 
-										LinearSimilarity.dateTimeSimilarityUntil(similarityScale.toSeconds()))), 
-						new Projection.To(Join.left(Electricity.customer), Electricity.customer),
-						new Projection.To(Electricity.fromTime, Electricity.fromTime),
-						new Projection.To(Electricity.time, Electricity.toTime),
-						new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
+										LinearSimilarities.dateTimeSimilarityUntil(similarityScale.toSeconds()))), 
+						new Projection.To<>(Join.left(Electricity.customer), Electricity.customer),
+						new Projection.To<>(Electricity.fromTime, Electricity.fromTime),
+						new Projection.To<>(Electricity.time, Electricity.toTime),
+						new Projection.To<>(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
 			};
 		};
 	}

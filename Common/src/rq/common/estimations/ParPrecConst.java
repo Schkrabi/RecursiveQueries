@@ -2,28 +2,27 @@ package rq.common.estimations;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
+import rq.common.similarities.ISimilarity;
 
 /** Estimation based on (precise) most common values */
 public class ParPrecConst implements IEstimation {
 
-	public final Attribute attriute;
+	public final Attribute<Double> attriute;
 	public final int slices;
 	public final double c;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final ISimilarity<Double> similarity;
 	private final Collection<Pair<Double, Integer>> mostCommon;
 	
 	public ParPrecConst(
-			Attribute attribute,
+			Attribute<Double> attribute,
 			int slices,
 			double c,
-			BiFunction<Object, Object, Double> similarity,
+			ISimilarity<Double> similarity,
 			Collection<Pair<Double, Integer>> mostCommon) {
 		this.attriute = attribute;
 		this.slices = slices;

@@ -3,32 +3,26 @@
  */
 package rq.common.onOperators;
 
-import rq.common.exceptions.ComparableDomainMismatchException;
-import rq.common.exceptions.NotComparableException;
 import rq.common.table.Record;
 
 /**
  * @author Mgr. Radomir Skrabal
  *
  */
-public class OnGreaterThanOrEquals extends OnCompare {
+public class OnGreaterThanOrEquals<T extends Comparable<T>> extends OnCompare<T> {
 
-	public OnGreaterThanOrEquals(RecordValue left, RecordValue right) {
+	public OnGreaterThanOrEquals(RecordValue<T> left, RecordValue<T> right) {
 		super(left, right);
 	}
 	
-	public static OnGreaterThanOrEquals factory(RecordValue left, RecordValue right)
-			throws NotComparableException, ComparableDomainMismatchException {
-		validateComparable(left, right);
-		
-		return new OnGreaterThanOrEquals(left, right);
+	public static <T extends Comparable<T>> OnGreaterThanOrEquals<T> factory(RecordValue<T> left, RecordValue<T> right) {
+		return new OnGreaterThanOrEquals<>(left, right);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public double eval(Record leftRecord, Record rightRecord) {
-		Comparable<Object> leftValue = (Comparable<Object>)this.left.value(leftRecord);
-		Comparable<Object> rightValue = (Comparable<Object>)this.right.value(rightRecord);
+		var leftValue = this.left.value(leftRecord);
+		var rightValue = this.right.value(rightRecord);
 		
 		int cmp = leftValue.compareTo(rightValue); 
 		

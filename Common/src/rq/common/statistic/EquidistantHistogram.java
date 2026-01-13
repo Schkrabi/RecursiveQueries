@@ -10,13 +10,13 @@ import rq.common.estimations.SignatureProvider;
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class EquidistantHistogram extends DataSlicedHistogram implements SignatureProvider {
+public class EquidistantHistogram<T extends Number> extends DataSlicedHistogram<T> implements SignatureProvider {
 
-	public EquidistantHistogram(Attribute observed, int n) {
+	public EquidistantHistogram(Attribute<T> observed, int n) {
 		super(observed, n);
 	}
 	
-	private EquidistantHistogram(Attribute observed, int n, Map<Interval, Integer> counts) {
+	private EquidistantHistogram(Attribute<T> observed, int n, Map<Interval, Integer> counts) {
 		super(observed, n, counts);
 	}
 	
@@ -46,18 +46,18 @@ public class EquidistantHistogram extends DataSlicedHistogram implements Signatu
 		values.forEach(v -> this.add(v.doubleValue()));
 	}
 	
-	public static EquidistantHistogram deserialize(String serialized) throws ClassNotFoundException {
-		var args = DataSlicedHistogram.doDeserialize(serialized);
-		var hist = new EquidistantHistogram(args.observed, args.n, args.counts);
+	public static <T extends Number> EquidistantHistogram<T> deserialize(String serialized) throws ClassNotFoundException {
+		HistArgs<T> args = DataSlicedHistogram.doDeserialize(serialized);
+		var hist = new EquidistantHistogram<T>(args.observed, args.n, args.counts);
 		return hist;
 	}
 	
-	public static EquidistantHistogram readFile(String path) {
+	public static <T extends Number> EquidistantHistogram<T> readFile(String path) {
 		return readFile(Path.of(path));
 	}
 	
-	public static EquidistantHistogram readFile(Path path) {
-		EquidistantHistogram hist;
+	public static <T extends Number> EquidistantHistogram<T> readFile(Path path) {
+		EquidistantHistogram<T> hist;
 		try {
 			hist = deserialize(Files.readString(path));
 		} catch (ClassNotFoundException | IOException e) {

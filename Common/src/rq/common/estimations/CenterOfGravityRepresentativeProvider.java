@@ -6,12 +6,12 @@ import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.DataSlicedHistogram.Interval;
 import rq.common.statistic.MostCommonValues;
 
-public class CenterOfGravityRepresentativeProvider implements RepresentativeProvider {
+public class CenterOfGravityRepresentativeProvider implements RepresentativeProvider<Double> {
 
-	private final MostCommonValues mcv;
+	private final MostCommonValues<Double> mcv;
 	
 	public CenterOfGravityRepresentativeProvider(
-			MostCommonValues mcv) {
+			MostCommonValues<Double> mcv) {
 		this.mcv = mcv;
 	}
 
@@ -26,7 +26,7 @@ public class CenterOfGravityRepresentativeProvider implements RepresentativeProv
 	}
 
 	@Override
-	public double representative(Interval interval) {
+	public Double representative(Interval interval) {
 		return mcv.centerOfGravity(interval);
 	}
 

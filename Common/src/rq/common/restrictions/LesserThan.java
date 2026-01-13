@@ -9,17 +9,16 @@ import rq.common.table.Record;
 /**
  * Lesser than selection condition
  */
-public class LesserThan extends CompareCondition {
+public class LesserThan<T extends Comparable<T>> extends CompareCondition<T> {
 
-	public LesserThan(RecordValue left, RecordValue right) {
+	public LesserThan(RecordValue<T> left, RecordValue<T> right) {
 		super(left, right);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public double eval(Record record) {
-		Comparable<Object> leftValue = (Comparable<Object>)this.left.value(record);
-		Comparable<Object> rightValue = (Comparable<Object>)this.right.value(record);
+		var leftValue = this.left.value(record);
+		var rightValue = this.right.value(record);
 		return leftValue.compareTo(rightValue) <= -1 ? 1.0d : 0.0d; 
 	}
 	

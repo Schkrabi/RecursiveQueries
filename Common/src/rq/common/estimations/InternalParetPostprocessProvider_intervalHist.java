@@ -2,7 +2,6 @@ package rq.common.estimations;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.IntervalPostprocessProvider;
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
@@ -12,22 +11,22 @@ import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.util.Pair;
 
-public class InternalParetPostprocessProvider_intervalHist implements IntervalPostprocessProvider {
+public class InternalParetPostprocessProvider_intervalHist implements IntervalPostprocessProvider<Double> {
 
-	private final DataSlicedHistogram hist;
+	private final DataSlicedHistogram<Double> hist;
 	public final int slices;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final int numOfConsideredValues;
 	public final double paretRatio;
-	private final RepresentativeProvider representativeProvider;
+	private final RepresentativeProvider<Double> representativeProvider;
 	
 	public InternalParetPostprocessProvider_intervalHist(
-			DataSlicedHistogram hist,
+			DataSlicedHistogram<Double> hist,
 			int slices,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			int numOfConsideredValues,
 			double paretRatio,
-			RepresentativeProvider representativeProvider) {
+			RepresentativeProvider<Double> representativeProvider) {
 		this.hist = hist;
 		this.slices = slices;
 		this.similarity = similarity;
@@ -51,7 +50,7 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	}
 
 	@Override
-	public RankHistogram postprocess(RankHistogram hist, int count, double representative) {
+	public RankHistogram postprocess(RankHistogram hist, int count, Double representative) {
 		var est = new ParRepConstInt(
 				this.slices, 
 				this.similarity, 
@@ -76,13 +75,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdIpi(
+	public static IntervalEstimation<Double> eqdIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<Double>(
 				slices, 
 				similarity,
 				hist,
@@ -108,13 +107,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnIpi(
+	public static IntervalEstimation<Double> eqnIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -140,13 +139,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdCIpi(
+	public static IntervalEstimation<Double> eqdCIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -172,13 +171,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnCIpi(
+	public static IntervalEstimation<Double> eqnCIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -204,13 +203,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdGpIpi(
+	public static IntervalEstimation<Double> eqdGpIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -242,13 +241,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnGpIpi(
+	public static IntervalEstimation<Double> eqnGpIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<Double>(
 				slices, 
 				similarity,
 				hist,
@@ -280,13 +279,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdCGpIpi(
+	public static IntervalEstimation<Double> eqdCGpIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -318,13 +317,13 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnCGpIpi(
+	public static IntervalEstimation<Double> eqnCGpIpi(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,

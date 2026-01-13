@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.experiments;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import java.util.Map;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.table.Attribute;
+import rq.estimations.framework.Experiment;
 import rq.files.contracts.EstimationExperimentContract;
 import rq.files.contracts.QueryGenerationStrategy;
 
@@ -37,28 +38,28 @@ public class ParametrizedExperiment extends Experiment {
 	}
 
 	
-	private Map<Attribute, Collection<Integer>> cnsdrvls = null;
+	private Map<Attribute<Double>, Collection<Integer>> cnsdrvls = null;
 	
 	@Override
-	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+	protected Map<Attribute<Double>, Collection<Integer>> nConsideredValues() {
 		if(cnsdrvls == null) {
-			cnsdrvls = new HashMap<Attribute, Collection<Integer>>();
-			for(var a : this.contract.attributes) {
-				cnsdrvls.put(a.getAttribute(), List.of(a.consideredValues));
-			}
+			cnsdrvls = new HashMap<>();
+			this.contract.attributes.stream()
+				.filter(ac -> ac.isNumericAttribute())
+				.forEach(ac -> cnsdrvls.put(ac.getDoubleAttribute(), List.of(ac.consideredValues)));
 		}
 		return cnsdrvls;
 	}
 
-	private Map<Attribute, Collection<Double>> prtrat = null;
+	private Map<Attribute<Double>, Collection<Double>> prtrat = null;
 	
 	@Override
-	protected Map<Attribute, Collection<Double>> paretRatios() {
+	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		if(prtrat == null) {
-			prtrat = new HashMap<Attribute, Collection<Double>>();
-			for(var a : this.contract.attributes) {
-				prtrat.put(a.getAttribute(), List.of(a.paretValue));
-			}
+			prtrat = new HashMap<>();
+			this.contract.attributes.stream()
+				.filter(ac -> ac.isNumericAttribute())
+				.forEach(ac -> prtrat.put(ac.getDoubleAttribute(), List.of(ac.paretValue)));
 		}
 		return prtrat;
 	}
@@ -74,39 +75,41 @@ public class ParametrizedExperiment extends Experiment {
 		return List.of(this.contract.slices);
 	}
 
-	List<Attribute> atts = null;
+	List<Attribute<Double>> atts = null;
 	
 	@Override
-	protected List<Attribute> numericAttributes() {
+	protected List<Attribute<Double>> numericAttributes() {
 		if(atts == null) {
-			atts = this.contract.attributes.stream().map(a -> a.getAttribute()).toList();
+			atts = this.contract.attributes.stream()
+					.filter(ac -> ac.isNumericAttribute())
+					.map(a -> a.getDoubleAttribute()).toList();
 		}
 		return atts;
 	}
 
 	@Override
-	protected List<Attribute> nominalAttributes() {
+	protected List<Attribute<?>> nominalAttributes() {
 		//TODO
 		return List.of();
 	}
 
-	private Map<Attribute, Double> hss = null;
+	private Map<Attribute<Double>, Double> hss = null;
 	
 	@Override
-	protected double histSampleSize(Attribute a) {
+	protected double histSampleSize(Attribute<Double> a) {
 		if(hss == null) {
 			hss = new HashMap<>();
-			for(var at : this.contract.attributes) {
-				hss.put(at.getAttribute(), at.histSampleSize);
-			}
+			this.contract.attributes.stream()
+				.filter(ac -> ac.isNumericAttribute())
+				.forEach(ac -> hss.put(ac.getDoubleAttribute(), ac.histSampleSize));
 		}
 		return hss.get(a);
 	}
 
-	Map<Attribute, List<Integer>> intvs = null;
+	Map<Attribute<?>, List<Integer>> intvs = null;
 	
 	@Override
-	protected List<Integer> intervals(Attribute a) {
+	protected List<Integer> intervals(Attribute<?> a) {
 		if(intvs == null) {
 			intvs = new HashMap<>();
 			for(var at : this.contract.attributes) {
@@ -116,15 +119,15 @@ public class ParametrizedExperiment extends Experiment {
 		return intvs.get(a);
 	}
 
-	Map<Attribute, Double> sml = null;
+	Map<Attribute<Double>, Double> sml = null;
 	
 	@Override
-	protected double similarUntil(Attribute a) {
+	protected double similarUntil(Attribute<Double> a) {
 		if(sml == null) {
 			sml = new HashMap<>();
-			for(var at : this.contract.attributes) {
-				sml.put(at.getAttribute(), at.similarUntil);
-			}
+			this.contract.attributes.stream()
+				.filter(ac -> ac.isNumericAttribute())
+				.forEach(ac -> sml.put(ac.getDoubleAttribute(), ac.similarUntil));
 		}
 		return sml.get(a);
 	}
@@ -135,7 +138,7 @@ public class ParametrizedExperiment extends Experiment {
 	}
 
 	@Override
-	protected List<Integer> estSamples(Attribute a) {
+	protected List<Integer> estSamples(Attribute<?> a) {
 		return List.of();
 	}
 	
@@ -146,13 +149,13 @@ public class ParametrizedExperiment extends Experiment {
 	}
 
 	@Override
-	protected Map<String, List<Attribute>> smallData() {
+	protected Map<String, List<Attribute<?>>> smallData() {
 		//TODO
 		return Map.of();
 	}
 
 	@Override
-	protected List<Attribute> projectionAttributes() {
+	protected List<Attribute<?>> projectionAttributes() {
 		// TODO Auto-generated method stub
 		return List.of();
 	}
@@ -162,14 +165,14 @@ public class ParametrizedExperiment extends Experiment {
 		return this.contract.seed;
 	}
 
-	private Map<Attribute, Collection<Double>> queryValues = null;
+	private Map<Attribute<Double>, Collection<Double>> queryValues = null;
 	@Override
-	protected Map<Attribute, Collection<Double>> getQueryValues(){
+	protected Map<Attribute<Double>, Collection<Double>> getQueryValues(){
 		if(this.queryValues == null) {
 			this.queryValues = new HashMap<>();
-			for(var at : this.contract.attributes) {
-				this.queryValues.put(at.getAttribute(), new ArrayList<>(at.restrictionQryArgs));
-			}
+			this.contract.attributes.stream()
+				.filter(ac -> ac.isNumericAttribute())
+				.forEach(ac -> this.queryValues.put(ac.getDoubleAttribute(), new ArrayList<>(ac.restrictionQryArgs)));
 		}
 		return this.queryValues;
 	}

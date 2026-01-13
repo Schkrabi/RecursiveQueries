@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import rq.common.statistic.RankHistogram;
 

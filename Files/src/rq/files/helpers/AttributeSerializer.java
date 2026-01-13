@@ -9,10 +9,10 @@ import rq.common.table.Attribute;
  * @author r.skrabal
  *
  */
-public class AttributeSerializer {
-	private final Attribute serialized;
+public class AttributeSerializer<T> {
+	private final Attribute<T> serialized;
 	
-	public AttributeSerializer(Attribute serialized) {
+	public AttributeSerializer(Attribute<T> serialized) {
 		this.serialized = serialized;
 	}
 	
@@ -20,8 +20,8 @@ public class AttributeSerializer {
 		return this.serialized.serialize();
 	}
 	
-	public static String serialize(Attribute serialized) {
-		AttributeSerializer serializer = new AttributeSerializer(serialized);
+	public static <T> String serialize(Attribute<T> serialized) {
+		AttributeSerializer<T> serializer = new AttributeSerializer<>(serialized);
 		String s = serializer.serialize();
 		return s;
 	}

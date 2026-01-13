@@ -28,7 +28,8 @@ import rq.common.table.MemoryTable;
 class MemoryTableTest {
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 	MemoryTable t1, t2, t3, t4;
 
@@ -51,33 +52,33 @@ class MemoryTableTest {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.8d);
 		
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3),
-						new Record.AttributeValuePair(b, "baz")), 
+						new Record.AttributeValuePair<>(a, 3),
+						new Record.AttributeValuePair<>(b, "baz")), 
 				1.0f);
 		
 		
@@ -113,22 +114,22 @@ class MemoryTableTest {
 			this.t1.insert(this.r1);
 			this.t1.insert(
 					Arrays.asList(
-							new Record.AttributeValuePair(a, 2), 
-							new Record.AttributeValuePair(b, "bar")), 
+							new Record.AttributeValuePair<>(a, 2), 
+							new Record.AttributeValuePair<>(b, "bar")), 
 					1.0d);
 			});
 		
 		assertThrows(
 				TableRecordSchemaMismatch.class,
 				() -> {
-					Attribute d = new Attribute("D", Integer.class);
-					Attribute e = new Attribute("E", String.class);
+					var d = new Attribute<>("D", Integer.class);
+					var e = new Attribute<>("E", String.class);
 					this.t1.insert(
 							Record.factory(
 									Schema.factory(d, e), 
 									Arrays.asList(
-											new Record.AttributeValuePair(d, 1), 
-											new Record.AttributeValuePair(e, "foo")), 
+											new Record.AttributeValuePair<>(d, 1), 
+											new Record.AttributeValuePair<>(e, "foo")), 
 									1.0d));
 				});
 		assertThrows(
@@ -136,8 +137,8 @@ class MemoryTableTest {
 				() -> {
 					this.t1.insert(
 							Arrays.asList(
-									new Record.AttributeValuePair(a, "baz"), 
-									new Record.AttributeValuePair(b, 3.0f)), 
+									new Record.AttributeValuePair<>(a, "baz"), 
+									new Record.AttributeValuePair<>(b, 3.0f)), 
 							1.0);
 				});
 	}
@@ -152,13 +153,13 @@ class MemoryTableTest {
 		assertFalse(this.t2.delete(this.r1));
 		assertThrows(TableRecordSchemaMismatch.class,
 				() -> {
-					Attribute d = new Attribute("D", Integer.class);
-					Attribute e = new Attribute("E", String.class);
+					var d = new Attribute<>("D", Integer.class);
+					var e = new Attribute<>("E", String.class);
 					this.t2.delete(Record.factory(
 							Schema.factory(d, e), 
 							Arrays.asList(
-									new Record.AttributeValuePair(d, 1), 
-									new Record.AttributeValuePair(e, "foo")), 
+									new Record.AttributeValuePair<>(d, 1), 
+									new Record.AttributeValuePair<>(e, "foo")), 
 							1.0d));
 				});
 	}
@@ -174,16 +175,16 @@ class MemoryTableTest {
 		this.t3.insert(this.r1);		
 		assertFalse(this.t3.update(this.r2, this.r1));
 		
-		Attribute d = new Attribute("D", Integer.class);
-		Attribute e = new Attribute("E", String.class);
+		var d = new Attribute<>("D", Integer.class);
+		var e = new Attribute<>("E", String.class);
 		
 		assertThrows(TableRecordSchemaMismatch.class,
 				() -> {
 					this.t3.update(Record.factory(
 							Schema.factory(d, e), 
 							Arrays.asList(
-									new Record.AttributeValuePair(d, 1), 
-									new Record.AttributeValuePair(e, "foo")), 
+									new Record.AttributeValuePair<>(d, 1), 
+									new Record.AttributeValuePair<>(e, "foo")), 
 							1.0d), 
 						this.r1);
 				});
@@ -192,11 +193,11 @@ class MemoryTableTest {
 					this.t3.update(this.r1,
 							Record.factory(
 								Schema.factory(
-										new Attribute("D", Integer.class),
-										new Attribute("E", String.class)), 
+										new Attribute<>("D", Integer.class),
+										new Attribute<>("E", String.class)), 
 								Arrays.asList(
-										new Record.AttributeValuePair(d, 1), 
-										new Record.AttributeValuePair(e, "foo")), 
+										new Record.AttributeValuePair<>(d, 1), 
+										new Record.AttributeValuePair<>(e, "foo")), 
 								1.0d));
 				});
 	}

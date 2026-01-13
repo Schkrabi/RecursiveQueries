@@ -15,7 +15,7 @@ import rq.common.statistic.RankHistogram;
 /**
  * 
  */
-public class Nominal_stochastic extends Nominal {
+public class Nominal_stochastic<T> extends Nominal<T> {
 
 	public final int samples;
 	
@@ -28,13 +28,13 @@ public class Nominal_stochastic extends Nominal {
 	 * @param similarity
 	 */
 	public Nominal_stochastic(Selection selection, int resultSlices,
-			int probedAttributes, Set<Object> attributeDomain, int restSamples) {
+			int probedAttributes, Set<T> attributeDomain, int restSamples) {
 		super(selection, resultSlices, probedAttributes, attributeDomain);
 		this.samples = restSamples;
 	}
 
 	@Override
-	protected RankHistogram estimateProbability(Set<Object> histValues) {
+	protected RankHistogram estimateProbability(Set<T> histValues) {
 		Set<Integer> sampleIndices = this.sampleIndices(Math.min(histValues.size(), this.samples));
 		
 		double size = (double)this.argumentAttributeHistogram.getHistogram().entrySet().stream()
@@ -43,13 +43,13 @@ public class Nominal_stochastic extends Nominal {
 				.reduce(0, (x, y) -> x + y);
 		double added = size / (double)sampleIndices.size();
 		
-		List<Object> histValuesList = histValues.stream().collect(Collectors.toList());
+		List<T> histValuesList = histValues.stream().collect(Collectors.toList());
 		
 		List<Double> rankList = new LinkedList<Double>();
 		
 		for(int i : sampleIndices) {
-			Object histValue = histValuesList.get(i);
-			for(Object domValue : this.attributeDomain) {
+			T histValue = histValuesList.get(i);
+			for(T domValue : this.attributeDomain) {
 				Double rank = this.similarity.apply(domValue, histValue);
 				Stream.generate(() -> rank).limit((long) added).forEach(r -> rankList.add(r));
 			}
@@ -60,9 +60,9 @@ public class Nominal_stochastic extends Nominal {
 		return rslt;
 	}
 	
-	public static RankHistogram estimateStatic(Selection selection, int resultSlices,
-		int probedAttributes, Set<Object> attributeDomain, int restSamples){
-		var me = new Nominal_stochastic(selection, resultSlices, probedAttributes, attributeDomain, restSamples);
+	public static <U> RankHistogram estimateStatic(Selection selection, int resultSlices,
+		int probedAttributes, Set<U> attributeDomain, int restSamples){
+		var me = new Nominal_stochastic<U>(selection, resultSlices, probedAttributes, attributeDomain, restSamples);
 		var rslt = me.estimate();
 		return rslt;
 	}

@@ -3,7 +3,6 @@ package rq.common.estimations;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.statistic.DataSlicedHistogram;
 import rq.common.statistic.EquidistantHistogram;
@@ -14,10 +13,10 @@ import rq.common.util.Pair;
 
 public abstract class IntervalParetHybridEstimation implements IEstimation {
 
-	protected final DataSlicedHistogram hist;
+	protected final DataSlicedHistogram<Double> hist;
 	private final Collection<Pair<Double, Integer>> mostCommon;
 	public final int slices;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final double c;
 	
 	/**
@@ -30,9 +29,9 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 	 */
 	public IntervalParetHybridEstimation(
 			int slices,
-			DataSlicedHistogram hist,
+			DataSlicedHistogram<Double> hist,
 			Collection<Pair<Double, Integer>> mostCommon,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			double c) {
 		this.slices = slices;
 		this.hist = hist;
@@ -41,7 +40,7 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 		this.c = c;
 	}
 	
-	public abstract IEstimation subestimation(DataSlicedHistogram sHist);
+	public abstract IEstimation subestimation(DataSlicedHistogram<Double> sHist);
 
 	@Override
 	public String signature() {
@@ -96,9 +95,9 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 	
 	public static IEstimation knownConstant(
 			int slices,
-			DataSlicedHistogram hist,
-			MostCommonValues mcv,
-			BiFunction<Object, Object, Double> similarity,
+			DataSlicedHistogram<Double> hist,
+			MostCommonValues<Double> mcv,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			double c) {
 		return new IntervalParetHybridEstimation(
 				slices,
@@ -108,7 +107,7 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 				c) {
 
 					@Override
-					public IEstimation subestimation(DataSlicedHistogram sHist) {
+					public IEstimation subestimation(DataSlicedHistogram<Double> sHist) {
 						return IntervalEstimation.fromHist(this.slices, this.similarity, sHist);
 					}
 		};
@@ -116,9 +115,9 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 	
 	public static IEstimation unknownConstant(
 			int slices,
-			DataSlicedHistogram hist,
-			MostCommonValues mcv,
-			BiFunction<Object, Object, Double> similarity) {
+			DataSlicedHistogram<Double> hist,
+			MostCommonValues<Double> mcv,
+			rq.common.similarities.ISimilarity<Double> similarity) {
 		return new IntervalParetHybridEstimation(
 				slices,
 				hist,
@@ -137,7 +136,7 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 					}
 			
 					@Override
-					public IEstimation subestimation(DataSlicedHistogram sHist) {
+					public IEstimation subestimation(DataSlicedHistogram<Double> sHist) {
 						return ConstantRepresentativeProvider.fromHist(this.slices, this.similarity, sHist, this.c);
 					}
 		};

@@ -1,23 +1,11 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiFunction;
-
-import rq.common.estimations.CenterOfGravityRepresentativeProvider;
-import rq.common.estimations.GlobalCenterRepresentativeProvider;
 import rq.common.estimations.IEstimation;
-import rq.common.estimations.InternalParetPostprocessProvider_intervalHist;
-import rq.common.estimations.IntervalEstimation;
-import rq.common.estimations.IntervalParetHybridEstimation;
-import rq.common.estimations.ParetWeightedEstimation_sampledHist;
-import rq.common.estimations.InternalParetPostprocessProvider_sampledHist;
 import rq.common.estimations.RandomEstimation;
-import rq.common.estimations.WeightedCompositeEstimation;
-import rq.common.estimations.WeighterdParetPostprocessProvider_intervalHist;
-import rq.common.estimations.WeighterdParetPostprocessProvider_sampledHist;
 import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.SampledHistogram;
@@ -27,23 +15,23 @@ import rq.common.table.Attribute;
 public class NumericalEstimations {
 	//Params
 	public final Path dataPath;
-	public final Attribute attribute;
+	public final Attribute<Double> attribute;
 	public final int slice;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final Collection<Integer> intervals;
 	public final Collection<Integer> numOfConsideredValues;
 	public final Collection<Double> paretRatios;
 	
 	//Derived
-	public final SampledHistogram sHist;
-	public final Collection<EquidistantHistogram> eqds;
-	public final Collection<EquinominalHistogram> eqns;
+	public final SampledHistogram<Double> sHist;
+	public final Collection<EquidistantHistogram<Double>> eqds;
+	public final Collection<EquinominalHistogram<Double>> eqns;
 	
 	public NumericalEstimations(
 			Path dataPath,
-			Attribute attribute,
+			Attribute<Double> attribute,
 			int slice,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			Collection<Integer> intervals,
 			Collection<Integer> numOfConsideredValues,
 			Collection<Double> paretRatios) {
@@ -71,18 +59,18 @@ public class NumericalEstimations {
 	
 	private List<IEstimation> generateEstimations() {
 		var l = new ArrayList<IEstimation>();
-		var mcv = ResourceLoader.instance().getOrLoadMCV(this.dataPath, this.attribute);
+//		var mcv = ResourceLoader.instance().getOrLoadMCV(this.dataPath, this.attribute);
 		
 //		l.add(new ParetWeightedEstimation_sampledHist(slice, similarity, sHist.valuesCount(), sHist));
 		l.add(new RandomEstimation(slice, sHist.tableSize()));
 		
-		for (var i : this.eqds) {
+//		for (var i : this.eqds) {
 //			l.add(IntervalEstimation.eqd(slice, similarity, i));
 //			l.add(GlobalCenterRepresentativeProvider.eqdC(slice, similarity, i));
 //			l.add(new IntervalParetHybridEstimation(slice, i, mcv.mostCommon(20), similarity, i.center()));
 //			l.add(IntervalParetHybridEstimation.unknownConstant(slice, i, mcv, similarity));
 
-			for (var n : this.numOfConsideredValues) {
+//			for (var n : this.numOfConsideredValues) {
 //				for(var r : this.paretRatios) {
 //					l.add(WeighterdParetPostprocessProvider_sampledHist.eqdGps(slice, similarity, i, n, r, sHist));
 //					l.add(WeighterdParetPostprocessProvider_sampledHist.eqdCGps(slice, similarity, i, n, r, sHist));
@@ -101,16 +89,16 @@ public class NumericalEstimations {
 				
 //				l.add(new WeightedCompositeEstimation(slice, i, IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER, n, similarity));
 //				l.add(new WeightedCompositeEstimation(slice, i, new CenterOfGravityRepresentativeProvider(mcv), n, similarity));
-			}
-		}
+//			}
+//		}
 
-		for (var i : this.eqns) {
+//		for (var i : this.eqns) {
 //			l.add(IntervalEstimation.eqn(slice, similarity, i));
 //			l.add(GlobalCenterRepresentativeProvider.eqnC(slice, similarity, i));
 //			l.add(new IntervalParetHybridEstimation(slice, i, mcv.mostCommon(20), similarity, i.center()));
 //			l.add(IntervalParetHybridEstimation.unknownConstant(slice, i, mcv, similarity));
 			
-			for (var n : this.numOfConsideredValues) {
+//			for (var n : this.numOfConsideredValues) {
 //				for(var r : this.paretRatios) {
 //					l.add(WeighterdParetPostprocessProvider_sampledHist.eqnGps(slice, similarity, i, n, r, sHist));
 //					l.add(WeighterdParetPostprocessProvider_sampledHist.eqnCGps(slice, similarity, i, n, r, sHist));
@@ -129,8 +117,8 @@ public class NumericalEstimations {
 				
 //				l.add(new WeightedCompositeEstimation(slice, i, IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER, n, similarity));
 //				l.add(new WeightedCompositeEstimation(slice, i, new CenterOfGravityRepresentativeProvider(mcv), n, similarity));
-			}
-		}
+//			}
+//		}
 		return l;
 	}
 	

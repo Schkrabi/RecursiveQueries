@@ -40,7 +40,7 @@ public class RecordReader implements Closeable {
 	
 	private CSVReader reader;
 	private Schema schema = null;
-	private List<Attribute> columnOrder = null;
+	private List<Attribute<?>> columnOrder = null;
 	private ValueParserContext context;
 	private Function<String[], Double> rankParser = (String[] s) -> 1.0d;
 	
@@ -86,7 +86,7 @@ public class RecordReader implements Closeable {
 	 * @throws DuplicateAttributeNameException 
 	 */
 	private Schema parseSchema(String[] headers) throws ClassNotFoundException, DuplicateAttributeNameException {
-		this.columnOrder = new ArrayList<Attribute>();
+		this.columnOrder = new ArrayList<>();
 		
 		for(int i = 0; i < headers.length; i++) {
 			String s = headers[i];
@@ -123,12 +123,12 @@ public class RecordReader implements Closeable {
 		if(this.columnOrder == null) {
 			throw new ColumnOrderingNotInitializedException();
 		}
-		List<Record.AttributeValuePair> l = new ArrayList<Record.AttributeValuePair>();
+		var l = new ArrayList<Record.AttributeValuePair<?>>();
 		int i = 0;
-		for(Attribute a : this.columnOrder) {
+		for(Attribute<?> a : this.columnOrder) {
 			if(a!= null) {
 				Object o = ValueParser.parse(a, line[i], this.context);
-				Record.AttributeValuePair pair = new Record.AttributeValuePair(a, o);
+				var pair = new Record.AttributeValuePair<>(a, o);
 				l.add(pair);
 			}
 			i++;

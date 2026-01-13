@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.function.BinaryOperator;
 
 import rq.common.exceptions.DuplicateAttributeNameException;
@@ -38,13 +36,13 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	private LazyJoin(
 			LazyExpression leftArg,
 			CachedExpression rightArg,
-			Collection<OnOperator> onClause,
+			Collection<OnOperator<?>> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
-			java.util.Map<Attribute, Attribute> leftProjection,
-			java.util.Map<Attribute, Attribute> rightProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> leftProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> rightProjection,
 			Schema schema) {
-		super(new ArrayList<OnOperator>(onClause), product, infimum, leftProjection, rightProjection, schema);
+		super(new ArrayList<OnOperator<?>>(onClause), product, infimum, leftProjection, rightProjection, schema);
 		this.leftArg = leftArg;
 		this.rightArg = rightArg;
 		this.rightIterator = this.rightArg.lazyIterator();
@@ -55,25 +53,25 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 		LazyJoin factory(
 				T leftArg,
 				U rightArg,
-				Collection<OnOperator> onClause,
+				Collection<OnOperator<?>> onClause,
 				BinaryOperator<Double> product,
 				BinaryOperator<Double> infimum)
 		throws OnOperatornNotApplicableToSchemaException {
 		Schema leftSchema = ((SchemaProvider)leftArg).schema();
 		Schema rightSchema = ((SchemaProvider)rightArg).schema();
-		for(OnOperator p : onClause) {
+		for(var p : onClause) {
 			if(!p.isApplicableToSchema(leftSchema, rightSchema)) {
 				throw new OnOperatornNotApplicableToSchemaException(p, leftSchema, rightSchema);
 			}
 		}
 		
-		Set<Attribute> intersection = new HashSet<Attribute>(leftSchema.attributeSet());
+		var intersection = new HashSet<>(leftSchema.attributeSet());
 		intersection.retainAll(rightSchema.attributeSet());
 		
-		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(leftSchema, intersection, LEFT);
-		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(rightSchema, intersection, RIGHT);
+		var leftProjection = makeProjection(leftSchema, intersection, LEFT);
+		var rightProjection = makeProjection(rightSchema, intersection, RIGHT);
 		
-		List<Attribute> attrs = new ArrayList<Attribute>(leftProjection.size() + rightProjection.size());
+		var attrs = new ArrayList<Attribute<?>>(leftProjection.size() + rightProjection.size());
 		attrs.addAll(leftProjection.values());
 		attrs.addAll(rightProjection.values());
 		Schema schema = null;
@@ -100,7 +98,7 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	LazyJoin factory(
 			T leftArg,
 			U rightArg,
-			Collection<OnOperator> onClause)
+			Collection<OnOperator<?>> onClause)
 	throws OnOperatornNotApplicableToSchemaException {
 		return LazyJoin.factory(
 				leftArg, 
@@ -116,7 +114,7 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 				U rightArg,
 				BinaryOperator<Double> product,
 				BinaryOperator<Double> infimum,
-				OnOperator... ons) 
+				OnOperator<?>... ons) 
 			throws OnOperatornNotApplicableToSchemaException {
 		return LazyJoin.factory(
 				leftArg,
@@ -130,7 +128,7 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 	LazyJoin factory(
 			T leftArg,
 			U rightArg,
-			OnOperator... ons) {
+			OnOperator<?>... ons) {
 		try {
 		return LazyJoin.factory(
 				leftArg, 
@@ -189,7 +187,7 @@ public class LazyJoin extends AbstractJoin implements LazyExpression, SchemaProv
 		return LazyJoin.factory(
 				left, 
 				right, 
-				new rq.common.onOperators.OnEquals(new Constant<Boolean>(true), new Constant<Boolean>(true)));
+				new rq.common.onOperators.OnEquals<>(new Constant<Boolean>(true), new Constant<Boolean>(true)));
 	}
 	
 	@Override

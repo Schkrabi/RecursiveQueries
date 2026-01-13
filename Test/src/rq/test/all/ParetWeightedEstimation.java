@@ -3,12 +3,11 @@ package rq.test.all;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 import rq.common.table.Attribute;
@@ -37,15 +36,15 @@ class ParetWeightedEstimation {
 	//	[.66,1.0] -> 50 * 0.5 + 40 * 0.4 = 25 + 16 = 41
 	
 	rq.common.estimations.ParetWeightedEstimation_sampledHist estimation = null;
-	SampledHistogram sampledHistogram = null;
-	final BiFunction<Object, Object, Double> similarity = LinearSimilarity.doubleSimilarityUntil(100.0);
+	SampledHistogram<Double> sampledHistogram = null;
+	final rq.common.similarities.ISimilarity<Double> similarity = LinearSimilarities.doubleSimilarityUntil(100.0);
 	final int numberOfConsideredValues = 2;
 	final int resultSlices = 3;
 	
 	@BeforeEach
 	void setUp() throws Exception {
-		sampledHistogram = new SampledHistogram(
-				new Attribute("A", Double.class),
+		sampledHistogram = new SampledHistogram<>(
+				new Attribute<>("A", Double.class),
 				50.0d,
 				Map.of(
 						0.0d, 50,

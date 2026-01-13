@@ -19,4 +19,5 @@ module rq.common {
 	exports rq.common.estimations;
 	exports rq.common.io.contexts;
 	exports rq.common.util;
+	requires com.fasterxml.jackson.annotations;
 }

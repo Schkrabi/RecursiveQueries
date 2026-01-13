@@ -3,20 +3,20 @@ package rq.common.onOperators;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 
-public class PlusInteger implements RecordValue {
+public class PlusInteger implements RecordValue<Integer> {
 	
-	private final RecordValue left;
-	private final RecordValue right;
+	private final RecordValue<Integer> left;
+	private final RecordValue<Integer> right;
 	
-	public PlusInteger(RecordValue left, RecordValue right) {
+	public PlusInteger(RecordValue<Integer> left, RecordValue<Integer> right) {
 		this.left = left;
 		this.right = right;
 	}
 
 	@Override
-	public Object value(Record record) {
-		Integer iLeft = (Integer)left.value(record);
-		Integer iRight = (Integer)right.value(record);
+	public Integer value(Record record) {
+		var iLeft = left.value(record);
+		var iRight = right.value(record);
 				
 		return iLeft + iRight;
 	}
@@ -36,7 +36,7 @@ public class PlusInteger implements RecordValue {
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<Integer> domain() {
 		return Integer.class;
 	}
 

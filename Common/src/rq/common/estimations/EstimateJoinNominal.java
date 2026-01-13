@@ -5,19 +5,19 @@ import java.util.function.BinaryOperator;
 import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.RankHistogram;
 
-public class EstimateJoinNominal {
+public class EstimateJoinNominal<T> {
 
 	private final RankHistogram left;
 	private final RankHistogram right;
-	private final AttributeHistogram leftAttributeHistogram;
-	private final AttributeHistogram rightAttributeHistogram;
+	private final AttributeHistogram<T> leftAttributeHistogram;
+	private final AttributeHistogram<T> rightAttributeHistogram;
 	private final BinaryOperator<Double> product;
 	
 	public EstimateJoinNominal(
 			RankHistogram left,
 			RankHistogram right,
-			AttributeHistogram leftAttributeHistogram,
-			AttributeHistogram rightAttributeHistogram,
+			AttributeHistogram<T> leftAttributeHistogram,
+			AttributeHistogram<T> rightAttributeHistogram,
 			BinaryOperator<Double> product) {
 		this.left = left;
 		this.right = right;
@@ -53,13 +53,13 @@ public class EstimateJoinNominal {
 		return (this.left.tableSize() * this.right.tableSize()) / Math.max(leftValueCount, rightValueCount);		
 	}
 	
-	public static RankHistogram estimate(
+	public static <T> RankHistogram estimate(
 			RankHistogram left,
 			RankHistogram right,
-			AttributeHistogram leftAttributeHistogram,
-			AttributeHistogram rightAttributeHistogram,
+			AttributeHistogram<T> leftAttributeHistogram,
+			AttributeHistogram<T> rightAttributeHistogram,
 			BinaryOperator<Double> product) {
-		var me = new EstimateJoinNominal(left, right, leftAttributeHistogram, rightAttributeHistogram, product);
+		var me = new EstimateJoinNominal<>(left, right, leftAttributeHistogram, rightAttributeHistogram, product);
 		var est = me.doEstimate();
 		return est;
 	}

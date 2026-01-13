@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import rq.common.estimations.SignatureProvider;
@@ -20,9 +19,9 @@ import rq.common.statistic.SlicedStatistic.RankInterval;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
 
-public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvider, SignatureProvider {
+public abstract class DataSlicedHistogram<T extends Number> implements IStatistic, IGeneratorProvider, SignatureProvider {
 
-	public final Attribute observed;
+	public final Attribute<T> observed;
 	public final int n;
 	protected Map<Interval, Integer> counts = Map.of();
 
@@ -103,7 +102,7 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 		values.forEach(this::add);
 	}
 
-	public DataSlicedHistogram(Attribute observed, int n) {
+	public DataSlicedHistogram(Attribute<T> observed, int n) {
 		super();
 		if(!observed.domain.equals(Double.class)) {
 			throw new RuntimeException(this.getClass().getName() + " can only observe " + Double.class.getName()
@@ -113,7 +112,7 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 		this.n = n;
 	}
 	
-	protected DataSlicedHistogram(Attribute observed, int n, Map<Interval, Integer> counts) {
+	protected DataSlicedHistogram(Attribute<T> observed, int n, Map<Interval, Integer> counts) {
 		super();
 		this.observed = observed;
 		this.n = n;
@@ -135,9 +134,9 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 	}
 	
 	/** vytvori prazdny histogram a naplni jej hodnotami */
-	public static DataSlicedHistogram create(Interval[] intervals, Collection<Double> values,
-			Attribute observed, int n) {
-		var result = new EquidistantHistogram(observed, n);
+	public static <T extends Number> DataSlicedHistogram<T> create(Interval[] intervals, Collection<Double> values,
+			Attribute<T> observed, int n) {
+		var result = new EquidistantHistogram<T>(observed, n);
 		result.initFromIntervals(intervals);
 		result.addAll(values);
 		return result;
@@ -197,13 +196,18 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 		return this._center;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public HistBasedRandom generator(Random rand) {
-		return HistBasedRandom.fromDataSLicedHist(this, rand);
+		if(!this.observed.domain.equals(Double.class)) {
+			throw new RuntimeException("Can only make generation for Double attibutes");
+		}
+		
+		return HistBasedRandom.fromDataSLicedHist((DataSlicedHistogram<Double>)this, rand);
 	}
 	
 	/** Subtracts values with its counts from the histogram effectively removing them from observation*/
-	public DataSlicedHistogram removeValueCount(Collection<Pair<Double, Integer>> valueCounts) {
+	public DataSlicedHistogram<T> removeValueCount(Collection<Pair<Double, Integer>> valueCounts) {
 		var m = new HashMap<>(this.counts);
 		for(var p : valueCounts) {
 			var i = this.counts.entrySet().stream()
@@ -212,7 +216,7 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 						.findFirst().get();
 			m.put(i, m.get(i) - p.second);
 		}
-		return new DataSlicedHistogram(this.observed, this.n, m) {
+		return new DataSlicedHistogram<T>(this.observed, this.n, m) {
 			
 			@Override
 			public void gather(Table table) {}
@@ -261,19 +265,19 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 		Files.write(path, serialized.getBytes());
 	}
 	
-	protected static class HistArgs {
-		public final Attribute observed;
+	protected static class HistArgs<U extends Number> {
+		public final Attribute<U> observed;
 		public final int n;
 		public final Map<Interval, Integer> counts;
-		public HistArgs(Attribute observed, int n, Map<Interval, Integer> counts) {
+		public HistArgs(Attribute<U> observed, int n, Map<Interval, Integer> counts) {
 			this.observed = observed;
 			this.n = n;
 			this.counts = counts;
 		}
 	}
 	
-	protected static HistArgs doDeserialize(String serialized) throws ClassNotFoundException{
-		Attribute observed = null;
+	protected static <U extends Number> HistArgs<U> doDeserialize(String serialized) throws ClassNotFoundException{
+		Attribute<U> observed = null;
 		var counts = new LinkedHashMap<Interval, Integer>();
 		
 		int lines = 0;
@@ -298,7 +302,7 @@ public abstract class DataSlicedHistogram implements IStatistic, IGeneratorProvi
 			counts.put(new Interval(from, to, closedFrom, closedTo), count);
 		}
 		
-		return new HistArgs(observed, lines - 1, counts);
+		return new HistArgs<U>(observed, lines - 1, counts);
 	}
 	
 	@Override

@@ -1,7 +1,6 @@
 package rq.common.estimations;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.EquidistantHistogram;
@@ -9,12 +8,12 @@ import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.DataSlicedHistogram;
 import rq.common.statistic.DataSlicedHistogram.Interval;
 
-public class GlobalCenterRepresentativeProvider implements RepresentativeProvider {
+public class GlobalCenterRepresentativeProvider implements RepresentativeProvider<Double> {
 
-	private final DataSlicedHistogram hist;
+	private final DataSlicedHistogram<Double> hist;
 	
 	public GlobalCenterRepresentativeProvider(
-			DataSlicedHistogram hist) {
+			DataSlicedHistogram<Double> hist) {
 		this.hist = hist;
 	}
 	
@@ -25,7 +24,7 @@ public class GlobalCenterRepresentativeProvider implements RepresentativeProvide
 
 	private Double _globalCenter = null;
 	@Override
-	public double representative(Interval interval) {
+	public Double representative(Interval interval) {
 		if(_globalCenter == null) {
 			var d = Math.abs(this.hist.max() - this.hist.min());
 			_globalCenter = this.hist.min() + d/2;
@@ -33,11 +32,11 @@ public class GlobalCenterRepresentativeProvider implements RepresentativeProvide
 		return _globalCenter;
 	}
 
-	public static IntervalEstimation eqdC(
+	public static IntervalEstimation<Double> eqdC(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist) {
-		var est = new IntervalEstimation(
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -47,11 +46,11 @@ public class GlobalCenterRepresentativeProvider implements RepresentativeProvide
 		return est;
 	}
 	
-	public static IntervalEstimation eqnC(
+	public static IntervalEstimation<Double> eqnC(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist) {
-		var est = new IntervalEstimation(
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,

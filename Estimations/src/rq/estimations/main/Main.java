@@ -3,10 +3,10 @@ package rq.estimations.main;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
+import rq.estimations.experiments.ParametrizedExperiment;
 import rq.files.contracts.EstimationExperimentContract;
+import rq.files.helpers.JsonSerializer;
 
 public class Main {
 
@@ -17,7 +17,7 @@ public class Main {
 		}
 		var confName = args[0];
 		var confJson = Files.readString(Path.of(confName));
-		var cnt = EstimationExperimentContract.deserialize(confJson);
+		var cnt = JsonSerializer.instance().deserialize(confJson, EstimationExperimentContract.class);
 		
 		var experiment = new ParametrizedExperiment(cnt);
 		

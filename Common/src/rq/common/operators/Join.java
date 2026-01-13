@@ -4,10 +4,8 @@ import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.HashSet;
@@ -36,9 +34,9 @@ public class Join extends AbstractJoin implements TabularExpression {
 	
 	public class AttributePair 
 	{
-		public final Attribute attribute1, attribute2;
+		public final Attribute<?> attribute1, attribute2;
 		
-		public AttributePair(Attribute attribute1, Attribute attribute2) {
+		public AttributePair(Attribute<?> attribute1, Attribute<?> attribute2) {
 			this.attribute1 = attribute1;
 			this.attribute2 = attribute2;			
 		}
@@ -52,14 +50,14 @@ public class Join extends AbstractJoin implements TabularExpression {
 	private Join(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<OnOperator> onClause,
+			Collection<OnOperator<?>> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
-			java.util.Map<Attribute, Attribute> leftProjection,
-			java.util.Map<Attribute, Attribute> rightProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> leftProjection,
+			java.util.Map<Attribute<?>, Attribute<?>> rightProjection,
 			Schema schema,
 			BiFunction<Schema, Integer, Table> tableSupplier) {
-		super(new ArrayList<OnOperator>(onClause), product, infimum, leftProjection, rightProjection, schema);
+		super(new ArrayList<OnOperator<?>>(onClause), product, infimum, leftProjection, rightProjection, schema);
 		this.argument1 = argument1;
 		this.argument2 = argument2;
 		this.tableSupplier = tableSupplier;
@@ -79,26 +77,26 @@ public class Join extends AbstractJoin implements TabularExpression {
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<OnOperator> onClause,
+			Collection<OnOperator<?>> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
 			BiFunction<Schema, Integer, Table> tableSupplier) 
 		throws OnOperatornNotApplicableToSchemaException {
 		Schema schema1 = argument1.schema();
 		Schema schema2 = argument2.schema();
-		for(OnOperator p : onClause) {
+		for(var p : onClause) {
 			if(!p.isApplicableToSchema(schema1, schema2)) {
 				throw new OnOperatornNotApplicableToSchemaException(p, schema1, schema2);
 			}
 		}
 		
-		Set<Attribute> intersection = new HashSet<Attribute>(schema1.attributeSet());
+		var intersection = new HashSet<>(schema1.attributeSet());
 		intersection.retainAll(schema2.attributeSet());
 		
-		java.util.Map<Attribute, Attribute> leftProjection = makeProjection(schema1, intersection, LEFT);
-		java.util.Map<Attribute, Attribute> rightProjection = makeProjection(schema2, intersection, RIGHT);
+		var leftProjection = makeProjection(schema1, intersection, LEFT);
+		var rightProjection = makeProjection(schema2, intersection, RIGHT);
 		
-		List<Attribute> attrs = new ArrayList<Attribute>(leftProjection.size() + rightProjection.size());
+		var attrs = new ArrayList<Attribute<?>>(leftProjection.size() + rightProjection.size());
 		attrs.addAll(leftProjection.values());
 		attrs.addAll(rightProjection.values());
 		Schema schema = null;
@@ -116,7 +114,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<OnOperator> onClause,
+			Collection<OnOperator<?>> onClause,
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum) 
 		throws OnOperatornNotApplicableToSchemaException {
@@ -126,7 +124,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2, 
-			Collection<OnOperator> onClause)
+			Collection<OnOperator<?>> onClause)
 		throws OnOperatornNotApplicableToSchemaException {
 		return Join.factory(
 				argument1, 
@@ -153,7 +151,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 			TabularExpression argument2, 
 			BinaryOperator<Double> product,
 			BinaryOperator<Double> infimum,
-			OnOperator ...onClauses) 
+			OnOperator<?> ...onClauses) 
 		throws OnOperatornNotApplicableToSchemaException {
 		return Join.factory(
 				argument1, 
@@ -166,7 +164,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	public static Join factory(
 			TabularExpression argument1, 
 			TabularExpression argument2,
-			OnOperator ...onClauses)
+			OnOperator<?> ...onClauses)
 		throws OnOperatornNotApplicableToSchemaException {
 		return Join.factory(
 				argument1, 
@@ -236,7 +234,7 @@ public class Join extends AbstractJoin implements TabularExpression {
 	public static Join crossJoin(TabularExpression left, TabularExpression right) {
 		try {
 			return Join.factory(left, right, 
-					new rq.common.onOperators.OnEquals(
+					new rq.common.onOperators.OnEquals<>(
 							new Constant<Boolean>(true), 
 							new Constant<Boolean>(true)));
 		} catch (OnOperatornNotApplicableToSchemaException e) {

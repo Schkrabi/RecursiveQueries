@@ -16,22 +16,22 @@ import java.util.stream.Collectors;
 import rq.common.interfaces.Table;
 import rq.common.table.Attribute;
 
-public class SampledHistogram implements IStatistic, IGeneratorProvider {
+public class SampledHistogram<T extends Number> implements IStatistic, IGeneratorProvider {
 
 	public final double sampleSize;
-	public final Attribute observed;
+	public final Attribute<T> observed;
 	
 	private final Map<Double, Integer> data = new HashMap<Double, Integer>();
 	
 	public SampledHistogram(
-			Attribute observed,
+			Attribute<T> observed,
 			double sampleSize) {
 		this.observed = observed;
 		this.sampleSize = sampleSize;
 	}
 	
 	public SampledHistogram(
-			Attribute observed,
+			Attribute<T> observed,
 			double sampleSize,
 			Map<Double, Integer> data) {
 		this.data.putAll(data);
@@ -144,10 +144,10 @@ public class SampledHistogram implements IStatistic, IGeneratorProvider {
 		return sb.toString();
 	}
 	
-	public static SampledHistogram deserialize(String serialized) throws ClassNotFoundException {
+	public static <U extends Number> SampledHistogram<U> deserialize(String serialized) throws ClassNotFoundException {
 		var data = new LinkedHashMap<Double, Integer>();
 		
-		Attribute observed = null;
+		Attribute<U> observed = null;
 		Double sampleSize = null;
 		
 		for(var line : serialized.split("\n")) {
@@ -166,7 +166,7 @@ public class SampledHistogram implements IStatistic, IGeneratorProvider {
 			data.put(key, value);
 		}
 		
-		return new SampledHistogram(observed, sampleSize, data);
+		return new SampledHistogram<U>(observed, sampleSize, data);
 	}
 	
 	public void writeFile(String path) throws IOException {
@@ -177,9 +177,14 @@ public class SampledHistogram implements IStatistic, IGeneratorProvider {
 		Files.write(path, this.serialize().getBytes());
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public HistBasedRandom generator(Random base) {
-		return HistBasedRandom.fromSampledHist(this, base);
+		if(!this.observed.domain.equals(Double.class)) {
+			throw new RuntimeException("Can only make generators for Double");
+		}
+		
+		return HistBasedRandom.fromSampledHist((SampledHistogram<Double>)this, base);
 	}
 	
 	/** size of the observed table*/
@@ -187,11 +192,11 @@ public class SampledHistogram implements IStatistic, IGeneratorProvider {
 		return this.data.values().stream().reduce((x, y) -> x + y).get();
 	}
 	
-	public static SampledHistogram readFile(String path) throws IOException, ClassNotFoundException {
+	public static <U extends Number> SampledHistogram<U> readFile(String path) throws IOException, ClassNotFoundException {
 		return readFile(Path.of(path));
 	}
 	
-	public static SampledHistogram readFile(Path path) throws IOException, ClassNotFoundException {
+	public static <U extends Number> SampledHistogram<U> readFile(Path path) throws IOException, ClassNotFoundException {
 		return deserialize(Files.readString(path));
 	}
 }

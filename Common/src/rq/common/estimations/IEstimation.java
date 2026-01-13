@@ -1,7 +1,6 @@
 package rq.common.estimations;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import rq.common.statistic.RankHistogram;

@@ -14,10 +14,10 @@ public class ComparableDomainMismatchException extends Exception {
 	 * 
 	 */
 	private static final long serialVersionUID = 507942147540763204L;
-	public final RecordValue left;
-	public final RecordValue right;
+	public final RecordValue<?> left;
+	public final RecordValue<?> right;
 	
-	public ComparableDomainMismatchException(RecordValue left, RecordValue right) {
+	public ComparableDomainMismatchException(RecordValue<?> left, RecordValue<?> right) {
 		super(new StringBuilder()
 				.append("Compared attributes ")
 				.append(left.toString())

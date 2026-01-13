@@ -15,7 +15,6 @@ import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
@@ -61,7 +60,8 @@ class LazyRecursiveTopKTest {
 			+	"7,1,0.45d\n";
 	
 	Schema schema;
-	Attribute a, b, f;
+	Attribute<Integer> a, f;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 	LazyTable t1;
 	
@@ -70,33 +70,33 @@ class LazyRecursiveTopKTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		this.t1 = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.f = new Attribute("F", Integer.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.f = new Attribute<>("F", Integer.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.7d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.8d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"baz")), 
 				0.9d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 5), 
-						new Record.AttributeValuePair(b,"bah")), 
+						new Record.AttributeValuePair<>(a, 5), 
+						new Record.AttributeValuePair<>(b,"bah")), 
 				1.0d);
 		
 		Table t = LazyExpression.realizeInMemory(this.t1);
@@ -120,9 +120,9 @@ class LazyRecursiveTopKTest {
 											new LazyFacade(t), 
 											Lukasiewitz.PRODUCT, 
 											Lukasiewitz.INFIMUM, 
-											new OnEquals(a, a)), 
-									new Projection.To(new Attribute("right.A", Integer.class), a),
-									new Projection.To(new Attribute("right.B", String.class), b));
+											new OnEquals<>(a, a)), 
+									new Projection.To<>(new Attribute<>("right.A", Integer.class), a),
+									new Projection.To<>(new Attribute<>("right.B", String.class), b));
 					} catch (OnOperatornNotApplicableToSchemaException e) {
 						throw new RuntimeException(e);
 					}
@@ -159,20 +159,20 @@ class LazyRecursiveTopKTest {
 		this.r1 = Record.factory(
 				this.schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1),
-						new Record.AttributeValuePair(f, 1)), 
+						new Record.AttributeValuePair<>(a, 1),
+						new Record.AttributeValuePair<>(f, 1)), 
 				1.0f);
 		this.r2 = Record.factory(
 				this.schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2),
-						new Record.AttributeValuePair(f, 1)), 
+						new Record.AttributeValuePair<>(a, 2),
+						new Record.AttributeValuePair<>(f, 1)), 
 				0.65d);
 		this.r3 = Record.factory(
 				this.schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3),
-						new Record.AttributeValuePair(f, 1)), 
+						new Record.AttributeValuePair<>(a, 3),
+						new Record.AttributeValuePair<>(f, 1)), 
 				0.45d);
 		
 		Table t = LazyExpression.realizeInMemory(LazyTable.open(new ByteArrayInputStream(this.data2.getBytes())));
@@ -185,10 +185,10 @@ class LazyRecursiveTopKTest {
 								LazyJoin.factory(
 										new LazyFacade(table), 
 										new LazyFacade(t), 
-										new OnNotEquals(a, a),
-										new OnEquals(f, f)),
-								new Projection.To(Join.right(a), a),
-								new Projection.To(Join.left(f), f));
+										new OnNotEquals<>(a, a),
+										new OnEquals<>(f, f)),
+								new Projection.To<>(Join.right(a), a),
+								new Projection.To<>(Join.left(f), f));
 					}, 
 				2,
 				new rq.common.tools.AlgorithmMonitor());
@@ -205,10 +205,10 @@ class LazyRecursiveTopKTest {
 							LazyJoin.factory(
 									new LazyFacade(table), 
 									new LazyFacade(t), 
-									new OnNotEquals(a, a),
-									new OnEquals(f, f)),
-							new Projection.To(Join.right(a), a),
-							new Projection.To(Join.left(f), f));
+									new OnNotEquals<>(a, a),
+									new OnEquals<>(f, f)),
+							new Projection.To<>(Join.right(a), a),
+							new Projection.To<>(Join.left(f), f));
 				},
 				new rq.common.tools.AlgorithmMonitor());
 		

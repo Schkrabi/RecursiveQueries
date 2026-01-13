@@ -13,23 +13,24 @@ import rq.common.operators.LazySelection;
 import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
+import rq.estimations.framework.SelectionQueryInfo;
 
 /** Gathers rank histograms from queries for all given slice numbers and stores them */
-public class QueryHistogramHolder {
+public class QueryHistogramHolder<T> {
 
 	public final Collection<Integer> slices;
-	private final Map<SelectionQueryInfo, LazySelection> _selects;
-	private Map<RankHistogramInfo, RankHistogram> _hists = null;
+	private final Map<SelectionQueryInfo<T>, LazySelection> _selects;
+	private Map<RankHistogramInfo<T>, RankHistogram> _hists = null;
 	
 	private QueryHistogramHolder(
 			Collection<Integer> slices, 
-			Map<SelectionQueryInfo, LazySelection> selects) {
+			Map<SelectionQueryInfo<T>, LazySelection> selects) {
 		this.slices = slices;
 		this._selects = selects;
 	}
 	
-	private Collection<Pair<RankHistogramInfo, RankHistogram>> evalInfo(
-			SelectionQueryInfo info,
+	private Collection<Pair<RankHistogramInfo<T>, RankHistogram>> evalInfo(
+			SelectionQueryInfo<T> info,
 			LazySelection selection) {
 		var start = System.currentTimeMillis();
 		var record = selection.next();
@@ -39,7 +40,7 @@ public class QueryHistogramHolder {
 		}
 		
 		var hists = this.slices.stream()
-				.map(s -> Pair.of(new RankHistogramInfo(info, s), new RankHistogram(s))) 
+				.map(s -> Pair.of(new RankHistogramInfo<>(info, s), new RankHistogram(s))) 
 				.collect(Collectors.toList());
 		
 		while(record != null) {
@@ -54,7 +55,7 @@ public class QueryHistogramHolder {
 		return hists;
 	}
 	
-	public Map<RankHistogramInfo, RankHistogram> getHists(){
+	public Map<RankHistogramInfo<T>, RankHistogram> getHists(){
 		if(this._hists == null) {
 			this._hists = new HashMap<>();
 			for(var e : this._selects.entrySet()) {
@@ -73,7 +74,7 @@ public class QueryHistogramHolder {
 		return this._hists;
 	}
 	
-	public Collection<Pair<RankHistogramInfo, RankHistogram>> getHistograms(Attribute a, int slice){
+	public Collection<Pair<RankHistogramInfo<T>, RankHistogram>> getHistograms(Attribute<T> a, int slice){
 		var hists = this.getHists();
 		var fltrd = hists.entrySet().stream()
 				.filter(e -> e.getKey().slice == slice && e.getKey().queryInfo.attribute.equals(a))
@@ -82,20 +83,20 @@ public class QueryHistogramHolder {
 		return fltrd;
 	}
 	
-	public static QueryHistogramHolder fromRestrictionQueries(
+	public static <T> QueryHistogramHolder<T> fromRestrictionQueries(
 			Collection<Integer> slices,
-			RestrictionQueries rq) {
+			RestrictionQueries<T> rq) {
 		var selects = rq.getSelections();
-		var me = new QueryHistogramHolder(slices, selects);
+		var me = new QueryHistogramHolder<T>(slices, selects);
 		return me;
 	}
 
-	public static class RankHistogramInfo {
-		public final SelectionQueryInfo queryInfo;
+	public static class RankHistogramInfo<T> {
+		public final SelectionQueryInfo<T> queryInfo;
 		public final int slice;
 		
 		public RankHistogramInfo(
-				SelectionQueryInfo queryInfo,
+				SelectionQueryInfo<T> queryInfo,
 				int slice) {
 			this.queryInfo = queryInfo;
 			this.slice = slice;
@@ -132,7 +133,7 @@ public class QueryHistogramHolder {
 		@Override
 		public boolean equals(Object other) {
 			if(other instanceof RankHistogramInfo) {
-				var rhi = (RankHistogramInfo)other;
+				var rhi = (RankHistogramInfo<?>)other;
 				return this.queryInfo.equals(rhi.queryInfo)
 						&& this.slice == rhi.slice;
 			}

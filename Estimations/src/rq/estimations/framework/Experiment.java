@@ -1,34 +1,26 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.opencsv.exceptions.CsvValidationException;
 
-import rq.common.estimations.ReintroduceRanks;
 import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.NotSubschemaException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
@@ -37,11 +29,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.io.contexts.ClassNotInContextException;
-import rq.common.onOperators.Constant;
-import rq.common.operators.LazySelection;
-import rq.common.operators.Selection;
-import rq.common.restrictions.Similar;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
@@ -49,11 +37,13 @@ import rq.common.statistic.MostCommonValues;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 import rq.common.table.Attribute;
-import rq.common.table.LazyFacade;
+import rq.estimations.contracts.RestrictionExperimentContract;
+import rq.estimations.main.Workbench;
 import rq.files.contracts.EstimationExperimentContract;
 import rq.files.contracts.QueryGenerationStrategy;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
+import rq.files.helpers.JsonSerializer;
 import rq.files.io.TableReader;
 import rq.files.io.TableWriter;
 
@@ -70,7 +60,7 @@ public abstract class Experiment {
 	/** Name of the prepared data. Used to build folder structure */
 	protected abstract String preparedDataName();
 	
-	protected Map<Attribute, Collection<Double>> getQueryValues(){
+	protected Map<Attribute<Double>, Collection<Double>> getQueryValues(){
 		return Map.of();
 	}
 	protected QueryGenerationStrategy getQueryGenerationStrategy() {
@@ -80,26 +70,28 @@ public abstract class Experiment {
 	private RestrictionExperiment _restrictionExperiment = null;
 	protected RestrictionExperiment restrictionExperiment() {
 		if(this._restrictionExperiment == null) {
+			var cnt = new RestrictionExperimentContract();
+			cnt.setDataPath(this.preparedDataPath());
+			cnt.setQueryCount((int)SAMPLE_QUERY_COUNT);
+			cnt.setAttributes(this.numericAttributes());
+			cnt.setSlices(this.slices());
+			cnt.setConsideredValues(this.nConsideredValues());
+			cnt.setParetRatios(this.paretRatios());
+			cnt.setIntervals(this.IntervalsMany(this.numericAttributes()));
+			cnt.setSimilarUntil(this.similarsUntil(this.numericAttributes()));
+			cnt.setRandom(this.getRand());
+			cnt.setUseRankedDataAsPrimary(this.USE_RANKED_TABLE_AS_PRIMARY_DATA);
+			cnt.setQueryGenerationStrategy(this.getQueryGenerationStrategy());
+			cnt.setQueryValues(this.getQueryValues());
+			
 			this._restrictionExperiment = 
-					new RestrictionExperiment(
-							this.preparedDataPath(),
-							(int) SAMPLE_QUERY_COUNT,
-							this.numericAttributes(),
-							this.slices(),
-							this.nConsideredValues(),
-							this.paretRatios(),
-							this.IntervalsMany(this.numericAttributes()),
-							this.similarsUntil(this.numericAttributes()),
-							this.getRand(),
-							this.USE_RANKED_TABLE_AS_PRIMARY_DATA,
-							this.getQueryGenerationStrategy(),
-							this.getQueryValues());
+					new RestrictionExperiment(cnt);
 		}
 		return this._restrictionExperiment;
 	}
 	
-	protected abstract Map<Attribute, Collection<Integer>> nConsideredValues();
-	protected abstract Map<Attribute, Collection<Double>> paretRatios();
+	protected abstract Map<Attribute<Double>, Collection<Integer>> nConsideredValues();
+	protected abstract Map<Attribute<Double>, Collection<Double>> paretRatios();
 	
 	/** Prepared data with ranks for experiments */
 	private Table preparedData = null;
@@ -167,18 +159,18 @@ public abstract class Experiment {
 	}
 	
 	/** List of nominal attributes */
-	protected abstract List<Attribute> numericAttributes();
+	protected abstract List<Attribute<Double>> numericAttributes();
 	/** List of numerical attributes */
-	protected abstract List<Attribute> nominalAttributes();
+	protected abstract List<Attribute<?>> nominalAttributes();
 	
 	/** Returns histogram sample size for given attribute */
-	protected abstract double histSampleSize(Attribute a);
+	protected abstract double histSampleSize(Attribute<Double> a);
 	
 	/** Returns list of intervals used for given attribute */
-	protected abstract List<Integer> intervals(Attribute a);
+	protected abstract List<Integer> intervals(Attribute<?> a);
 	
-	protected Map<Attribute, Collection<Integer>> IntervalsMany(Collection<Attribute> as){
-		var m = new HashMap<Attribute, Collection<Integer>>();
+	protected Map<Attribute<Double>, Collection<Integer>> IntervalsMany(Collection<Attribute<Double>> as){
+		var m = new HashMap<Attribute<Double>, Collection<Integer>>();
 		for(var a : as) {
 			m.put(a, this.intervals(a));
 		}
@@ -202,36 +194,38 @@ public abstract class Experiment {
 		//Nominal attribute histograms
 		for (var a : Stream.concat(this.nominalAttributes().stream(), this.projectionAttributes().stream())
 				.collect(Collectors.toList())) {
-			var hist = new AttributeHistogram(a);
+			var hist = new AttributeHistogram<>(a);
 			hist.gather(this.preparedData);
-			hist.writeFile(this.preparedDataHistFolder()
-					.resolve(Workbench.histName(this.preparedDataFileName(), a.name)));
+			var json = JsonSerializer.instance().serialize(hist);
+			Files.writeString(this.preparedDataHistFolder()
+					.resolve(Workbench.histName(this.preparedDataFileName(), a.name)), json);
 		}
 		
 		//Numerical attribure histograms
 		for(var a : this.numericAttributes()) {
 			var sampleSize = this.histSampleSize(a);
-			var hist = new SampledHistogram(a, sampleSize);
+			var hist = new SampledHistogram<>(a, sampleSize);
 			hist.gather(this.preparedData);
 			hist.writeFile(this.preparedDataHistFolder()
 					.resolve(Workbench.sampledHistName(this.preparedDataFileName(), a.name)));
 			
-			var attHist = new AttributeHistogram(a);
+			var attHist = new AttributeHistogram<>(a);
 			attHist.gather(this.preparedData);
-			attHist.writeFile(this.preparedDataHistFolder()
-					.resolve(Workbench.histName(this.preparedDataFileName(), a.name)));
+			Files.writeString(this.preparedDataHistFolder()
+					.resolve(Workbench.histName(this.preparedDataFileName(), a.name)), 
+					JsonSerializer.instance().serialize(attHist));
 			
-			var mcv = new MostCommonValues(a);
+			var mcv = new MostCommonValues<>(a);
 			mcv.gather(this.preparedData);
 			mcv.writeFile(Workbench.mcvFile(this.preparedDataPath(), a));
 			
 			for(var i : this.intervals(a)) {
-				var eqn = new EquinominalHistogram(a, i);
+				var eqn = new EquinominalHistogram<>(a, i);
 				eqn.gather(this.preparedData);
 				eqn.writeFile(this.preparedDataHistFolder()
 						.resolve(Workbench.eqnHistName(this.preparedDataFileName(), a.name, i)));
 				
-				var eqd = new EquidistantHistogram(a, i);
+				var eqd = new EquidistantHistogram<>(a, i);
 				eqd.gather(this.preparedData);
 				eqd.writeFile(this.preparedDataHistFolder()
 						.resolve(Workbench.eqdHistName(this.preparedDataFileName(), a.name, i)));
@@ -247,32 +241,25 @@ public abstract class Experiment {
 	}
 	
 	/** Returns similarity used for queries and estimates of given attribute */
-	protected BiFunction<Object, Object, Double> similarity(Attribute a){
-		return LinearSimilarity.doubleSimilarityUntil(this.similarUntil(a));
+	protected rq.common.similarities.ISimilarity<Double> similarity(Attribute<Double> a){
+		return LinearSimilarities.doubleSimilarityUntil(this.similarUntil(a));
 	}
 	
-	protected abstract double similarUntil(Attribute a);
+	protected abstract double similarUntil(Attribute<Double> a);
 	
-	protected Map<Attribute, Double> similarsUntil(Collection<Attribute> as){
-		var m = new HashMap<Attribute, Double>();
+	protected Map<Attribute<Double>, Double> similarsUntil(Collection<Attribute<Double>> as){
+		var m = new HashMap<Attribute<Double>, Double>();
 		for(var a : as) {
 			m.put(a, this.similarUntil(a));
 		}
 		return m;
 	}
 	
-	/** Prefix of the estimation files */
-	private String estFileNamePrefix(Attribute a) {
-		return Workbench.estFileNamePrefix(
-				this.preparedDataFileName(), 
-				a.name);
-	}
-	
 	/** List of tested number of probes in the experiment */
 	protected abstract List<Integer> probes();
 	
 	/** List of stochastic estimation samples for given attribute */
-	protected abstract List<Integer> estSamples(Attribute a);
+	protected abstract List<Integer> estSamples(Attribute<?> a);
 	
 	/** Computes the estimates */
 	public void estimates() throws IOException, ClassNotFoundException {
@@ -289,31 +276,6 @@ public abstract class Experiment {
 		return this.preparedDataFolder().resolve("queries");
 	}
 	
-	/** Name of the query file */
-	private String queryFileName(Attribute a, Object v) {
-		return new StringBuilder()
-				.append(this.primaryDataFileName())
-				.append(".")
-				.append(a.name)
-				.append(".")
-				.append(v.toString())
-				.append(".csv")
-				.toString();
-	}
-	
-//	/** Query file */
-//	private Path queryFile(Attribute a, Object v) {
-//		return this.queryFolder().resolve(this.queryFileName(a, v));
-//	}
-	
-	/** All attributes measured by this experiment */
-	private Set<Attribute> allMeasuredAttributes(){
-		var attrs = new HashSet<Attribute>(this.numericAttributes());
-		attrs.addAll(this.nominalAttributes());
-		return attrs;
-	}
-	
-	private Map<Attribute, List<Double>> _sampleQueryValues = new LinkedHashMap<Attribute, List<Double>>();
 	private Random rand = null;
 	
 	protected Random getRand() {
@@ -323,70 +285,28 @@ public abstract class Experiment {
 		return this.rand;
 	}
 	
-	private List<Double> sampleQueryValues(Attribute a) throws ClassNotFoundException, IOException{
-		var vls = this._sampleQueryValues.get(a); 
-		if(vls == null) {
-			//vls = this.sampleQueryValues_paret(a);
-			vls = this.sampleQueryValues_uniform(a);
-		}
-		return vls;
-	}
-	
-	private List<Double> sampleQueryValues_uniform(Attribute a){
-		SampledHistogram sHist;
-		try {
-			sHist = this.sampledHist(a);
-		} catch (ClassNotFoundException | IOException e) {
-			throw new RuntimeException(e);
-		}
-		var min = sHist.min();
-		var max = sHist.max();
-		//Note: Query values are picked uniformly from the effective domain
-		var vls =  Stream.generate(new Supplier<Double>() {
-
-			@Override
-			public Double get() {
-				return min + getRand().nextDouble() * max;
-			}
-			
-		}).limit(this.SAMPLE_QUERY_COUNT).collect(Collectors.toList());
-		return vls;
-	}
-	
-	private List<Double> sampleQueryValues_paret(Attribute a){
-		SampledHistogram sHist;
-		try {
-			sHist = this.sampledHist(a);
-		} catch (ClassNotFoundException | IOException e) {
-			throw new RuntimeException(e);
-		}
-		
-		var vls = sHist.generator().doubles()
-				.limit(this.SAMPLE_QUERY_COUNT)
-				.boxed().collect(Collectors.toList());
-		return vls;
-	}
-	
 	public final long SAMPLE_QUERY_COUNT = 200;
 	
-	private Path sampledHistFile(Attribute a) {
+	private Path sampledHistFile(Attribute<?> a) {
 		return this.preparedDataHistFolder().resolve(
 				Workbench.sampledHistName(this.preparedDataFileName(), a.name));
 	}
 	
-	public SampledHistogram sampledHist(Attribute a) throws ClassNotFoundException, IOException {
+	public <T extends Number> SampledHistogram<T> sampledHist(Attribute<T> a) throws ClassNotFoundException, IOException {
 		return SampledHistogram.readFile(this.sampledHistFile(a));
 	}
 	
-	private Path attHistFile(Attribute a) {
+	private Path attHistFile(Attribute<?> a) {
 		return this.preparedDataHistFolder().resolve(
 				Workbench.histName(this.preparedDataFileName(), a.name));		
 	}
 	
-	public AttributeHistogram attHist(Attribute a) {
+	@SuppressWarnings("unchecked")
+	public <T> AttributeHistogram<T> attHist(Attribute<T> a) {
 		try {
-			return AttributeHistogram.readFile(this.attHistFile(a));
-		} catch (ClassNotFoundException | IOException e) {
+			var h = JsonSerializer.instance().deserialize(Files.readString(this.attHistFile(a)), AttributeHistogram.class);
+			return h;
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -437,7 +357,7 @@ public abstract class Experiment {
 	protected abstract Map<String, TabularExpression> prepareSubDataQueries(Table preparedData);
 	
 	/** sub data file name */
-	String subdataName(String identifier) {
+	protected String subdataName(String identifier) {
 		return new StringBuilder(this.primaryDataFileName())
 				.append(".")
 				.append(identifier)
@@ -547,12 +467,12 @@ public abstract class Experiment {
 	
 	/** Map of filename - attribute data used as left side of join experiments.
 	 * Experiment class is responsible for creating the data files */
-	protected abstract Map<String, List<Attribute>> smallData();
+	protected abstract Map<String, List<Attribute<?>>> smallData();
 	
 	/** Projection experiment*/
 	public final ProjectionExperiment projection = new ProjectionExperiment(this);
 	
-	private List<JoinExperiment> joins = new LinkedList<JoinExperiment>();
+	private List<JoinExperiment<?>> joins = new LinkedList<>();
 	
 	/** Prepares join experiments 
 	 * @throws TableRecordSchemaMismatch 
@@ -564,7 +484,7 @@ public abstract class Experiment {
 	 * @throws CsvValidationException */
 	public void prepareJoins() throws CsvValidationException, ClassNotFoundException, IOException, DuplicateAttributeNameException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch {
 		for(var sde : this.smallData().entrySet()) {
-			for(Attribute a : sde.getValue()) {
+			for(Attribute<?> a : sde.getValue()) {
 				var join = JoinExperiment.joinExperiment(this, sde.getKey(), a);
 				join.prepare();
 				this.joins.add(join);
@@ -587,10 +507,11 @@ public abstract class Experiment {
 							.resolve(Workbench.rankHistFileName(join.smallDataId, slice)));
 				}
 				
-				var hist = new AttributeHistogram(join.joined);
+				var hist = new AttributeHistogram<>(join.joined);
 				hist.gather(join.getSmallData());
-				hist.writeFile(this.preparedDataHistFolder()
-						.resolve(Workbench.histName(join.smallDataId, join.joined.name)));
+				Files.writeString(this.preparedDataHistFolder()
+						.resolve(Workbench.histName(join.smallDataId, join.joined.name)), 
+						JsonSerializer.instance().serialize(hist));
 			}
 		}
 		
@@ -599,15 +520,17 @@ public abstract class Experiment {
 			var data = e.getValue();
 			
 			for(var a : this.nominalAttributes()) {
-				var hist = new AttributeHistogram(a);
+				var hist = new AttributeHistogram<>(a);
 				hist.gather(data);
-				hist.writeFile(this.preparedDataHistFolder()
-						.resolve(Workbench.histName(this.subdataName(id), a.name)));
+				
+				Files.writeString(this.preparedDataHistFolder()
+						.resolve(Workbench.histName(this.subdataName(id), a.name)),
+						JsonSerializer.instance().serialize(hist));
 			}
 		}
 	}
 	
-	protected abstract List<Attribute> projectionAttributes();
+	protected abstract List<Attribute<?>> projectionAttributes();
 	
 	protected abstract long seed();
 	
@@ -704,6 +627,6 @@ public abstract class Experiment {
 				this.seed(),
 				atts);
 		
-		return cnt.serialize();
+		return JsonSerializer.instance().serialize(cnt);
 	}
 }

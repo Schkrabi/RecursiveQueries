@@ -1,6 +1,6 @@
 package queries;
 
-import java.util.function.BiFunction;
+
 import java.util.function.Function;
 
 import annotations.CallingArg;
@@ -18,7 +18,8 @@ import rq.common.operators.LazyProjection;
 import rq.common.operators.LazySelection;
 import rq.common.operators.Projection;
 import rq.common.restrictions.Similar;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.LazyFacade;
 import rq.common.tools.AlgorithmMonitor;
 import rq.common.restrictions.Equals;
@@ -52,14 +53,14 @@ public class Queries2_Toloker_top extends Queries2 {
 	}
 	
 	private double _approvedRateSimilarity = 1.0d;
-	private BiFunction<Object, Object, Double> approvedRateSimilarity =
-			LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
+	private ISimilarity<Double> approvedRateSimilarity =
+			LinearSimilarities.doubleSimilarityUntil(_approvedRateSimilarity);
 	
 	@QueryParameter("approvedRateSimilarity")
 	public void setApprovedRateSimilarity(String arsim) {
 		this._approvedRateSimilarity = Double.parseDouble(arsim);
 		this.approvedRateSimilarity =
-				LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
+				LinearSimilarities.doubleSimilarityUntil(_approvedRateSimilarity);
 	}
 	
 	@QueryParameterGetter("approvedRateSimilarity")
@@ -85,15 +86,15 @@ public class Queries2_Toloker_top extends Queries2 {
 			return LazyProjection.factory(
 					new LazySelection(
 							new LazyFacade(iTable),
-							new Similar(Toloker.sourceApprovedRate, 
+							new Similar<>(Toloker.sourceApprovedRate, 
 										new Constant<Double>(this._approvedRate), 
 										this.approvedRateSimilarity)),
-					new Projection.To(Toloker.source, Toloker.source),
+					new Projection.To<>(Toloker.source, Toloker.source),
 //					new Projection.To(Toloker.sourceApprovedRate, Toloker.approvedRate),
 //					new Projection.To(Toloker.sourceRejectedRate, Toloker.rejectedRate),
 //					new Projection.To(Toloker.sourceExpiredRate, Toloker.expiredRate),
 //					new Projection.To(Toloker.sourceSkippedRate, Toloker.skippedRate),
-					new Projection.To(Toloker.sourceEductation, Toloker.education)//,
+					new Projection.To<>(Toloker.sourceEductation, Toloker.education)//,
 //					new Projection.To(Toloker.sourceEnglishProfile, Toloker.englishProfile),
 //					new Projection.To(Toloker.sourceEnglishTested, Toloker.englishTested),
 //					new Projection.To(Toloker.sourceBanned, Toloker.banned)
@@ -110,17 +111,17 @@ public class Queries2_Toloker_top extends Queries2 {
 						LazyJoin.factory(
 							new LazyFacade(t), 
 							new LazyFacade(iTable),
-							new OnEquals(Toloker.source, Toloker.source),
-							new OnSimilar(
+							new OnEquals<>(Toloker.source, Toloker.source),
+							new OnSimilar<>(
 									Toloker.education, 
 									Toloker.targetEductation, 
 									Toloker.educationSimilarity)),
-						new Projection.To(Toloker.target, Toloker.source),
+						new Projection.To<>(Toloker.target, Toloker.source),
 //						new Projection.To(Toloker.targetApprovedRate, Toloker.approvedRate),
 //						new Projection.To(Toloker.targetRejectedRate, Toloker.rejectedRate),
 //						new Projection.To(Toloker.targetSkippedRate, Toloker.skippedRate),
 //						new Projection.To(Toloker.targetExpiredRate, Toloker.expiredRate),
-						new Projection.To(Toloker.targetEductation, Toloker.education)//,
+						new Projection.To<>(Toloker.targetEductation, Toloker.education)//,
 //						new Projection.To(Toloker.targetEnglishProfile, Toloker.englishProfile),
 //						new Projection.To(Toloker.targetEnglishTested, Toloker.englishTested),
 //						new Projection.To(Toloker.targetBanned, Toloker.banned)
@@ -140,8 +141,8 @@ public class Queries2_Toloker_top extends Queries2 {
 		
 		exp = new LazySelection(
 				iTable,
-				new InfimumAnd(	new Equals(Toloker.sourceBanned, new Constant<Integer>(this._isBanned)),
-								new Equals(Toloker.targetBanned, new Constant<Integer>(this._isBanned))));
+				new InfimumAnd(	new Equals<>(Toloker.sourceBanned, new Constant<Integer>(this._isBanned)),
+								new Equals<>(Toloker.targetBanned, new Constant<Integer>(this._isBanned))));
 		
 		return exp;
 	}

@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.types.DateTime;
 
 class LinearSimilarityTest {
@@ -20,7 +19,7 @@ class LinearSimilarityTest {
 
 	@Test
 	void testIntegerSimilarityUntil() {
-		BiFunction<Object, Object, Double> sf = LinearSimilarity.integerSimilarityUntil(10);
+		var sf = LinearSimilarities.integerSimilarityUntil(10);
 		
 		double s = sf.apply(0, 0);
 		assertTrue(s >= 0.0d);
@@ -44,7 +43,7 @@ class LinearSimilarityTest {
 
 	@Test
 	void testDoubleSimilarityUntil() {
-		BiFunction<Object, Object, Double> sf = LinearSimilarity.doubleSimilarityUntil(2.0d);
+		var sf = LinearSimilarities.doubleSimilarityUntil(2.0d);
 		
 		double s = sf.apply(0.0d, 0.0d);
 		assertTrue(s >= 0.0d);
@@ -68,7 +67,7 @@ class LinearSimilarityTest {
 
 	@Test
 	void testDateTimeSimilarityUntil() {
-		BiFunction<Object, Object, Double> sf = LinearSimilarity.dateTimeSimilarityUntil(3600);
+		var sf = LinearSimilarities.dateTimeSimilarityUntil(3600);
 		
 		double s = sf.apply(
 				new DateTime(LocalDateTime.of(2023, 9, 28, 6, 0, 0)),
@@ -97,7 +96,7 @@ class LinearSimilarityTest {
 		assertTrue(s <= 1.0d);
 		assertEquals(s, 0.0d);
 		
-		sf = LinearSimilarity.dateTimeSimilarityUntil(Duration.ofDays(30).toSeconds());
+		sf = LinearSimilarities.dateTimeSimilarityUntil(Duration.ofDays(30).toSeconds());
 		s = sf.apply(
 				new DateTime(LocalDateTime.of(2010, 12, 30, 0, 0, 0)),
 				new DateTime(LocalDateTime.of(2011, 1, 6, 0, 0, 0)));

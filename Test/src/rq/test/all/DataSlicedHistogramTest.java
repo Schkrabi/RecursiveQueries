@@ -14,7 +14,7 @@ import rq.common.table.Attribute;
 
 class DataSlicedHistogramTest {
 
-	private Attribute A = new Attribute("A", Double.class);
+	private Attribute<Double> A = new Attribute<>("A", Double.class);
 	
 	@BeforeEach
 	void setUp() throws Exception {
@@ -35,7 +35,7 @@ class DataSlicedHistogramTest {
 				3);
 		
 		var ser = eqd.serialize();
-		EquidistantHistogram des;
+		EquidistantHistogram<Double> des;
 		try {
 			des = EquidistantHistogram.deserialize(ser);
 		} catch (ClassNotFoundException e) {

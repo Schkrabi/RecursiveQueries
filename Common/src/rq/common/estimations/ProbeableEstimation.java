@@ -16,7 +16,7 @@ import rq.common.restrictions.Similar;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 
-public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
+public abstract class ProbeableEstimation<T> extends AbstractSelectionEstimation<T> {
 
 	protected int probes;
 	
@@ -44,11 +44,11 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 	/**
 	 * Pair of most frequent and rest values
 	 */
-	protected static class SplitedValues{
-		public final List<Object> mostFrequent;
-		public final List<Object> rest;
+	protected class SplitedValues{
+		public final List<T> mostFrequent;
+		public final List<T> rest;
 		
-		public SplitedValues(List<Object> mostFrequent, List<Object> rest) {
+		public SplitedValues(List<T> mostFrequent, List<T> rest) {
 			this.mostFrequent = mostFrequent;
 			this.rest = rest;
 		}
@@ -60,16 +60,16 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 	 * @param sortedValues list of values ordered by frequency
 	 * @return
 	 */
-	protected SplitedValues splitValues(Map<Object, Integer> histogram, int probedValues){
-		List<Object> sorted = histogram.entrySet().stream()
+	protected SplitedValues splitValues(Map<T, Integer> histogram, int probedValues){
+		var sorted = histogram.entrySet().stream()
 				.sorted((e1, e2) -> Integer.compare(e1.getValue(), e2.getValue()))
 				.map(e -> e.getKey())
 				.collect(Collectors.toList());
-		List<Object> mostFrequent = new ArrayList<Object>(probedValues);
-		List<Object> rest = new ArrayList<Object>(Math.max(histogram.size() - probedValues, 1));			
+		var mostFrequent = new ArrayList<T>(probedValues);
+		var rest = new ArrayList<T>(Math.max(histogram.size() - probedValues, 1));			
 		
 		int i = 0;
-		for(Object o : sorted) {
+		for(T o : sorted) {
 			if(i < probedValues) {
 				mostFrequent.add(o);
 			}
@@ -88,10 +88,10 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 	 * @param value
 	 * @return
 	 */
-	protected RankHistogram probeAttributeValue(Object value, Set<RankInterval> slices) {
+	protected RankHistogram probeAttributeValue(T value, Set<RankInterval> slices) {
 		Selection selection = new Selection(
 				this.argument,
-				new Similar(this.attribute, new Constant<Object>(value), this.similarity));
+				new Similar<T>(this.attribute, new Constant<>(value), this.similarity));
 		
 		Table rslt = selection.eval();
 		rslt.getStatistics().addRankHistogram(slices);
@@ -100,8 +100,8 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 		return rslt.getStatistics().getRankHistogram(slices).get();
 	}
 	
-	protected abstract RankHistogram estimateProbability(Set<Object> histValues);
-	protected abstract Map<Object, Integer> getHistogramData();
+	protected abstract RankHistogram estimateProbability(Set<T> histValues);
+	protected abstract Map<T, Integer> getHistogramData();
 	
 	/**
 	 * Estimates with probes
@@ -109,11 +109,11 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 	 * @return estimate
 	 */
 	public RankHistogram estimate() {
-		Map<Object, Integer> atributeHistogram = this.getHistogramData();
+		Map<T, Integer> atributeHistogram = this.getHistogramData();
 		
 		SplitedValues split = 
 				this.splitValues(
-						new HashMap<Object, Integer>(atributeHistogram), 
+						new HashMap<T, Integer>(atributeHistogram), 
 						this.probes);
 		
 		double tableSize = (double)atributeHistogram.entrySet()
@@ -129,7 +129,7 @@ public abstract class ProbeableEstimation extends AbstractSelectionEstimation {
 		
 		RankHistogram rslt = new RankHistogram(restEstimate.getSlices());
 		
-		for(Object value : split.mostFrequent) {
+		for(T value : split.mostFrequent) {
 			RankHistogram probe = this.probeAttributeValue(value, rslt.getSlices());
 			Double ratio = (double)atributeHistogram.get(value) / tableSize; 
 			probe = RankHistogram.mult(probe, ratio);

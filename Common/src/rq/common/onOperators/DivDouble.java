@@ -6,18 +6,18 @@ import rq.common.table.Schema;
 /**
  * Record value dividing two subexpressions, only supports subexpressions from the same record
  */
-public class DivDouble implements RecordValue {
+public class DivDouble implements RecordValue<Double> {
 
-	private final RecordValue left;
-	private final RecordValue right;
+	private final RecordValue<Double> left;
+	private final RecordValue<Double> right;
 	
-	public DivDouble(RecordValue left, RecordValue right) {
+	public DivDouble(RecordValue<Double> left, RecordValue<Double> right) {
 		this.left = left;
 		this.right = right;
 	}
 
 	@Override
-	public Object value(Record record) {
+	public Double value(Record record) {
 		Double leftDouble = (Double)left.value(record);
 		Double rightDouble = (Double)right.value(record);
 		
@@ -39,7 +39,7 @@ public class DivDouble implements RecordValue {
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<Double> domain() {
 		return Double.class;
 	}
 	

@@ -17,7 +17,7 @@ import rq.common.onOperators.OnEquals;
 import rq.common.onOperators.OnGreaterThanOrEquals;
 import rq.common.onOperators.OnSimilar;
 import rq.common.operators.LazyJoin;
-import rq.common.similarities.NaiveSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
@@ -36,7 +36,8 @@ class LazyJoinTest {
 		+	"3, \"bah\", 0.4";
 	
 	Schema schema1, schema2, expected;
-	Attribute a, b, c, la, ra;
+	Attribute<Integer> a, la, ra;
+	Attribute<String> c, b;
 	Record r11, r12, r21, r22;
 	LazyTable t1, t2, u1, u2, v1, v2;
 	LazyJoin j1, j2, j3;
@@ -50,11 +51,11 @@ class LazyJoinTest {
 		u2 = LazyTable.open(new ByteArrayInputStream(this.data2.getBytes()));
 		v2 = LazyTable.open(new ByteArrayInputStream(this.data2.getBytes()));
 		
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.c = new Attribute("C", String.class);
-		this.la = new Attribute("left." + a.name, a.domain);
-		this.ra = new Attribute("right." + a.name, a.domain);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.c = new Attribute<>("C", String.class);
+		this.la = new Attribute<>("left." + a.name, a.domain);
+		this.ra = new Attribute<>("right." + a.name, a.domain);
 		schema1 = Schema.factory(a, b);
 		schema2 = Schema.factory(a, c);
 		expected = Schema.factory(
@@ -66,26 +67,26 @@ class LazyJoinTest {
 		r11 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.8d);
 		r12 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.7d);
 		r21 = Record.factory(
 				schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(c, "baz")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(c, "baz")),
 				1.0d);
 		r22 = Record.factory(
 				schema2,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(c, "bah")),
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(c, "bah")),
 				0.4d);
 		
 		j1 = LazyJoin.factory(
@@ -93,19 +94,19 @@ class LazyJoinTest {
 				t2,
 				Lukasiewitz.PRODUCT,
 				Lukasiewitz.INFIMUM,
-				new OnEquals(a, a));
+				new OnEquals<>(a, a));
 		j2 = LazyJoin.factory(
 				u1, 
 				u2, 
 				Lukasiewitz.PRODUCT, 
 				Lukasiewitz.INFIMUM, 
-				new OnSimilar(a, a, NaiveSimilarity.INTEGER_SIMILARITY));
+				new OnSimilar<>(a, a, LinearSimilarities.integerSimilarityUntil(1)));
 		j3 = LazyJoin.factory(
 				v1, 
 				v2, 
 				Lukasiewitz.PRODUCT, 
 				Lukasiewitz.INFIMUM, 
-				new OnGreaterThanOrEquals(a, a));
+				new OnGreaterThanOrEquals<>(a, a));
 	}
 
 	@AfterEach
@@ -139,7 +140,7 @@ class LazyJoinTest {
 							t1, 
 							t2,
 							Arrays.asList(
-									new OnEquals(new Attribute("G", String.class), new Attribute("H", String.class))),
+									new OnEquals<>(new Attribute<>("G", String.class), new Attribute<>("H", String.class))),
 							Lukasiewitz.PRODUCT,
 							Lukasiewitz.INFIMUM);
 				});
@@ -158,10 +159,10 @@ class LazyJoinTest {
 		assertEquals(
 				Record.factory(this.expected, 
 						Arrays.asList(
-								new Record.AttributeValuePair(la, 1),
-								new Record.AttributeValuePair(ra, 1),
-								new Record.AttributeValuePair(b, "foo"),
-								new Record.AttributeValuePair(c, "baz")), 
+								new Record.AttributeValuePair<>(la, 1),
+								new Record.AttributeValuePair<>(ra, 1),
+								new Record.AttributeValuePair<>(b, "foo"),
+								new Record.AttributeValuePair<>(c, "baz")), 
 						0.8d),
 				this.j1.next());
 		assertNull(this.j1.next());
@@ -169,10 +170,10 @@ class LazyJoinTest {
 		assertEquals(
 				Record.factory(this.expected, 
 						Arrays.asList(
-								new Record.AttributeValuePair(la, 1),
-								new Record.AttributeValuePair(ra, 1),
-								new Record.AttributeValuePair(b, "foo"),
-								new Record.AttributeValuePair(c, "baz")), 
+								new Record.AttributeValuePair<>(la, 1),
+								new Record.AttributeValuePair<>(ra, 1),
+								new Record.AttributeValuePair<>(b, "foo"),
+								new Record.AttributeValuePair<>(c, "baz")), 
 						0.8d),
 				this.j2.next());
 		assertNull(this.j2.next());
@@ -180,19 +181,19 @@ class LazyJoinTest {
 		assertEquals(
 				Record.factory(this.expected, 
 						Arrays.asList(
-								new Record.AttributeValuePair(la, 1),
-								new Record.AttributeValuePair(ra, 1),
-								new Record.AttributeValuePair(b, "foo"),
-								new Record.AttributeValuePair(c, "baz")), 
+								new Record.AttributeValuePair<>(la, 1),
+								new Record.AttributeValuePair<>(ra, 1),
+								new Record.AttributeValuePair<>(b, "foo"),
+								new Record.AttributeValuePair<>(c, "baz")), 
 						0.8d),
 				this.j3.next());
 		assertEquals(
 				Record.factory(this.expected, 
 						Arrays.asList(
-								new Record.AttributeValuePair(la, 2),
-								new Record.AttributeValuePair(ra, 1),
-								new Record.AttributeValuePair(b, "bar"),
-								new Record.AttributeValuePair(c, "baz")), 
+								new Record.AttributeValuePair<>(la, 2),
+								new Record.AttributeValuePair<>(ra, 1),
+								new Record.AttributeValuePair<>(b, "bar"),
+								new Record.AttributeValuePair<>(c, "baz")), 
 						0.7d),
 				this.j3.next());
 		assertNull(this.j3.next());

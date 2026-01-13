@@ -23,46 +23,47 @@ import rq.common.table.Schema;
 class OnNotEqualsTest {
 	
 	Schema schema1, schema2;
-	Attribute a, b, c;
+	Attribute<Integer> a;
+	Attribute<String> b, c;
 	Record r11, r12, r21, r22;
-	OnNotEquals onNotEquals;
+	OnNotEquals<Integer> onNotEquals;
 
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.c = new Attribute("C", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.c = new Attribute<>("C", String.class);
 		schema1 = Schema.factory(a, b);
 		schema2 = Schema.factory(a, c);
 		r11 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.8d);
 		r12 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.7d);
 		r21 = Record.factory(
 				schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(c, "baz")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(c, "baz")),
 				1.0d);
 		r22 = Record.factory(
 				schema2,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(c, "bah")),
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(c, "bah")),
 				0.4d);
 		
-		onNotEquals = new OnNotEquals(this.a, this.a);
+		onNotEquals = new OnNotEquals<>(this.a, this.a);
 	}
 
 	/**

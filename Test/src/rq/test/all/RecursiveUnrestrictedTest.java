@@ -30,7 +30,8 @@ import rq.common.interfaces.Table;
 class RecursiveUnrestrictedTest {
 
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 	MemoryTable t1;
 	
@@ -38,32 +39,32 @@ class RecursiveUnrestrictedTest {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"baz")), 
 				0.8d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 5), 
-						new Record.AttributeValuePair(b,"bah")), 
+						new Record.AttributeValuePair<>(a, 5), 
+						new Record.AttributeValuePair<>(b,"bah")), 
 				0.8d);
 		
 		t1 = new MemoryTable(this.schema);
@@ -90,9 +91,9 @@ class RecursiveUnrestrictedTest {
 												}), 
 										Lukasiewitz.PRODUCT,
 										Lukasiewitz.INFIMUM,
-										new OnEquals(a, a)), 
-								new Projection.To(new Attribute("left.A", Integer.class), a),
-								new Projection.To(new Attribute("left.B", String.class), b)).eval();
+										new OnEquals<>(a, a)), 
+								new Projection.To<>(new Attribute<>("left.A", Integer.class), a),
+								new Projection.To<>(new Attribute<>("left.B", String.class), b)).eval();
 					} catch (DuplicateAttributeNameException | OnOperatornNotApplicableToSchemaException | RecordValueNotApplicableOnSchemaException e) {
 						throw new RuntimeException(e);
 					}

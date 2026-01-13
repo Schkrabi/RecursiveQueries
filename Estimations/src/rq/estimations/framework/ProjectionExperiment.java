@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,7 +19,9 @@ import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.table.FileMappedTable;
 import rq.common.table.Schema;
+import rq.estimations.main.Workbench;
 import rq.files.exceptions.DuplicateHeaderWriteException;
+import rq.files.helpers.JsonSerializer;
 
 public class ProjectionExperiment {
 
@@ -45,8 +47,10 @@ public class ProjectionExperiment {
 	private List<Integer> valueCounts() throws ClassNotFoundException, IOException{
 		var rslt = new LinkedList<Integer>();
 		for(var a : this.parent.projectionAttributes()) {
-			var hist = AttributeHistogram.readFile( 
-					this.parent.preparedDataHistFolder().resolve(Workbench.histName(this.parent.preparedDataFileName(), a.name)));
+			var hist = JsonSerializer.instance().deserialize(
+					Files.readString(this.parent.preparedDataHistFolder()
+							.resolve(Workbench.histName(this.parent.preparedDataFileName(), a.name))),
+					AttributeHistogram.class);
 			
 			rslt.add(hist.distinctValues());
 		}
@@ -68,7 +72,7 @@ public class ProjectionExperiment {
 	}
 	
 	/** Name of the query file */
-	public String queryFileName(Attribute excluded) {
+	public String queryFileName(Attribute<?> excluded) {
 		return new StringBuilder()
 				.append(this.parent.preparedDataFileName())
 				.append(".")
@@ -80,7 +84,7 @@ public class ProjectionExperiment {
 	}
 	
 	/** Prepares the projection with excluded attribute */
-	private TabularExpression prepareQuery(Attribute excluded) throws NotSubschemaException, DuplicateAttributeNameException {
+	private TabularExpression prepareQuery(Attribute<?> excluded) throws NotSubschemaException, DuplicateAttributeNameException {
 		return Projection.factory(
 				this.parent.getPreparedData(), 
 				Schema.factory(

@@ -25,15 +25,16 @@ class LazyTableTest {
 		+	"3, \"baz\", 0.7";
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	
 	LazyTable table = null;
 
 	@BeforeEach
 	void setUp() throws Exception {
 		table = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 	}
 	
@@ -53,22 +54,22 @@ class LazyTableTest {
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 1), 
-								new Record.AttributeValuePair(b, "foo")), 
+								new Record.AttributeValuePair<>(a, 1), 
+								new Record.AttributeValuePair<>(b, "foo")), 
 						0.8d));
 		assertEquals(table.next(),
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 2), 
-								new Record.AttributeValuePair(b, "bar")), 
+								new Record.AttributeValuePair<>(a, 2), 
+								new Record.AttributeValuePair<>(b, "bar")), 
 						0.5d));
 		assertEquals(table.next(),
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 3), 
-								new Record.AttributeValuePair(b, "baz")), 
+								new Record.AttributeValuePair<>(a, 3), 
+								new Record.AttributeValuePair<>(b, "baz")), 
 						0.7d));
 	}
 

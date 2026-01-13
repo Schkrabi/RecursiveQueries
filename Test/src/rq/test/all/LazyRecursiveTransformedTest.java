@@ -9,9 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import rq.common.algorithms.LazyRecursiveTransformed;
-import rq.common.exceptions.DuplicateAttributeNameException;
-import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.onOperators.Constant;
@@ -39,7 +36,8 @@ class LazyRecursiveTransformedTest {
 		+	"5, \"bah\", 1.0";
 	
 	Schema schema, schema2;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4, rp1, rp2, rp3, rp4;
 	LazyTable t1;
 	
@@ -48,49 +46,49 @@ class LazyRecursiveTransformedTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		this.t1 = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		this.schema2 = Schema.factory(b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.7d);
 		rp1 = Record.factory(
 				schema2, 
-				Arrays.asList(new Record.AttributeValuePair(b, "foo")),
+				Arrays.asList(new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.8d);
 		rp2 = Record.factory(
 				schema2, 
-				Arrays.asList(new Record.AttributeValuePair(b, "bar")),
+				Arrays.asList(new Record.AttributeValuePair<>(b, "bar")),
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"baz")), 
 				0.9d);
 		rp3 = Record.factory(
 				schema2, 
-				Arrays.asList(new Record.AttributeValuePair(b, "baz")),
+				Arrays.asList(new Record.AttributeValuePair<>(b, "baz")),
 				1.0d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 5), 
-						new Record.AttributeValuePair(b,"bah")), 
+						new Record.AttributeValuePair<>(a, 5), 
+						new Record.AttributeValuePair<>(b,"bah")), 
 				1.0d);
 		rp4 = Record.factory(
 				schema2, 
-				Arrays.asList(new Record.AttributeValuePair(b, "bah")),
+				Arrays.asList(new Record.AttributeValuePair<>(b, "bah")),
 				1.0d);
 		
 		Table t = LazyExpression.realizeInMemory(this.t1);
@@ -103,13 +101,13 @@ class LazyRecursiveTransformedTest {
 								LazyJoin.factory(
 										new LazyFacade(table), 
 										new LazyFacade(t),  
-										new OnEquals(new PlusInteger(a, new Constant<Integer>(1)), a)), 
-								new Projection.To(Join.right(a), a),
-								new Projection.To(Join.right(b), b));
+										new OnEquals<>(new PlusInteger(a, new Constant<Integer>(1)), a)), 
+								new Projection.To<>(Join.right(a), a),
+								new Projection.To<>(Join.right(b), b));
 				}, 
 				2, 
 				(Record r) -> {
-					return LazyProjection.factory(new LazyFacade(MemoryTable.of(r)), new Projection.To(b, b));
+					return LazyProjection.factory(new LazyFacade(MemoryTable.of(r)), new Projection.To<>(b, b));
 				},
 				new rq.common.tools.AlgorithmMonitor());
 	}

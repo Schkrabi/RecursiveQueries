@@ -22,13 +22,13 @@ import java.util.Iterator;
  * @author Mgr. R.Skrabal
  *
  */
-public class Schema implements Iterable<Attribute> {
-	private final Map<Attribute, Integer> indexMap = new HashMap<Attribute, Integer>();
-	private final Map<String, Integer> nameMap = new HashMap<String, Integer>();
+public class Schema implements Iterable<Attribute<?>> {
+	private final Map<Attribute<?>, Integer> indexMap = new HashMap<>();
+	private final Map<String, Integer> nameMap = new HashMap<>();
 	
-	private Schema(Collection<Attribute> attributes) {
+	private Schema(Collection<Attribute<?>> attributes) {
 		int i = 0;
-		for(Attribute at : attributes.stream().sorted().collect(Collectors.toList())) {
+		for(Attribute<?> at : attributes.stream().sorted().collect(Collectors.toList())) {
 			this.indexMap.put(at, i);
 			this.nameMap.put(at.name, i);
 			i++;
@@ -40,9 +40,9 @@ public class Schema implements Iterable<Attribute> {
 	 * @param attributes checked attribute collection
 	 * @return Optional with name, if duplicate detected. Empty otional otherwise
 	 */
-	private static Optional<String> findDuplicateAttributeName(Collection<Attribute> attributes){
+	private static Optional<String> findDuplicateAttributeName(Collection<Attribute<?>> attributes){
 		Set<String> names = new HashSet<String>();
-		for(Attribute a : attributes){
+		for(var a : attributes){
 			if(names.contains(a.name)) {
 				return Optional.of(a.name);
 			}
@@ -56,7 +56,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @param attributes checked attribute collection
 	 * @return true if no duplicates found, false otherwise
 	 */
-	private static boolean validateAttributeCollection(Collection<Attribute> attributes)
+	private static boolean validateAttributeCollection(Collection<Attribute<?>> attributes)
 			throws DuplicateAttributeNameException {
 		Optional<String> duplicate = Schema.findDuplicateAttributeName(attributes);
 		if(duplicate.isPresent()) {
@@ -71,7 +71,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @return new Schema instance
 	 * @throws DuplicateAttributeNameException if arguments does not validate
 	 */
-	public static Schema factory(Collection<Attribute> attributes)
+	public static Schema factory(Collection<Attribute<?>> attributes)
 		throws DuplicateAttributeNameException {
 		if(Schema.validateAttributeCollection(attributes)) {
 			 return new Schema(attributes);
@@ -86,7 +86,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @return Schema instance 
 	 * @throws DuplicateAttributeNameException if arguments does not validate
 	 */
-	public static Schema factory(Attribute ...attributes) 
+	public static Schema factory(Attribute<?> ...attributes) 
 			throws DuplicateAttributeNameException {
 		return Schema.factory(Arrays.asList(attributes));
 	}
@@ -96,7 +96,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @param attribute
 	 * @return Optional with index if the attribute is part of schema. Empty optional otherwise.
 	 */
-	public Optional<Integer> attributeIndex(Attribute attribute) {
+	public Optional<Integer> attributeIndex(Attribute<?> attribute) {
 		Integer i = this.indexMap.get(attribute);
 		if(i != null) {
 			return Optional.of(i);
@@ -130,7 +130,7 @@ public class Schema implements Iterable<Attribute> {
 	 * Gets stream of attributes in this Schema
 	 * @return stream of attributes
 	 */
-	public Stream<Attribute> stream(){
+	public Stream<Attribute<?>> stream(){
 		return this.indexMap.keySet().stream();
 	}
 	
@@ -138,7 +138,7 @@ public class Schema implements Iterable<Attribute> {
 	 * Gets stream of attribute - index pair in this Schema
 	 * @return Stream with Attribute - Index Pair
 	 */
-	public Stream<Map.Entry<Attribute, Integer>> attrIndexStream(){
+	public Stream<Map.Entry<Attribute<?>, Integer>> attrIndexStream(){
 		return this.indexMap.entrySet().stream();
 	}
 	
@@ -174,7 +174,7 @@ public class Schema implements Iterable<Attribute> {
 	}
 
 	@Override
-	public Iterator<Attribute> iterator() {
+	public Iterator<Attribute<?>> iterator() {
 		return this.indexMap.keySet().iterator();
 	}
 	
@@ -183,7 +183,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @param attribute checked attribute
 	 * @return true or false.
 	 */
-	public boolean contains(Attribute attribute) {
+	public boolean contains(Attribute<?> attribute) {
 		return this.indexMap.containsKey(attribute);
 	}
 	
@@ -202,7 +202,7 @@ public class Schema implements Iterable<Attribute> {
 	 * @return true or false
 	 */
 	public boolean isJoinableWith(Schema schema) {
-		for(Attribute a : this) {
+		for(var a : this) {
 			if(schema.contains(a.name) && !schema.contains(a)) {
 				return false;
 			}
@@ -214,12 +214,12 @@ public class Schema implements Iterable<Attribute> {
 	 * Gets set of all attributes in this schema
 	 * @return set of attributes.
 	 */
-	public Set<Attribute> attributeSet(){
+	public Set<Attribute<?>> attributeSet(){
 		return this.indexMap.keySet();
 	}
 	
 	/** Gets attribute of given name or null if it does not exists in this schema */
-	public Attribute attributeByName(String name) {
+	public Attribute<?> attributeByName(String name) {
 		var o = this.attributeSet().stream()
 				.filter(a -> a.name.equals(name))
 				.findAny();

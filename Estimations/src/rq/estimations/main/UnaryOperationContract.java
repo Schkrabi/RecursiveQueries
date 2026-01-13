@@ -3,19 +3,20 @@ package rq.estimations.main;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.interfaces.Table;
+import rq.common.similarities.ISimilarity;
 import rq.common.table.Attribute;
+import rq.estimations.framework.EstimationSetupContract;
 import rq.files.io.TableReader;
 
-public class UnaryOperationContract extends EstimationSetupContract {
+public class UnaryOperationContract<T extends Number> extends EstimationSetupContract {
 
 	private Table table;
-	private Attribute attribute;
-	private BiFunction<Object, Object, Double> similarity;
+	private Attribute<T> attribute;
+	private rq.common.similarities.ISimilarity<T> similarity;
 	private String similarityName;
-	private double value;
+	private T value;
 	/** Number of probes for histogram if applicable */
 	private int probes = 0;
 	/** Number of samples for numerical domain if applicable */ 
@@ -25,15 +26,15 @@ public class UnaryOperationContract extends EstimationSetupContract {
 	/** Domain sample size if applicable */
 	private double domainSampleSize = 0.5d;
 	
-	public Attribute getAttribute() {
+	public Attribute<T> getAttribute() {
 		return this.attribute;
 	}
 	
-	public BiFunction<Object, Object, Double> getSimilarity(){
+	public rq.common.similarities.ISimilarity<T> getSimilarity(){
 		return this.similarity;
 	}
 	
-	public double getValue() {
+	public T getValue() {
 		return this.value;
 	}
 	
@@ -61,13 +62,14 @@ public class UnaryOperationContract extends EstimationSetupContract {
 		super();
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void initFromMap(Map<String, String> args) {
 		super.initFromMap(args);
 		
 		var att = args.get("attribute");
 		if(att != null) {
-			this.attribute = this.table.schema().attributeByName(att);
+			this.attribute = (Attribute<T>) this.table.schema().attributeByName(att);
 		}
 		else {
 			throw new RuntimeException("Attribute must be specified.");
@@ -75,7 +77,7 @@ public class UnaryOperationContract extends EstimationSetupContract {
 		
 		var sim = args.get("similarity");
 		if(sim != null) {
-			this.similarity = SimilarityProvider.gets(sim);
+			this.similarity = (ISimilarity<T>) SimilarityProvider.gets(sim);
 			this.similarityName = sim;
 		}
 		else {
@@ -84,7 +86,7 @@ public class UnaryOperationContract extends EstimationSetupContract {
 		
 		var val = args.get("value");
 		if(val != null) {
-			this.value = Double.parseDouble(val);
+			this.value = rq.common.util.NumberDeserializer.deserialize(val, this.attribute.domain);
 		}
 		else {
 			throw new RuntimeException("Value must be specified.");

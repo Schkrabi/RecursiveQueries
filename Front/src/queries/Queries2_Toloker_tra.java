@@ -1,6 +1,5 @@
 package queries;
 
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import annotations.CallingArg;
@@ -20,7 +19,8 @@ import rq.common.operators.LazySelection;
 import rq.common.restrictions.Equals;
 import rq.common.restrictions.InfimumAnd;
 import rq.common.onOperators.Constant;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.LazyFacade;
 import rq.common.table.MemoryTable;
 import rq.common.tools.AlgorithmMonitor;
@@ -40,14 +40,14 @@ public class Queries2_Toloker_tra extends Queries2 {
 	}
 	
 	private double _approvedRateSimilarity = 1.0d;
-	private BiFunction<Object, Object, Double> approvedRateSimilarity = 
-			LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
+	private ISimilarity<Double> approvedRateSimilarity = 
+			LinearSimilarities.doubleSimilarityUntil(_approvedRateSimilarity);
 	
 	@QueryParameter("approvedRateSimilarity")
 	public void setApprovedRateSimilarity(String rateSimilarity) {
 		this._approvedRateSimilarity = Double.parseDouble(rateSimilarity);
 		this.approvedRateSimilarity = 
-				LinearSimilarity.doubleSimilarityUntil(_approvedRateSimilarity);
+				LinearSimilarities.doubleSimilarityUntil(_approvedRateSimilarity);
 	}
 	
 	@QueryParameterGetter("approvedRateSimilarity")
@@ -87,13 +87,13 @@ public class Queries2_Toloker_tra extends Queries2 {
 			return LazyProjection.factory(
 					new LazySelection(
 							new LazyFacade(iTable),
-							new Equals(Toloker.source, new Constant<Integer>(_startNode))),
-					new Projection.To(Toloker.source, Toloker.source),
-					new Projection.To(Toloker.sourceApprovedRate, Toloker.approvedRate),
+							new Equals<>(Toloker.source, new Constant<Integer>(_startNode))),
+					new Projection.To<>(Toloker.source, Toloker.source),
+					new Projection.To<>(Toloker.sourceApprovedRate, Toloker.approvedRate),
 //					new Projection.To(Toloker.sourceRejectedRate, Toloker.rejectedRate),
 //					new Projection.To(Toloker.sourceExpiredRate, Toloker.expiredRate),
 //					new Projection.To(Toloker.sourceSkippedRate, Toloker.skippedRate),
-					new Projection.To(Toloker.sourceEductation, Toloker.education)
+					new Projection.To<>(Toloker.sourceEductation, Toloker.education)
 //					new Projection.To(Toloker.sourceEnglishProfile, Toloker.englishProfile),
 //					new Projection.To(Toloker.sourceEnglishTested, Toloker.englishTested),
 //					new Projection.To(Toloker.sourceBanned, Toloker.banned)
@@ -110,17 +110,17 @@ public class Queries2_Toloker_tra extends Queries2 {
 						LazyJoin.factory(
 							new LazyFacade(t), 
 							new LazyFacade(iTable), 
-							new OnEquals(Toloker.source, Toloker.source),
-							new OnSimilar(
+							new OnEquals<>(Toloker.source, Toloker.source),
+							new OnSimilar<>(
 									Toloker.education, 
 									Toloker.targetEductation, 
 									Toloker.educationSimilarity)),
-						new Projection.To(Toloker.target, Toloker.source),
-						new Projection.To(Toloker.targetApprovedRate, Toloker.approvedRate),
+						new Projection.To<>(Toloker.target, Toloker.source),
+						new Projection.To<>(Toloker.targetApprovedRate, Toloker.approvedRate),
 //						new Projection.To(Toloker.targetRejectedRate, Toloker.rejectedRate),
 //						new Projection.To(Toloker.targetSkippedRate, Toloker.skippedRate),
 //						new Projection.To(Toloker.targetExpiredRate, Toloker.expiredRate),
-						new Projection.To(Toloker.targetEductation, Toloker.education)
+						new Projection.To<>(Toloker.targetEductation, Toloker.education)
 //						new Projection.To(Toloker.targetEnglishProfile, Toloker.englishProfile),
 //						new Projection.To(Toloker.targetEnglishTested, Toloker.englishTested),
 //						new Projection.To(Toloker.targetBanned, Toloker.banned)
@@ -136,11 +136,11 @@ public class Queries2_Toloker_tra extends Queries2 {
 				LazyJoin.factory(
 					new LazyFacade(MemoryTable.of(this.rec)), 
 					new LazyFacade(iTable),
-					new OnSimilar(
+					new OnSimilar<>(
 							Toloker.sourceApprovedRate, 
 							Toloker.approvedRate, 
 							this.approvedRateSimilarity)),
-				new Projection.To(AbstractJoin.right(Toloker.source), Toloker.source));
+				new Projection.To<>(AbstractJoin.right(Toloker.source), Toloker.source));
 		};
 	}
 
@@ -150,13 +150,13 @@ public class Queries2_Toloker_tra extends Queries2 {
 		
 		//Selects the original source record used later in post processing
 		this.rec =
-				new LazySelection(iTable, new Equals(Toloker.source, new Constant<Integer>(this._startNode)))
+				new LazySelection(iTable, new Equals<>(Toloker.source, new Constant<Integer>(this._startNode)))
 				.next();
 		
 		exp = new LazySelection(
 				iTable,
-				new InfimumAnd(	new Equals(Toloker.sourceBanned, new Constant<Integer>(this._isBanned)),
-								new Equals(Toloker.targetBanned, new Constant<Integer>(this._isBanned))));
+				new InfimumAnd(	new Equals<>(Toloker.sourceBanned, new Constant<Integer>(this._isBanned)),
+								new Equals<>(Toloker.targetBanned, new Constant<Integer>(this._isBanned))));
 		
 		return exp;
 	}

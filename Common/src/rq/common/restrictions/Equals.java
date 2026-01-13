@@ -6,9 +6,9 @@ import rq.common.table.Record;
 /**
  * Equals condition for selection
  */
-public class Equals extends BiCondition {
+public class Equals<T> extends BiCondition<T> {
 	
-	public Equals(RecordValue left, RecordValue right) {
+	public Equals(RecordValue<T> left, RecordValue<T> right) {
 		super(left, right);
 	}
 

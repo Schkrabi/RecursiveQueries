@@ -51,11 +51,11 @@ public class Record implements Comparable<Record>{
 		
 	};
 
-	public static class AttributeValuePair {
-		public final Attribute attribute;
+	public static class AttributeValuePair<T> {
+		public final Attribute<T> attribute;
 		public final Object value;
 		
-		public AttributeValuePair(Attribute attribute, Object value) {
+		public AttributeValuePair(Attribute<T> attribute, Object value) {
 			this.attribute = attribute;
 			this.value = value;
 			
@@ -115,13 +115,13 @@ public class Record implements Comparable<Record>{
 		return new Record(schema, values, rank);
 	}
 
-	public static Record factory(Schema schema, Collection<AttributeValuePair> values, double rank)
+	public static Record factory(Schema schema, Collection<AttributeValuePair<?>> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException {
 		// Add missing values
-		Set<AttributeValuePair> s = new HashSet<AttributeValuePair>(values);
-		for (Attribute a : schema) {
+		Set<AttributeValuePair<?>> s = new HashSet<>(values);
+		for (Attribute<?> a : schema) {
 			if (values.stream().filter(p -> p.attribute.equals(a)).findAny().isEmpty()) {
-				s.add(new AttributeValuePair(a, null));
+				s.add(new AttributeValuePair<>(a, null));
 			}
 		}
 		// Check if there are extra values
@@ -135,7 +135,8 @@ public class Record implements Comparable<Record>{
 				rank);
 	}
 
-	public static Record factory(Schema schema, double rank, AttributeValuePair... values)
+	@SafeVarargs
+	public static <U> Record factory(Schema schema, double rank, AttributeValuePair<U>... values)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException {
 		return Record.factory(schema, Arrays.asList(values), rank);
 	}
@@ -147,12 +148,13 @@ public class Record implements Comparable<Record>{
 	 * @return Object value
 	 * @throws AttributeNotInSchemaException if attribute is not part of the schema
 	 */
-	public Object get(Attribute attribute) throws AttributeNotInSchemaException {
+	@SuppressWarnings("unchecked")
+	public <T> T get(Attribute<T> attribute) throws AttributeNotInSchemaException {
 		Optional<Integer> index = this.schema.attributeIndex(attribute);
 		if (index.isEmpty()) {
 			throw new AttributeNotInSchemaException(attribute, this.schema);
 		}
-		return this.values[index.get()];
+		return (T)this.values[index.get()];
 	}
 
 	/**
@@ -173,15 +175,17 @@ public class Record implements Comparable<Record>{
 	
 	/**
 	 * Gets the value of an attribute. If attribute is not part of the schema returns null.
+	 * @param <T>
 	 * @param attribute searched attribute
 	 * @return Object or null.
 	 */
-	public Object getNoThrow(Attribute attribute) {
+	@SuppressWarnings("unchecked")
+	public <T> T getNoThrow(Attribute<T> attribute) {
 		Optional<Integer> index = this.schema.attributeIndex(attribute);
 		if (index.isEmpty()) {
 			return null;
 		}
-		return this.values[index.get()];
+		return (T)this.values[index.get()];
 	}
 	
 	/**
@@ -275,7 +279,7 @@ public class Record implements Comparable<Record>{
 	 * @throws AttributeNotInSchemaException 
 	 * @throws TypeSchemaMismatchException 
 	 */
-	public Record set(Attribute attribute, Object value) throws AttributeNotInSchemaException, TypeSchemaMismatchException {
+	public <T> Record set(Attribute<T> attribute, Object value) throws AttributeNotInSchemaException, TypeSchemaMismatchException {
 		if(!this.schema.contains(attribute)) {
 			throw new AttributeNotInSchemaException(attribute, this.schema);
 		}

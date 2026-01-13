@@ -6,7 +6,7 @@ import java.util.Random;
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.DataSlicedHistogram.Interval;
 
-public class RandRepresentativeProvider implements RepresentativeProvider {
+public class RandRepresentativeProvider implements RepresentativeProvider<Double> {
 
 	public final Random rand;
 	
@@ -25,7 +25,7 @@ public class RandRepresentativeProvider implements RepresentativeProvider {
 	}
 
 	@Override
-	public double representative(Interval interval) {
+	public Double representative(Interval interval) {
 		var d = interval.to - interval.from;
 		var rep = interval.from + this.rand.nextDouble() * d;
 		return rep;

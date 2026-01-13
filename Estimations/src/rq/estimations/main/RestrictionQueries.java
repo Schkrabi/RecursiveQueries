@@ -7,58 +7,56 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import rq.common.operators.LazySelection;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
 import rq.common.statistic.IGeneratorProvider;
 import rq.common.table.Attribute;
+import rq.estimations.framework.ResourceLoader;
+import rq.estimations.framework.SelectionQueryInfo;
 
-public abstract class RestrictionQueries {
+public abstract class RestrictionQueries<T> {
 	//Params
 	public final Path dataPath;
-	public final Attribute attribute;
+	public final Attribute<T> attribute;
 	public final int count;	
-	public final double similarUntil;
 	public final Random rand;
 	
 	//Derived
-	public final BiFunction<Object, Object, Double> similarity;
+	public final ISimilarity<T> similarity;
 	
 	//Computed
-	private Collection<SelectionQueryInfo> _infos = null;
-	private Map<SelectionQueryInfo, LazySelection> _selects = null;
-	private List<Double> _values = null;
+	private Collection<SelectionQueryInfo<T>> _infos = null;
+	private Map<SelectionQueryInfo<T>, LazySelection> _selects = null;
+	private List<T> _values = null;
 	
 	public RestrictionQueries(
 			Path dataPath,
-			Attribute attribute,
+			Attribute<T> attribute,
 			int count,
-			double similarUntil) {
+			ISimilarity<T> similarity) {
 		this.dataPath = dataPath;
 		this.attribute = attribute;
 		this.count = count;
-		this.similarUntil = similarUntil;
 		
-		this.similarity = LinearSimilarity.doubleSimilarityUntil(similarUntil);
+		this.similarity = similarity;
 		this.rand = new Random(System.currentTimeMillis());
 	}
 	
 	public RestrictionQueries(
 			Path dataPath,
-			Attribute attribute,
+			Attribute<T> attribute,
 			int count,
-			double similarUntil,
+			ISimilarity<T> similarity,
 			Random rand) {
 		this.dataPath = dataPath;
 		this.attribute = attribute;
 		this.count = count;
-		this.similarUntil = similarUntil;
 		
-		this.similarity = LinearSimilarity.doubleSimilarityUntil(similarUntil);
+		this.similarity = similarity;
 		this.rand = rand;
 	}
 	
@@ -67,28 +65,30 @@ public abstract class RestrictionQueries {
 //	}
 	
 	/** Generates new set of values for the queries*/
-	protected abstract List<Double> generateValues();
-	public Collection<Double> getValues(){
+	protected abstract List<T> generateValues();
+	public Collection<T> getValues(){
 		if(this._values == null) {
 			this._values = this.generateValues();
 		}
 		return this._values;
 	}
 	
-	public Collection<SelectionQueryInfo> getInfos(){
+	public Collection<SelectionQueryInfo<T>> getInfos(){
 		if(this._infos == null) {
-			this._infos = this.getValues().stream()
-					.map(v -> new SelectionQueryInfo(
-							this.dataPath,
-							this.attribute,
-							this.similarUntil,
-							v))
-					.collect(Collectors.toList());
+			this._infos = new ArrayList<>();
+			for(var v : this.getValues()) {
+				var sqi = new SelectionQueryInfo<>(
+						this.dataPath,
+						this.attribute,
+						this.similarity,
+						v);
+				this._infos.add(sqi);
+			}
 		}
 		return this._infos;
 	}
 	
-	public Map<SelectionQueryInfo, LazySelection> getSelections(){
+	public Map<SelectionQueryInfo<T>, LazySelection> getSelections(){
 		if(this._selects == null) {
 			this._selects = new HashMap<>();
 			for(var i : this.getInfos()) {
@@ -98,28 +98,28 @@ public abstract class RestrictionQueries {
 		return this._selects;
 	}
 	
-	public static final class Paret extends RestrictionQueries {
+	public static final class Paret extends RestrictionQueries<Double> {
 
 		public final IGeneratorProvider hist;
 		
 		public Paret(
 				Path dataPath,
-				Attribute attribute,
+				Attribute<Double> attribute,
 				int count,
-				double similarUntil,
+				ISimilarity<Double> similarity,
 				IGeneratorProvider hist) {
-			super(dataPath, attribute, count, similarUntil);
+			super(dataPath, attribute, count, similarity);
 			this.hist = hist;
 		}
 		
 		public Paret(
 				Path dataPath,
-				Attribute attribute,
+				Attribute<Double> attribute,
 				int count,
-				double similarUntil,
+				ISimilarity<Double> similarity,
 				IGeneratorProvider hist,
 				Random rand) {
-			super(dataPath, attribute, count, similarUntil, rand);
+			super(dataPath, attribute, count, similarity, rand);
 			this.hist = hist;
 		}
 
@@ -132,17 +132,17 @@ public abstract class RestrictionQueries {
 		}		
 	}
 	
-	public static final class Uniform extends RestrictionQueries {
+	public static final class Uniform extends RestrictionQueries<Double> {
 		
 		public final double min;
 		public final double max;
 		
 		public Uniform(
 				Path dataPath,
-				Attribute attribute,
+				Attribute<Double> attribute,
 				int count,
-				double similarUntil) {
-			super(dataPath, attribute, count, similarUntil);
+				ISimilarity<Double> similarity) {
+			super(dataPath, attribute, count, similarity);
 			var hist = ResourceLoader.instance().getOrLoadSampledHistogram(dataPath, attribute);
 			this.min = hist.min();
 			this.max = hist.max();
@@ -150,11 +150,11 @@ public abstract class RestrictionQueries {
 		
 		public Uniform(
 				Path dataPath,
-				Attribute attribute,
+				Attribute<Double> attribute,
 				int count,
-				double similarUntil,
+				ISimilarity<Double> similarity,
 				Random rand) {
-			super(dataPath, attribute, count, similarUntil, rand);
+			super(dataPath, attribute, count, similarity, rand);
 			var hist = ResourceLoader.instance().getOrLoadSampledHistogram(dataPath, attribute);
 			this.min = hist.min();
 			this.max = hist.max();
@@ -176,17 +176,17 @@ public abstract class RestrictionQueries {
 	}
 	
 	/** Constant set values*/
-	public static final class FromValues extends RestrictionQueries {
+	public static final class FromValues<T> extends RestrictionQueries<T> {
 
-		private Collection<Double> values;
+		private Collection<T> values;
 		
-		public FromValues(Path dataPath, Attribute attribute, double similarUntil, Collection<Double> values) {
-			super(dataPath, attribute, values.size(), similarUntil);
+		public FromValues(Path dataPath, Attribute<T> attribute, ISimilarity<T> similarity, Collection<T> values) {
+			super(dataPath, attribute, values.size(), similarity);
 			this.values = values;
 		}
 
 		@Override
-		protected List<Double> generateValues() {
+		protected List<T> generateValues() {
 			return new ArrayList<>(this.values);
 		}
 		

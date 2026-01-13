@@ -13,9 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.algorithms.LazyRecursiveUnrestricted;
 import rq.common.exceptions.AttributeNotInSchemaException;
-import rq.common.exceptions.DuplicateAttributeNameException;
 import rq.common.exceptions.OnOperatornNotApplicableToSchemaException;
-import rq.common.exceptions.RecordValueNotApplicableOnSchemaException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.latices.Lukasiewitz;
@@ -43,7 +41,8 @@ class LazyRecursiveUnrestrictedTest {
 		+	"5, \"bah\", 0.8";
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 	LazyTable t1;
 	
@@ -52,32 +51,32 @@ class LazyRecursiveUnrestrictedTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		this.t1 = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"baz")), 
 				0.8d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 5), 
-						new Record.AttributeValuePair(b,"bah")), 
+						new Record.AttributeValuePair<>(a, 5), 
+						new Record.AttributeValuePair<>(b,"bah")), 
 				0.8d);
 		
 		Table t = LazyExpression.realizeInMemory(this.t1);
@@ -101,9 +100,9 @@ class LazyRecursiveUnrestrictedTest {
 											new LazyFacade(t), 
 											Lukasiewitz.PRODUCT, 
 											Lukasiewitz.INFIMUM, 
-											new OnEquals(a, a)), 
-									new Projection.To(new Attribute("right.A", Integer.class), a),
-									new Projection.To(new Attribute("right.B", String.class), b));
+											new OnEquals<>(a, a)), 
+									new Projection.To<>(new Attribute<>("right.A", Integer.class), a),
+									new Projection.To<>(new Attribute<>("right.B", String.class), b));
 					} catch (OnOperatornNotApplicableToSchemaException e) {
 						throw new RuntimeException(e);
 					}

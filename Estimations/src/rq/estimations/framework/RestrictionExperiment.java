@@ -1,92 +1,60 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Random;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IEstimation;
 import rq.common.estimations.ReintroduceRanks;
-import rq.common.similarities.LinearSimilarity;
-import rq.common.statistic.DataSlicedHistogram.Interval;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
+import rq.estimations.contracts.RestrictionExperimentContract;
+import rq.estimations.main.Measurement;
+import rq.estimations.main.QueryHistogramHolder;
+import rq.estimations.main.RestrictionQueries;
+import rq.estimations.main.Workbench;
 import rq.estimations.main.QueryHistogramHolder.RankHistogramInfo;
-import rq.files.contracts.QueryGenerationStrategy;
 
 public class RestrictionExperiment {
 
-	public final Path dataPath;
-	public final int queryCount;
-	public final Collection<Attribute> attributes;
-	public final Collection<Integer> slices;
-	
-	public final Map<Attribute, Collection<Integer>> intervals;
-	public final Map<Attribute, Double> similarUntil;
-	public final Random random;	
-	
-	public final QueryGenerationStrategy queryGenerationStrategy;
-	
-	public final String dataFileName;
-	public final Map<Attribute, BiFunction<Object, Object, Double>> similarity = new HashMap<>();
-	private final Path histFolder;
-	private final Path estFolder;
-	
-	private final Map<Attribute, Collection<Integer>> consideredValues;
-	private final Map<Attribute, Collection<Double>> paretRatios;
-	
-	private final boolean USE_RANKED_TABLE_AS_PRIMARY_DATA;
-	
-	private final Map<Attribute, Collection<Double>> queryValues;
+	protected RestrictionExperimentContract contract;
 	
 	public RestrictionExperiment(
-			Path dataPath,
-			int queryCount,
-			Collection<Attribute> attributes,
-			Collection<Integer> slices,
-			Map<Attribute, Collection<Integer>> consideredValues,
-			Map<Attribute, Collection<Double>> paretRatios,
-			Map<Attribute, Collection<Integer>> intervals,
-			Map<Attribute, Double> similarUntil,
-			Random random,
-			boolean useRankedTableAsPrimaryData,
-			QueryGenerationStrategy queryGenerationStrategy,
-			Map<Attribute, Collection<Double>> queryValues) {
-		this.dataPath = dataPath;
-		this.dataFileName = this.dataPath.getFileName().toString();
-		this.similarUntil = similarUntil;
-		this.queryCount = queryCount;
-		this.attributes = attributes;
-		this.slices = slices;
-		this.intervals = intervals;
-		this.consideredValues = consideredValues;
-		this.random = random;
-		this.paretRatios = paretRatios;
+			RestrictionExperimentContract cnt) {
+		this.contract = cnt;
 		
-		for(var e : similarUntil.entrySet()) {
-			this.similarity.put(e.getKey(), LinearSimilarity.doubleSimilarityUntil(e.getValue()));
-		}
-		this.histFolder = Workbench.histFolder(dataPath);
-		this.estFolder = Workbench.estFolder(dataPath);
-		this.USE_RANKED_TABLE_AS_PRIMARY_DATA = useRankedTableAsPrimaryData;
-		this.queryGenerationStrategy = queryGenerationStrategy;
-		this.queryValues = queryValues;
+//		this.dataPath = dataPath;
+//		this.dataFileName = this.dataPath.getFileName().toString();
+//		this.similarUntil = similarUntil;
+//		this.queryCount = queryCount;
+//		this.attributes = attributes;
+//		this.slices = slices;
+//		this.intervals = intervals;
+//		this.consideredValues = consideredValues;
+//		this.random = random;
+//		this.paretRatios = paretRatios;
+//		
+//		for(var e : similarUntil.entrySet()) {
+//			this.similarity.put(e.getKey(), LinearSimilarities.doubleSimilarityUntil(e.getValue()));
+//		}
+//		this.histFolder = Workbench.histFolder(dataPath);
+//		this.estFolder = Workbench.estFolder(dataPath);
+//		this.USE_RANKED_TABLE_AS_PRIMARY_DATA = useRankedTableAsPrimaryData;
+//		this.queryGenerationStrategy = queryGenerationStrategy;
+//		this.queryValues = queryValues;
 	}
 	
-	private Map<Attribute, Map<Integer, NumericalEstimations>> _numericalEsts = 
+	private Map<Attribute<Double>, Map<Integer, NumericalEstimations>> _numericalEsts = 
 			new HashMap<>();
 	
-	private Map<Integer, NumericalEstimations> _getPerIntervalEsts(Attribute a){
+	private Map<Integer, NumericalEstimations> _getPerIntervalEsts(Attribute<Double> a){
 		var m = this._numericalEsts.get(a);
 		if(m == null) {
 			m = new HashMap<>();
@@ -95,25 +63,25 @@ public class RestrictionExperiment {
 		return m;
 	}
 	
-	public NumericalEstimations numericalEst(Attribute a, int slice) {
+	public NumericalEstimations numericalEst(Attribute<Double> a, int slice) {
 		var perInterval = this._getPerIntervalEsts(a);
 		var ne = perInterval.get(slice);
 		if(ne == null) {
 			ne = new NumericalEstimations(
-					this.dataPath,
+					this.contract.getDataPath(),
 					a,
 					slice,
-					this.similarity.get(a),
-					this.intervals.get(a),
-					this.consideredValues.get(a),
-					this.paretRatios.get(a));
+					this.contract.getSimilarity().get(a),
+					this.contract.getIntervals().get(a),
+					this.contract.getConsideredValues().get(a),
+					this.contract.getParetRatios().get(a));
 			perInterval.put(slice, ne);
 		}
 		return ne;
 	}
 	
-	private final Map<Attribute, Map<Integer, Collection<Pair<IEstimation, RankHistogram>>>> _estmatedHists = new HashMap<>();
-	private Map<Integer, Collection<Pair<IEstimation, RankHistogram>>> _getPerIntervalEstHists(Attribute a){
+	private final Map<Attribute<Double>, Map<Integer, Collection<Pair<IEstimation, RankHistogram>>>> _estmatedHists = new HashMap<>();
+	private Map<Integer, Collection<Pair<IEstimation, RankHistogram>>> _getPerIntervalEstHists(Attribute<Double> a){
 		var m = this._estmatedHists.get(a);
 		if(m == null) {
 			m = new HashMap<>();
@@ -122,7 +90,7 @@ public class RestrictionExperiment {
 		return m;
 	}
 	
-	private Collection<Pair<IEstimation, RankHistogram>> estimates(Attribute a, int slice){
+	private Collection<Pair<IEstimation, RankHistogram>> estimates(Attribute<Double> a, int slice){
 		var m = this._getPerIntervalEstHists(a);
 		var ests = m.get(slice);
 		if(ests == null) {
@@ -131,10 +99,10 @@ public class RestrictionExperiment {
 
 			for (var est : ne.getEstmations()) {
 				RankHistogram finalRanks;
-				if(USE_RANKED_TABLE_AS_PRIMARY_DATA)
+				if(this.contract.isUseRankedDataAsPrimary())
 				{
-					var orgRanks = RankHistogram.readFile(this.histFolder
-							.resolve(Workbench.rankHistFileName(this.dataFileName, est.getSlices())));
+					var orgRanks = RankHistogram.readFile(this.contract.getHistFolder()
+							.resolve(Workbench.rankHistFileName(this.contract.getDataFileName(), est.getSlices())));
 					var ranks = est.estimate();
 					finalRanks = ReintroduceRanks.recalculate(ranks, orgRanks);
 				}
@@ -145,7 +113,7 @@ public class RestrictionExperiment {
 				ests.add(Pair.of(est, finalRanks));
 				m.put(slice, ests);
 				try {
-					Files.writeString(Workbench.restrictionEstimationPath(this.estFolder, a, est),
+					Files.writeString(Workbench.restrictionEstimationPath(this.contract.getEstFolder(), a, est),
 							finalRanks.serialize(), StandardOpenOption.CREATE, StandardOpenOption.WRITE,
 							StandardOpenOption.TRUNCATE_EXISTING);
 				} catch (IOException e) {
@@ -156,50 +124,50 @@ public class RestrictionExperiment {
 		return ests;
 	}
 	
-	private Map<Attribute, RestrictionQueries> _restrictionQueries = new HashMap<>();
+	private Map<Attribute<Double>, RestrictionQueries<Double>> _restrictionQueries = new HashMap<>();
 	
-	private RestrictionQueries getRestrictionQueries(Attribute a) {
+	private RestrictionQueries<Double> getRestrictionQueries(Attribute<Double> a) {
 		var rq = this._restrictionQueries.get(a);
 		if(rq == null) {
-			switch(this.queryGenerationStrategy){
+			switch(this.contract.getQueryGenerationStrategy()){
 			case SampledBasedParet:
-				var hist = ResourceLoader.instance().getOrLoadSampledHistogram(dataPath, a);
-				rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), hist);
+				var hist = ResourceLoader.instance().getOrLoadSampledHistogram(this.contract.getDataPath(), a);
+				rq = new RestrictionQueries.Paret(this.contract.getDataPath(), a, this.contract.getQueryCount(), this.contract.getSimilarity().get(a), hist);
 				break;
 			case IntervalBasedParet:
-				var eqn = ResourceLoader.instance().getOrLoadEqnHistogram(dataPath, a, 
-						this.intervals.get(a).stream().reduce(Math::max).get());
-				rq = new RestrictionQueries.Paret(dataPath, a, queryCount, similarUntil.get(a), eqn);
+				var eqn = ResourceLoader.instance().getOrLoadEqnHistogram(this.contract.getDataPath(), a, 
+						this.contract.getIntervals().get(a).stream().reduce(Math::max).get());
+				rq = new RestrictionQueries.Paret(this.contract.getDataPath(), a, this.contract.getQueryCount(), this.contract.getSimilarity().get(a), eqn);
 				break;
 			case Uniform:
-				rq = new RestrictionQueries.Uniform(dataPath, a, queryCount, similarUntil.get(a), this.random);
+				rq = new RestrictionQueries.Uniform(this.contract.getDataPath(), a, this.contract.getQueryCount(), this.contract.getSimilarity().get(a), this.contract.getRandom());
 				break;
 			case Values:
-				rq = new RestrictionQueries.FromValues(dataPath, a, queryCount, this.queryValues.get(a));
+				rq = new RestrictionQueries.FromValues<>(this.contract.getDataPath(), a, this.contract.getSimilarity().get(a), this.contract.getQueryValues().get(a));
 			}
 			this._restrictionQueries.put(a, rq);
 		}
 		return rq;
 	}
 	
-	private Map<Attribute, QueryHistogramHolder> _queryHists = new HashMap<>();
-	private QueryHistogramHolder getQryHistHolder(Attribute a) {
+	private Map<Attribute<Double>, QueryHistogramHolder<Double>> _queryHists = new HashMap<>();
+	private QueryHistogramHolder<Double> getQryHistHolder(Attribute<Double> a) {
 		var qhh = this._queryHists.get(a);
 		if(qhh == null) {
-			qhh = QueryHistogramHolder.fromRestrictionQueries(this.slices, this.getRestrictionQueries(a));
+			qhh = QueryHistogramHolder.fromRestrictionQueries(this.contract.getSlices(), this.getRestrictionQueries(a));
 			this._queryHists.put(a, qhh);
 		}		
 		return qhh;
 	}
 	
-	private Collection<Pair<RankHistogramInfo, RankHistogram>> qryHists(Attribute a, int slice){
+	private Collection<Pair<RankHistogramInfo<Double>, RankHistogram>> qryHists(Attribute<Double> a, int slice){
 		return this.getQryHistHolder(a).getHistograms(a, slice);
 	}
 	
 	private Collection<IEstimation> allEstimations(){
 		var l = new ArrayList<IEstimation>();
-		for(var a : this.attributes) {
-			for(var slice : this.slices) {
+		for(var a : this.contract.getAttributes()) {
+			for(var slice : this.contract.getSlices()) {
 				this.estimates(a, slice).stream().forEach(p -> l.add(p.first));
 				
 				var qrhst = this.qryHists(a, slice);
@@ -227,7 +195,7 @@ public class RestrictionExperiment {
 	protected Collection<RankInterval> measuredIntervals(){
 		if(this._measuredIntervals == null) {
 			this._measuredIntervals = new ArrayList<RankInterval>();
-			for(var s : this.slices) {
+			for(var s : this.contract.getSlices()) {
 				var itvs = RankHistogram.uniformSlices(s);
 				this._measuredIntervals.addAll(itvs);
 			}
@@ -254,17 +222,17 @@ public class RestrictionExperiment {
 		return this._header;
 	}
 	
-	private Map<RankHistogramInfo, ConstantRestrictionExperiment> _cnstEsts = new HashMap<>();
-	public ConstantRestrictionExperiment constantExperiment(RankHistogramInfo info) {
+	private Map<RankHistogramInfo<Double>, ConstantRestrictionExperiment> _cnstEsts = new HashMap<>();
+	public ConstantRestrictionExperiment constantExperiment(RankHistogramInfo<Double> info) {
 		var exp = this._cnstEsts.get(info);
 		if(exp == null) {
-			exp = new ConstantRestrictionExperiment(info, this.consideredValues.get(info.queryInfo.attribute));
+			exp = new ConstantRestrictionExperiment(info, this.contract.getConsideredValues().get(info.queryInfo.attribute));
 			_cnstEsts.put(info, exp);
 		}
 		return exp;
 	}
 	
-	protected String line(IEstimation est, RankHistogram ehist, RankHistogramInfo query, RankHistogram qhist, int size) {
+	protected String line(IEstimation est, RankHistogram ehist, RankHistogramInfo<Double> query, RankHistogram qhist, int size) {
 		var params = est.params();
 		var sb = new StringBuilder();
 		for(var p : this.columns()) {
@@ -322,10 +290,10 @@ public class RestrictionExperiment {
 
 	public void gatherData() {
 		var sb = new StringBuilder(this.header()).append("\n");
-		var size = ResourceLoader.instance().getOrLoadTable(this.dataPath).size();
+		var size = ResourceLoader.instance().getOrLoadTable(this.contract.getDataPath()).size();
 		
-		for(var a : this.attributes) {
-			for(var slice : this.slices) {
+		for(var a : this.contract.getAttributes()) {
+			for(var slice : this.contract.getSlices()) {
 				var qrhst = this.qryHists(a, slice);
 				var ests = this.estimates(a, slice);
 				for(var query : qrhst) {
@@ -352,7 +320,7 @@ public class RestrictionExperiment {
 							.append("\n");
 						
 						try {
-							hest.writeFile(Workbench.estFolder(this.dataPath).resolve(est.filename()));
+							hest.writeFile(Workbench.estFolder(this.contract.getDataPath()).resolve(est.filename()));
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
@@ -361,7 +329,7 @@ public class RestrictionExperiment {
 			}
 		}
 		try {
-			Files.writeString(Workbench.restrictionResultFile(this.dataPath), sb.toString());
+			Files.writeString(Workbench.restrictionResultFile(this.contract.getDataPath()), sb.toString());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

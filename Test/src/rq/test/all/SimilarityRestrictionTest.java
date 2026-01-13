@@ -17,14 +17,13 @@ import org.junit.jupiter.api.Test;
 
 import rq.common.latices.Lukasiewitz;
 import rq.common.operators.SimilarityRestriction;
-import rq.common.similarities.NaiveSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.common.table.MemoryTable;
 
 import rq.common.exceptions.AttributeNotInSchemaException;
-import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.TypeSchemaMismatchException;
 import rq.common.interfaces.Table;
 
@@ -35,10 +34,11 @@ import rq.common.interfaces.Table;
 class SimilarityRestrictionTest {
 
 	Schema schema;
-	Attribute a1, a2, b;
+	Attribute<Integer> a1, a2;
+	Attribute<String> b;
 	Record r1, r2, r3;
 	MemoryTable t1;
-	SimilarityRestriction s1;
+	SimilarityRestriction<Integer> s1;
 	
 	/**
 	 * @throws java.lang.Exception
@@ -59,30 +59,30 @@ class SimilarityRestrictionTest {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a1 = new Attribute("A1", Integer.class);
-		this.a2 = new Attribute("A2", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a1 = new Attribute<>("A1", Integer.class);
+		this.a2 = new Attribute<>("A2", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a1, a2, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a1, 1),
-						new Record.AttributeValuePair(a2, 2),
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a1, 1),
+						new Record.AttributeValuePair<>(a2, 2),
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a1, 2),
-						new Record.AttributeValuePair(a2, 4),
-						new Record.AttributeValuePair(b, "bar")),
+						new Record.AttributeValuePair<>(a1, 2),
+						new Record.AttributeValuePair<>(a2, 4),
+						new Record.AttributeValuePair<>(b, "bar")),
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a1, 3),
-						new Record.AttributeValuePair(a2, 3),
-						new Record.AttributeValuePair(b, "baz")),
+						new Record.AttributeValuePair<>(a1, 3),
+						new Record.AttributeValuePair<>(a2, 3),
+						new Record.AttributeValuePair<>(b, "baz")),
 				0.8d);
 		
 		t1 = new MemoryTable(this.schema);
@@ -92,10 +92,10 @@ class SimilarityRestrictionTest {
 		
 		s1 = SimilarityRestriction.factory(
 				t1, 
-				new Attribute("A1", Integer.class),
-				new Attribute("A2", Integer.class), 
+				new Attribute<>("A1", Integer.class),
+				new Attribute<>("A2", Integer.class), 
 				Lukasiewitz.PRODUCT, 
-				NaiveSimilarity.INTEGER_SIMILARITY);
+				LinearSimilarities.integerSimilarityUntil(2));
 	}
 
 	/**
@@ -115,30 +115,20 @@ class SimilarityRestrictionTest {
 				() -> {
 					SimilarityRestriction.factory(
 							t1, 
-							new Attribute("Q", Integer.class), 
-							new Attribute("A2", Integer.class), 
+							new Attribute<>("Q", Integer.class), 
+							new Attribute<>("A2", Integer.class), 
 							Lukasiewitz.PRODUCT, 
-							NaiveSimilarity.INTEGER_SIMILARITY);
+							LinearSimilarities.integerSimilarityUntil(2));
 				});
 		assertThrows(
 				AttributeNotInSchemaException.class,
 				() -> {
 					SimilarityRestriction.factory(
 							t1, 
-							new Attribute("A1", Integer.class), 
-							new Attribute("Q", Integer.class), 
+							new Attribute<>("A1", Integer.class), 
+							new Attribute<>("Q", Integer.class), 
 							Lukasiewitz.PRODUCT, 
-							NaiveSimilarity.INTEGER_SIMILARITY);
-				});
-		assertThrows(
-				ComparisonDomainMismatchException.class,
-				() -> {
-					SimilarityRestriction.factory(
-							t1, 
-							new Attribute("A1", Integer.class), 
-							new Attribute("B", String.class), 
-							Lukasiewitz.PRODUCT, 
-							NaiveSimilarity.INTEGER_SIMILARITY);
+							LinearSimilarities.integerSimilarityUntil(2));
 				});
 	}
 
@@ -163,16 +153,16 @@ class SimilarityRestrictionTest {
 		assertTrue(rcrds.contains(Record.factory(
 						this.schema, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a1, 2),
-								new Record.AttributeValuePair(a2, 4),
-								new Record.AttributeValuePair(b, "bar")),
+								new Record.AttributeValuePair<>(a1, 2),
+								new Record.AttributeValuePair<>(a2, 4),
+								new Record.AttributeValuePair<>(b, "bar")),
 						0d)));
 		assertTrue(rcrds.contains(Record.factory(
 						this.schema, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a1, 3),
-								new Record.AttributeValuePair(a2, 3),
-								new Record.AttributeValuePair(b, "baz")),
+								new Record.AttributeValuePair<>(a1, 3),
+								new Record.AttributeValuePair<>(a2, 3),
+								new Record.AttributeValuePair<>(b, "baz")),
 						0.8d)));
 	}
 

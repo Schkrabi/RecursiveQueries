@@ -2,7 +2,6 @@ package rq.common.estimations;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.GlobalPostprocessProvider;
 import rq.common.statistic.EquidistantHistogram;
@@ -14,17 +13,17 @@ import rq.common.util.Pair;
 public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPostprocessProvider {
 
 	public final int slices;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final int numOfConsideredValues;
-	public final SampledHistogram hist;
+	public final SampledHistogram<Double> hist;
 	public final double paretRatio;
 	
 	public WeighterdParetPostprocessProvider_sampledHist(
 			int slices,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			int numOfConsideredValues,
 			double paretRatio,
-			SampledHistogram hist) {
+			SampledHistogram<Double> hist) {
 		this.slices = slices;
 		this.similarity = similarity;
 		this.numOfConsideredValues = numOfConsideredValues;
@@ -66,14 +65,14 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdGps(
+	public static IntervalEstimation<Double> eqdGps(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio,
-			SampledHistogram sHist) {
-		var est = new IntervalEstimation(
+			SampledHistogram<Double> sHist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -93,14 +92,14 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnGps(
+	public static IntervalEstimation<Double> eqnGps(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio,
-			SampledHistogram sHist) {
-		var est = new IntervalEstimation(
+			SampledHistogram<Double> sHist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -121,14 +120,14 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqdCGps(
+	public static IntervalEstimation<Double> eqdCGps(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio,
-			SampledHistogram sHist) {
-		var est = new IntervalEstimation(
+			SampledHistogram<Double> sHist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -148,14 +147,14 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 	 * @param sHist sampled histogram - base for the estimation
 	 * @return
 	 */
-	public static IntervalEstimation eqnCGps(
+	public static IntervalEstimation<Double> eqnCGps(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			int numOfConsideredValues,
 			double paretRatio,
-			SampledHistogram sHist) {
-		var est = new IntervalEstimation(
+			SampledHistogram<Double> sHist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,

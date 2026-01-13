@@ -15,10 +15,10 @@ public class NotComparableException extends Exception{
 	 * 
 	 */
 	private static final long serialVersionUID = -5866038504535603707L;
-	public final RecordValue recordValue;
+	public final RecordValue<?> recordValue;
 	public final Class<?> operator;
 	
-	public NotComparableException(RecordValue recordValue, Class<?> operator) {
+	public NotComparableException(RecordValue<?> recordValue, Class<?> operator) {
 		super(new StringBuilder()
 				.append("Not comparable domain ")
 				.append(recordValue.domain().getName())

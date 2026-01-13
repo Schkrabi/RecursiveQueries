@@ -1,7 +1,5 @@
 package rq.common.estimations;
 
-import java.util.function.BiFunction;
-
 import rq.common.interfaces.Table;
 import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
@@ -9,16 +7,16 @@ import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.restrictions.Similar;
 
-public abstract class AbstractSelectionEstimation {
+public abstract class AbstractSelectionEstimation<T> {
 	
 	public final Selection selection;
 	public final Table argument;
 	public final int resultSlices;
-	public final Attribute attribute;
+	public final Attribute<T> attribute;
 	public final Constant<Object> constant;
 	
-	public final BiFunction<Object, Object, Double> similarity;
-	protected final Similar condition;
+	public final rq.common.similarities.ISimilarity<T> similarity;
+	protected final Similar<T> condition;
 
 	@SuppressWarnings("unchecked")
 	public AbstractSelectionEstimation(
@@ -35,13 +33,13 @@ public abstract class AbstractSelectionEstimation {
 		if(!(selection.condition instanceof Similar)) {
 			throw new RuntimeException("Selection must have a single bicondition.");
 		}
-		this.condition = (Similar)selection.condition;
+		this.condition = (Similar<T>)selection.condition;
 		this.similarity = this.condition.similarity;
 		
 		if(!(condition.left instanceof Attribute)) {
 			throw new RuntimeException("Left argument of condition must be an attribute");
 		}
-		this.attribute = (Attribute)condition.left;
+		this.attribute = (Attribute<T>)condition.left;
 		
 		if(!(condition.right instanceof Constant)) {
 			throw new RuntimeException("Right argument of condition must be a constant.");

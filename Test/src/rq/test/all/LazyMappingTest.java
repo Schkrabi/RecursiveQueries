@@ -26,7 +26,8 @@ class LazyMappingTest {
 		+	"3, \"baz\", 0.7";
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3;
 	
 	LazyTable table = null;
@@ -36,27 +37,27 @@ class LazyMappingTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		table = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		
 		this.r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")), 
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")), 
 				0.8d);
 		this.r2 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b, "bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b, "bar")), 
 				0.5d);
 		this.r3 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b, "baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b, "baz")), 
 				0.7d);
 		m = LazyMapping.factory(table,
 				r -> {
@@ -86,24 +87,24 @@ class LazyMappingTest {
 				Record.factory(
 						this.schema, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 2),
-								new Record.AttributeValuePair(b, "foo")), 
+								new Record.AttributeValuePair<>(a, 2),
+								new Record.AttributeValuePair<>(b, "foo")), 
 						0.8d),
 				this.m.next());
 		assertEquals(
 				Record.factory(
 						this.schema, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 3),
-								new Record.AttributeValuePair(b, "bar")), 
+								new Record.AttributeValuePair<>(a, 3),
+								new Record.AttributeValuePair<>(b, "bar")), 
 						0.5d),
 				this.m.next());
 		assertEquals(
 				Record.factory(
 						this.schema, 
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 4),
-								new Record.AttributeValuePair(b, "baz")), 
+								new Record.AttributeValuePair<>(a, 4),
+								new Record.AttributeValuePair<>(b, "baz")), 
 						0.7d),
 				this.m.next());
 		assertNull(this.m.next());

@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import rq.files.contracts.EstimationExperimentContract;
+import rq.files.helpers.JsonSerializer;
 
 class EstimationExperimentContractTest {
 
@@ -20,9 +21,9 @@ class EstimationExperimentContractTest {
 	
 	@Test
 	void testSerialization() throws IOException {
-		var json = cnt.serialize();
+		var json = JsonSerializer.instance().serialize(cnt);
 		
-		var cnt2 = EstimationExperimentContract.deserialize(json);
+		var cnt2 = JsonSerializer.instance().deserialize(json, EstimationExperimentContract.class);
 		assertEquals(cnt, cnt2);
 	}
 

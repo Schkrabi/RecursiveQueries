@@ -22,39 +22,40 @@ import rq.common.types.Str10;
 class FileMappedTableTest {
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<Str10> b;
 	Record r1, r2, r3, r4;
 	FileMappedTable t1, t2, t3, t4;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", Str10.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", Str10.class);
 		this.schema = Schema.factory(a, b);
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, Str10.factory("foo"))),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, Str10.factory("foo"))),
 				0.1d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b, Str10.factory("bar"))), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b, Str10.factory("bar"))), 
 				0.2d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, Str10.factory("foo"))), 
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, Str10.factory("foo"))), 
 				0.3d);
 		
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3),
-						new Record.AttributeValuePair(b, Str10.factory("baz"))), 
+						new Record.AttributeValuePair<>(a, 3),
+						new Record.AttributeValuePair<>(b, Str10.factory("baz"))), 
 				0.4f);
 		
 		t1 = FileMappedTable.factory(this.schema);
@@ -90,8 +91,8 @@ class FileMappedTableTest {
 			this.t1.insert(this.r1);
 			this.t1.insert(
 					Arrays.asList(
-							new Record.AttributeValuePair(a, 2), 
-							new Record.AttributeValuePair(b, Str10.factory("bar"))), 
+							new Record.AttributeValuePair<>(a, 2), 
+							new Record.AttributeValuePair<>(b, Str10.factory("bar"))), 
 					1.0d);
 			});
 	}

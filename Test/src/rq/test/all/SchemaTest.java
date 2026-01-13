@@ -32,14 +32,14 @@ class SchemaTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		this.s1 = Schema.factory(
-				new Attribute("A", Integer.class), 
-				new Attribute("B", String.class));
+				new Attribute<>("A", Integer.class), 
+				new Attribute<>("B", String.class));
 		this.s2 = Schema.factory(
-				new Attribute("A", String.class),
-				new Attribute("B", String.class));
+				new Attribute<>("A", String.class),
+				new Attribute<>("B", String.class));
 		this.s3 = Schema.factory(
-				new Attribute("C", Integer.class),
-				new Attribute("B", String.class));
+				new Attribute<>("C", Integer.class),
+				new Attribute<>("B", String.class));
 	}
 
 	@AfterEach
@@ -56,15 +56,15 @@ class SchemaTest {
 	@Test
 	void testSchema() {
 		assertThrows(DuplicateAttributeNameException.class,() -> {
-			Schema.factory(new Attribute("A", Integer.class), new Attribute("A", String.class));
+			Schema.factory(new Attribute<>("A", Integer.class), new Attribute<>("A", String.class));
 		});
 	}
 
 	@Test
 	void testAttributeIndex() {
-		assertEquals(Optional.of(0), this.s1.attributeIndex(new Attribute("A", Integer.class)));
+		assertEquals(Optional.of(0), this.s1.attributeIndex(new Attribute<>("A", Integer.class)));
 		assertEquals(Optional.of(1), this.s1.attributeIndex("B"));
-		assertTrue(this.s1.attributeIndex(new Attribute("A", String.class)).isEmpty());
+		assertTrue(this.s1.attributeIndex(new Attribute<>("A", String.class)).isEmpty());
 		assertTrue(this.s1.attributeIndex("C").isEmpty());
 	}
 
@@ -81,8 +81,8 @@ class SchemaTest {
 		
 		//This is problem:
 		assertEquals(
-				Schema.factory(new Attribute("A", Integer.class), new Attribute("B", Integer.class)),
-				Schema.factory(new Attribute("B", Integer.class), new Attribute("A", Integer.class)));
+				Schema.factory(new Attribute<>("A", Integer.class), new Attribute<>("B", Integer.class)),
+				Schema.factory(new Attribute<>("B", Integer.class), new Attribute<>("A", Integer.class)));
 	}
 
 }

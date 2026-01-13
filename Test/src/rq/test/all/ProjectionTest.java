@@ -29,7 +29,8 @@ import rq.common.interfaces.Table;
 class ProjectionTest {
 
 	Schema schema, subschema, schema2;
-	Attribute a, b, c, d;
+	Attribute<Integer> a, c;
+	Attribute<String> b;
 	Record r1, r2, r3;
 	MemoryTable t1;
 	Projection p1, p2;
@@ -39,9 +40,9 @@ class ProjectionTest {
 	 */
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.c = new Attribute("C", Integer.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.c = new Attribute<>("C", Integer.class);
 		this.schema = Schema.factory(a, b);
 		
 		this.subschema = Schema.factory(a);
@@ -50,20 +51,20 @@ class ProjectionTest {
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
 		r2 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.8d);
 		
 		t1 = new MemoryTable(this.schema);
@@ -76,8 +77,8 @@ class ProjectionTest {
 				subschema);
 		p2 = Projection.factory(
 				t1, 
-				new Projection.To(a, c), 
-				new Projection.To(b, b));
+				new Projection.To<>(a, c), 
+				new Projection.To<>(b, b));
 	}
 
 	/**
@@ -89,7 +90,7 @@ class ProjectionTest {
 				NotSubschemaException.class,
 				() -> Projection.factory(
 						t1, 
-						Schema.factory(new Attribute("C", Integer.class)))
+						Schema.factory(new Attribute<>("C", Integer.class)))
 				);
 	}
 
@@ -106,17 +107,17 @@ class ProjectionTest {
 		assertTrue(rcrds.contains(Record.factory(
 				this.subschema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1)), 
+						new Record.AttributeValuePair<>(a, 1)), 
 				1.0d)));
 		assertTrue(rcrds.contains(Record.factory(
 				this.subschema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2)),  
+						new Record.AttributeValuePair<>(a, 2)),  
 				1.0d)));
 		assertTrue(rcrds.contains(Record.factory(
 				this.subschema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3)), 
+						new Record.AttributeValuePair<>(a, 3)), 
 				0.8d)));
 		
 		rslt = this.p2.eval();
@@ -125,20 +126,20 @@ class ProjectionTest {
 		assertTrue(rcrds.contains(Record.factory(
 				this.schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 1), 
-						new Record.AttributeValuePair(b, "foo")), 
+						new Record.AttributeValuePair<>(c, 1), 
+						new Record.AttributeValuePair<>(b, "foo")), 
 				1.0d)));
 		assertTrue(rcrds.contains(Record.factory(
 				this.schema2,
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 2), 
-						new Record.AttributeValuePair(b,"bar")),  
+						new Record.AttributeValuePair<>(c, 2), 
+						new Record.AttributeValuePair<>(b,"bar")),  
 				1.0d)));
 		assertTrue(rcrds.contains(Record.factory(
 				this.schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 3), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(c, 3), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.8d)));
 	}
 

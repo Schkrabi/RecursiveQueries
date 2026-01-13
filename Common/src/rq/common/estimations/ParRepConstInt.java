@@ -1,7 +1,6 @@
 package rq.common.estimations;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.DataSlicedHistogram;
@@ -11,18 +10,18 @@ public class ParRepConstInt implements IEstimation {
 
 	public final int slices;
 	public final double constant;
-	public final BiFunction<Object, Object, Double> similarity;
-	private final DataSlicedHistogram hist;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
+	private final DataSlicedHistogram<Double> hist;
 	public final int numOfConsideredValues;
-	private final RepresentativeProvider representativeProvider;
+	private final RepresentativeProvider<Double> representativeProvider;
 	
 	public ParRepConstInt(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity, 
-			DataSlicedHistogram hist,
+			rq.common.similarities.ISimilarity<Double> similarity, 
+			DataSlicedHistogram<Double> hist,
 			double constant,
 			int numOfConsideredValues,
-			RepresentativeProvider representativeProvider) {
+			RepresentativeProvider<Double> representativeProvider) {
 		this.slices = slices;
 		this.similarity = similarity;
 		this.hist = hist;

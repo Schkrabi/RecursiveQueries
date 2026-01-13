@@ -1,7 +1,6 @@
 package queries;
 
 import java.time.Duration;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import annotations.CallingArg;
@@ -12,21 +11,17 @@ import rq.common.algorithms.LazyRecursive;
 import rq.common.interfaces.LazyExpression;
 import rq.common.interfaces.Table;
 import rq.common.onOperators.Constant;
-import rq.common.onOperators.DivDouble;
 import rq.common.onOperators.OnLesserThan;
 import rq.common.onOperators.OnSimilar;
 import rq.common.onOperators.PlusDateTime;
 import rq.common.onOperators.PlusInteger;
 import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
-import rq.common.operators.LazySelection;
 import rq.common.operators.Projection;
-import rq.common.restrictions.GreaterThanOrEquals;
-import rq.common.restrictions.Or;
-import rq.common.restrictions.Similar;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.LazyFacade;
 import rq.common.tools.AlgorithmMonitor;
+import rq.common.types.DateTime;
 
 @CallingArg("electricityNoCustTop")
 public class Queries2_Electricity_NoCust_top extends Queries2 {
@@ -44,14 +39,14 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 	}
 	
 	private  Duration _stepSimilarity = Duration.ofDays(30);
-	private BiFunction<Object, Object, Double> stepSimilarity =
-			LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+	private rq.common.similarities.ISimilarity<DateTime> stepSimilarity =
+			LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	
 	@QueryParameter("stepSimilarity")
 	public void setStepSimilarity(String similarityScale) {
 		this._stepSimilarity = Duration.ofDays(Integer.parseInt(similarityScale));
 		stepSimilarity =
-				LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+				LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	}
 	
 	@QueryParameterGetter("stepSimilarity")
@@ -72,14 +67,15 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 	}
 	
 	private Double _thresholdSimilarity = 0.2d; 
-	private BiFunction<Object, Object, Double> thresholdSimilarity =
-			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
+	@SuppressWarnings("unused")
+	private rq.common.similarities.ISimilarity<Double> thresholdSimilarity =
+			LinearSimilarities.doubleSimilarityUntil(_thresholdSimilarity);
 	
 	@QueryParameter("thresholdSimilarity")
 	public void setThresholdSimilarity(String peakSimilarity) {
 		this._thresholdSimilarity = Double.parseDouble(peakSimilarity);
 		this.thresholdSimilarity =
-			LinearSimilarity.doubleSimilarityUntil(_thresholdSimilarity);
+			LinearSimilarities.doubleSimilarityUntil(_thresholdSimilarity);
 	}
 	
 	@QueryParameterGetter("thresholdSimilarity")
@@ -105,9 +101,9 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 		return (Table iTable) -> {
 			return LazyProjection.factory(
 					new LazyFacade(iTable),  
-					new Projection.To(Electricity.time, Electricity.fromTime),
-					new Projection.To(Electricity.time, Electricity.toTime),
-					new Projection.To(new Constant<Integer>(1), Electricity.peaks));
+					new Projection.To<>(Electricity.time, Electricity.fromTime),
+					new Projection.To<>(Electricity.time, Electricity.toTime),
+					new Projection.To<>(new Constant<Integer>(1), Electricity.peaks));
 		};
 	}
 
@@ -119,14 +115,14 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 						LazyJoin.factory(
 								new LazyFacade(t), 
 								new LazyFacade(iTable),
-								new OnLesserThan(Electricity.toTime, Electricity.time),
-								new OnSimilar(
+								new OnLesserThan<>(Electricity.toTime, Electricity.time),
+								new OnSimilar<DateTime>(
 										new PlusDateTime(Electricity.toTime, _step), 
 										Electricity.time, 
 										this.stepSimilarity)), 
-						new Projection.To(Electricity.fromTime, Electricity.fromTime),
-						new Projection.To(Electricity.time, Electricity.toTime),
-						new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
+						new Projection.To<>(Electricity.fromTime, Electricity.fromTime),
+						new Projection.To<>(Electricity.time, Electricity.toTime),
+						new Projection.To<>(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
 			};
 		};
 	}
@@ -138,11 +134,12 @@ public class Queries2_Electricity_NoCust_top extends Queries2 {
 
 	@Override
 	public LazyExpression preprocess(LazyExpression iTable) {
-		LazyExpression le =
-				new LazySelection(
-						iTable,
-						new Or(	new Similar(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold), this.thresholdSimilarity),
-								new GreaterThanOrEquals(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold))));
+		//TODO
+		LazyExpression le = null;
+//				new LazySelection(
+//						iTable,
+//						new Or(	new Similar<>(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold), this.thresholdSimilarity),
+//								new GreaterThanOrEquals(new DivDouble(Electricity.value, Electricity.movingAvg), new Constant<Double>(this._threshold))));
 		
 		return le;
 	}

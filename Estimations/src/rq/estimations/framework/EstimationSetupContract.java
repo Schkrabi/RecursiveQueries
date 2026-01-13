@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
+import rq.estimations.main.UnaryOperationContract;
 
 public abstract class EstimationSetupContract {
 
@@ -83,7 +85,7 @@ public abstract class EstimationSetupContract {
 		case "numericalStochasticDomainPruning":
 		case "interval_equidistant":
 		case "interval_equinominal":
-			contract = new UnaryOperationContract();
+			contract = new UnaryOperationContract<>();
 			break;
 		case "union":
 		case "crossJoin":

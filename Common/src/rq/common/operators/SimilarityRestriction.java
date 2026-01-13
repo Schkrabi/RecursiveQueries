@@ -10,6 +10,7 @@ import rq.common.exceptions.ComparisonDomainMismatchException;
 import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.TabularExpression;
 import rq.common.latices.LaticeFactory;
+import rq.common.similarities.ISimilarity;
 import rq.common.statistic.Statistics;
 import rq.common.table.Attribute;
 import rq.common.table.MemoryTable;
@@ -23,20 +24,20 @@ import rq.common.interfaces.Table;
  *
  * Similary is not type checked!
  */
-public class SimilarityRestriction implements TabularExpression{
+public class SimilarityRestriction<T> implements TabularExpression{
 	private final TabularExpression argument;
-	private final Attribute attribute1;
-	private final Attribute attribute2;
+	private final Attribute<T> attribute1;
+	private final Attribute<T> attribute2;
 	private final BiFunction<Double, Double, Double> product;
-	private final BiFunction<Object, Object, Double> similarity;
+	private final ISimilarity<T> similarity;
 	private final BiFunction<Schema, Integer, Table> tableSupplier;
 	
 	private SimilarityRestriction(
 			TabularExpression argument, 
-			Attribute attribute1, 
-			Attribute attribute2, 
+			Attribute<T> attribute1, 
+			Attribute<T> attribute2, 
 			BiFunction<Double, Double, Double> product, 
-			BiFunction<Object, Object, Double> similarity,
+			ISimilarity<T> similarity,
 			BiFunction<Schema, Integer, Table> tableSupplier) {
 		this.argument = argument;
 		this.attribute1 = attribute1;
@@ -46,11 +47,11 @@ public class SimilarityRestriction implements TabularExpression{
 		this.tableSupplier = tableSupplier;
 	}
 	
-	public static SimilarityRestriction factory(
+	public static <T> SimilarityRestriction<T> factory(
 			TabularExpression argument, 
-			Attribute attribute1, 
-			Attribute attribute2, 
-			BiFunction<Object, Object, Double> similarity)
+			Attribute<T> attribute1, 
+			Attribute<T> attribute2, 
+			ISimilarity<T> similarity)
 		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
 		return SimilarityRestriction.factory(
 				argument,
@@ -60,12 +61,12 @@ public class SimilarityRestriction implements TabularExpression{
 				similarity);
 	}
 	
-	public static SimilarityRestriction factory(
+	public static <T> SimilarityRestriction<T> factory(
 			TabularExpression argument, 
-			Attribute attribute1, 
-			Attribute attribute2, 
+			Attribute<T> attribute1, 
+			Attribute<T> attribute2, 
 			BiFunction<Double, Double, Double> product, 
-			BiFunction<Object, Object, Double> similarity)
+			ISimilarity<T> similarity)
 		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
 		return SimilarityRestriction.factory(
 				argument, 
@@ -86,24 +87,21 @@ public class SimilarityRestriction implements TabularExpression{
 	 * @throws AttributeNotInSchemaException if either attribute is not in table schema
 	 * @throws ComparisonDomainMismatchException 
 	 */
-	public static SimilarityRestriction factory(
+	public static <T> SimilarityRestriction<T> factory(
 			TabularExpression argument, 
-			Attribute attribute1, 
-			Attribute attribute2, 
+			Attribute<T> attribute1, 
+			Attribute<T> attribute2, 
 			BiFunction<Double, Double, Double> product, 
-			BiFunction<Object, Object, Double> similarity,
+			ISimilarity<T> similarity,
 			BiFunction<Schema, Integer, Table> tableSupplier)
-		throws AttributeNotInSchemaException, ComparisonDomainMismatchException {
-		if(!attribute1.domain.equals(attribute2.domain)) {
-			throw new ComparisonDomainMismatchException(attribute1, attribute2);
-		}
+		throws AttributeNotInSchemaException {
 		if(argument.schema().attributeIndex(attribute1).isEmpty()) {
 			throw new AttributeNotInSchemaException(attribute1, argument.schema());
 		}
 		if(argument.schema().attributeIndex(attribute2).isEmpty()) {
 			throw new AttributeNotInSchemaException(attribute2, argument.schema());
 		}
-		return new SimilarityRestriction(
+		return new SimilarityRestriction<>(
 				argument,
 				attribute1,
 				attribute2,

@@ -7,16 +7,26 @@ import rq.common.onOperators.RecordValue;
  * @author Mgr. R.Skrabal
  *
  */
-public class Attribute implements Comparable<Attribute>, RecordValue{
+public class Attribute<T> implements RecordValue<T>, Comparable<Attribute<?>>{
 	public final String name;
-	public final Class<?> domain;
+	public final Class<T> domain;
 	
 	private boolean isHashCached = false;
 	private int cachedHash = 0;
 	
-	public Attribute(String name, Class<?> domain) {
+	public Attribute(String name, Class<T> domain) {
 		this.name = name;
 		this.domain = domain;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Attribute(String name, String domain) {
+		this.name = name;
+		try {
+			this.domain = (Class<T>) Class.forName(domain);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**
@@ -24,7 +34,7 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 	 * @param other other attribute
 	 * @return true or false
 	 */
-	public boolean equalsName(Attribute other) {
+	public boolean equalsName(Attribute<?> other) {
 		return this.name.equals(other.name);
 	}
 	
@@ -40,11 +50,11 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 	
 	@Override
 	public boolean equals(Object other) {
-		if(!(other instanceof Attribute)) {
-			return false;
+		if(other instanceof Attribute at) {
+			return this.name.equals(at.name)
+					&& this.domain.equals(at.domain);
 		}
-		return this.name.equals(((Attribute)other).name)
-				&& this.domain.equals((((Attribute)other).domain));
+		return false;
 	}
 	
 	@Override
@@ -63,16 +73,7 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 	}
 
 	@Override
-	public int compareTo(Attribute o) {
-		int cmp = this.name.compareTo(o.name);
-		if(cmp != 0) {
-			return cmp;
-		}
-		return this.domain.getName().compareTo(o.domain.getName());
-	}
-
-	@Override
-	public Object value(Record record) {
+	public T value(Record record) {
 		return record.getNoThrow(this);
 	}
 
@@ -82,14 +83,15 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 	}
 
 	@Override
-	public Class<?> domain() {
+	public Class<T> domain() {
 		return this.domain;
 	}
 	
-	public static Attribute parse(String serialized) throws ClassNotFoundException {
-		String[] pair = serialized.split(":");
-		Class<?> clazz = Class.forName(pair[1]);
-		return new Attribute(pair[0], clazz);
+	public static <U> Attribute<U> parse(String serialized) throws ClassNotFoundException {
+		var pair = serialized.split(":");
+		@SuppressWarnings("unchecked")
+		var clazz = (Class<U>) Class.forName(pair[1]);
+		return new Attribute<U>(pair[0], clazz);
 	}
 	
 	public String serialize() {
@@ -99,5 +101,14 @@ public class Attribute implements Comparable<Attribute>, RecordValue{
 				.append(this.domain.getName())
 				.toString();
 		return s;
+	}
+
+	@Override
+	public int compareTo(Attribute<?> o) {
+		int cmp = this.name.compareTo(o.name);
+		if(cmp != 0) {
+			return cmp;
+		}
+		return this.domain.getName().compareTo(o.domain.getName());
 	}
 }

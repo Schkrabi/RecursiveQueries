@@ -1,6 +1,7 @@
 package rq.estimations.main;
 
 import rq.common.statistic.RankHistogram;
+import rq.estimations.framework.EstimationProvider;
 
 
 public class Measurement {

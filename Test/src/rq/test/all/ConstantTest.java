@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 class ConstantTest {
 	
-	Attribute a = new Attribute("a", Integer.class);
+	Attribute<Integer> a = new Attribute<>("a", Integer.class);
 	Schema s;
 	
 	Constant<Integer> ic = new Constant<Integer>(42);
@@ -32,7 +32,7 @@ class ConstantTest {
 	@Test
 	void testValue() throws TypeSchemaMismatchException, AttributeNotInSchemaException, DuplicateAttributeNameException {
 		
-		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair(a, 0)), 1.0d);
+		Record record = Record.factory(s, Arrays.asList(new Record.AttributeValuePair<>(a, 0)), 1.0d);
 		assertEquals(42, ic.value(record));
 		assertEquals(Str10.factory("foobar"), sc.value(record));
 	}

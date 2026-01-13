@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.statistic.DataSlicedHistogram;
 import rq.common.statistic.DataSlicedHistogram.Interval;
@@ -12,28 +11,29 @@ import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.util.Pair;
+import rq.common.similarities.ISimilarity;
 
 /** Abstract class for the interval based restriction estimation*/
-public class IntervalEstimation implements IEstimation {
+public class IntervalEstimation<T extends Number> implements IEstimation {
 	
-	private final RepresentativeProvider representativeProvider;
+	private final RepresentativeProvider<T> representativeProvider;
 	private final GlobalPostprocessProvider globalPostprocessProvider;
-	private final IntervalPostprocessProvider intervalPostrprocessProvider;
+	private final IntervalPostprocessProvider<T> intervalPostrprocessProvider;
 	
 	/** number of result slices*/
 	public final int slices;
 	/** similarity function used*/
-	protected final BiFunction<Object, Object, Double> similarity;
+	protected final ISimilarity<Double> similarity;
 	/** interval histogram used for estimation*/
-	protected final DataSlicedHistogram dataIntervals;
+	protected final DataSlicedHistogram<T> dataIntervals;
 	
 	protected IntervalEstimation(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			DataSlicedHistogram dataIntervals,
-			RepresentativeProvider representativeProvider,
+			ISimilarity<Double> similarity,
+			DataSlicedHistogram<T> dataIntervals,
+			RepresentativeProvider<T> representativeProvider,
 			GlobalPostprocessProvider globalPostprocessProvider,
-			IntervalPostprocessProvider intervalPostprocessProvider) {
+			IntervalPostprocessProvider<T> intervalPostprocessProvider) {
 		this.slices = slices;
 		this.similarity = similarity;
 		this.dataIntervals = dataIntervals;
@@ -62,7 +62,7 @@ public class IntervalEstimation implements IEstimation {
 	}
 	
 	/** Returns list of computed ranks */
-	protected List<Double> ranksForInterval(Interval dataInterval, int count, Double value) {
+	protected List<Double> ranksForInterval(Interval dataInterval, int count, T value) {
 		List<Double> result = new ArrayList<Double>();
 
 		double step = (dataInterval.to - dataInterval.from) / count;
@@ -114,15 +114,15 @@ public class IntervalEstimation implements IEstimation {
 		return me;
 	}
 	
-	public static interface RepresentativeProvider extends SignatureProvider, IParametrized {
-		public double representative (Interval interval);
+	public static interface RepresentativeProvider<T> extends SignatureProvider, IParametrized {
+		public T representative (Interval interval);
 	}
 	
-	private static class DefaultRepresentativeProvider 
-		implements RepresentativeProvider {
+	private static class DefaultRepresentativeProvider
+		implements RepresentativeProvider<Double> {
 
 		@Override
-		public double representative(Interval interval) {
+		public Double representative(Interval interval) {
 			var min = Math.min(interval.from, interval.to);
 			var max = Math.max(interval.from, interval.to);
 			
@@ -141,11 +141,11 @@ public class IntervalEstimation implements IEstimation {
 			return Map.of();
 		}
 	}
-	public static final RepresentativeProvider DEFAULT_REPRESENTATIVE_PROVIDER
+	public static final RepresentativeProvider<Double> DEFAULT_REPRESENTATIVE_PROVIDER
 		 = new DefaultRepresentativeProvider();
 	
 	/** returns a representative of the data interval */
-	private double representative(Interval interval) {
+	private T representative(Interval interval) {
 		return this.representativeProvider.representative(interval);
 	}
 	
@@ -179,11 +179,11 @@ public class IntervalEstimation implements IEstimation {
 		return this.globalPostprocessProvider.postprocess(hist);
 	}
 	
-	public static interface IntervalPostprocessProvider extends SignatureProvider, IParametrized {
-		public RankHistogram postprocess(RankHistogram hist, int count, double representative);
+	public static interface IntervalPostprocessProvider<T extends Number> extends SignatureProvider, IParametrized {
+		public RankHistogram postprocess(RankHistogram hist, int count, T representative);
 	}
 	
-	private static class DefaultIntervalPostprocessProvider implements IntervalPostprocessProvider {
+	public static class DefaultIntervalPostprocessProvider<T extends Number> implements IntervalPostprocessProvider<T> {
 
 		@Override
 		public String signature() {
@@ -191,7 +191,7 @@ public class IntervalEstimation implements IEstimation {
 		}
 
 		@Override
-		public RankHistogram postprocess(RankHistogram hist, int count, double representative) {
+		public RankHistogram postprocess(RankHistogram hist, int count, T representative) {
 			return hist;
 		}
 
@@ -202,12 +202,12 @@ public class IntervalEstimation implements IEstimation {
 		}	
 	}
 	
-	public static final IntervalPostprocessProvider DEFAULT_INTERVAL_POSTPROCESS_PROVIDER = 
-			new DefaultIntervalPostprocessProvider();
+	public static final IntervalPostprocessProvider<Double> DEFAULT_INTERVAL_POSTPROCESS_PROVIDER = 
+			new DefaultIntervalPostprocessProvider<>();
 	
 	
 	/** postprocess the intermediate interval histogram*/
-	protected RankHistogram intervalPostprocess(RankHistogram hist, int count, double representative) {
+	protected RankHistogram intervalPostprocess(RankHistogram hist, int count, T representative) {
 		return this.intervalPostrprocessProvider.postprocess(hist, count, representative);
 	}
 	
@@ -247,11 +247,11 @@ public class IntervalEstimation implements IEstimation {
 		
 	};
 
-	public static IntervalEstimation eqd(
+	public static IntervalEstimation<Double> eqd(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist) {
-		var est = new IntervalEstimation(
+			ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist) {
+		var est = new IntervalEstimation<Double>(
 				slices, 
 				similarity,
 				hist,
@@ -270,11 +270,11 @@ public class IntervalEstimation implements IEstimation {
 		
 	};
 	
-	public static IntervalEstimation eqn(
+	public static IntervalEstimation<Double> eqn(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist) {
-		var est = new IntervalEstimation(
+			ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist) {
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
@@ -289,18 +289,18 @@ public class IntervalEstimation implements IEstimation {
 		return this.slices;
 	}
 	
-	public static IntervalEstimation fromHist(
+	public static IntervalEstimation<Double> fromHist(
 			int slices,
-			BiFunction<Object, Object, Double> similarity,
-			DataSlicedHistogram hist
+			ISimilarity<Double> similarity,
+			DataSlicedHistogram<Double> hist
 			) {
-		if(hist instanceof EquidistantHistogram eqd) {
+		if(hist instanceof EquidistantHistogram<Double> eqd) {
 			return eqd(slices, similarity, eqd);
 		}
-		else if(hist instanceof EquinominalHistogram eqn) {
+		else if(hist instanceof EquinominalHistogram<Double> eqn) {
 			return eqn(slices, similarity, eqn);
 		}
-		return new IntervalEstimation(
+		return new IntervalEstimation<>(
 				slices,
 				similarity,
 				hist,

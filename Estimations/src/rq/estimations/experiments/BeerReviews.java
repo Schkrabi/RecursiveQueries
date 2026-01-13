@@ -1,11 +1,10 @@
-package rq.estimations.main;
+package rq.estimations.experiments;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.io.contexts.ClassNotInContextException;
@@ -17,9 +16,12 @@ import rq.common.restrictions.InfimumAnd;
 import rq.common.restrictions.LesserThanOrEquals;
 import rq.common.restrictions.ProductAnd;
 import rq.common.restrictions.Similar;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.table.Attribute;
 import rq.common.types.Str50;
+import rq.estimations.framework.Experiment;
+import rq.estimations.main.Workbench;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableWriter;
 
@@ -39,41 +41,41 @@ public class BeerReviews extends Experiment {
 	String query1StatFileName = query1FileName + ".stat";
 	
 	//Attributes
-	Attribute brewery_name = new Attribute("brewery_name", rq.common.types.Str50.class);
-	Attribute beer_style = new Attribute("beer_style", rq.common.types.Str50.class);
-	Attribute review_profilename = new Attribute("review_profilename", rq.common.types.Str50.class);
-	Attribute review_time = new Attribute("review_time",java.lang.Integer.class);
-	Attribute review_taste = new Attribute("review_taste",java.lang.Double.class);
-	Attribute beer_name = new Attribute("beer_name", rq.common.types.Str50.class);
-	Attribute brewery_id = new Attribute("brewery_id", java.lang.Integer.class);
-	Attribute review_aroma = new Attribute("review_aroma", java.lang.Double.class);
-	Attribute beer_abv = new Attribute("beer_abv", java.lang.Double.class);
-	Attribute review_overall = new Attribute("review_overall", java.lang.Double.class);
-	Attribute review_appearance = new Attribute("review_appearance", java.lang.Double.class);
-	Attribute beer_beerid = new Attribute("beer_beerid", java.lang.Integer.class);
-	Attribute review_palate = new Attribute("review_palate", java.lang.Double.class);
+	Attribute<Str50> brewery_name = new Attribute<>("brewery_name", rq.common.types.Str50.class);
+	Attribute<Str50> beer_style = new Attribute<>("beer_style", rq.common.types.Str50.class);
+	Attribute<Str50> review_profilename = new Attribute<>("review_profilename", rq.common.types.Str50.class);
+	Attribute<Integer> review_time = new Attribute<>("review_time",java.lang.Integer.class);
+	Attribute<Double> review_taste = new Attribute<>("review_taste",java.lang.Double.class);
+	Attribute<Str50> beer_name = new Attribute<>("beer_name", rq.common.types.Str50.class);
+	Attribute<Integer> brewery_id = new Attribute<>("brewery_id", java.lang.Integer.class);
+	Attribute<Double> review_aroma = new Attribute<>("review_aroma", java.lang.Double.class);
+	Attribute<Double> beer_abv = new Attribute<>("beer_abv", java.lang.Double.class);
+	Attribute<Double> review_overall = new Attribute<>("review_overall", java.lang.Double.class);
+	Attribute<Double> review_appearance = new Attribute<>("review_appearance", java.lang.Double.class);
+	Attribute<Integer> beer_beerid = new Attribute<>("beer_beerid", java.lang.Integer.class);
+	Attribute<Double> review_palate = new Attribute<>("review_palate", java.lang.Double.class);
 	
-	List<Attribute> numericAttributes = 
+	List<Attribute<Double>> numericAttributes = 
 			List.of(review_taste, review_aroma, review_overall, review_appearance, review_palate);
-	List<Attribute> nominalAttributes = 
+	List<Attribute<?>> nominalAttributes = 
 			List.of(brewery_name, beer_style, review_profilename);
 	
 	//Estimation setup
 	List<Integer> slices = List.of(5/*3, 8*/);
 	List<Integer> probes = List.of(/*0,*/ 2);
-	Map<Attribute, List<Integer>> intervals =
+	Map<Attribute<?>, List<Integer>> intervals =
 			Map.of( review_taste, List.of(3),
 					review_aroma, List.of(3),
 					review_overall, List.of(3),
 					review_appearance, List.of(3),
 					review_palate, List.of(3));
-	Map<Attribute, List<Integer>> samples = 
+	Map<Attribute<Double>, List<Integer>> samples = 
 			Map.of( review_taste, List.of(3),
 					review_aroma, List.of(3),
 					review_overall, List.of(3),
 					review_appearance, List.of(3),
 					review_palate, List.of(3));
-	Map<Attribute, Double> histSampleSizes = 
+	Map<Attribute<Double>, Double> histSampleSizes = 
 			Map.of( review_taste, 1d,
 					review_aroma, 1d,
 					review_overall, 1d,
@@ -81,23 +83,23 @@ public class BeerReviews extends Experiment {
 					review_palate, 1d);
 
 	//Sample query setup
-	BiFunction<Object, Object, Double> reviewSimilarity_2 = LinearSimilarity.doubleSimilarityUntil(2d);
-	BiFunction<Object, Object, Double> reviewSimilarity_5 = LinearSimilarity.doubleSimilarityUntil(5d);
+	ISimilarity<Double> reviewSimilarity_2 = LinearSimilarities.doubleSimilarityUntil(2d);
+	ISimilarity<Double> reviewSimilarity_5 = LinearSimilarities.doubleSimilarityUntil(5d);
 	
-	Map<Attribute, Double> similarities = 
+	Map<Attribute<Double>, Double> similarities = 
 			Map.of( review_taste, 2.0d,
 					review_aroma, 2.0d,
 					review_overall, 2.0d,
 					review_appearance, 2.0d,
 					review_palate, 2.0d);
-	Map<Attribute, Collection<Integer>> _nOfCnsVls =
+	Map<Attribute<Double>, Collection<Integer>> _nOfCnsVls =
 			Map.of( review_taste, List.of(20),
 					review_aroma, List.of(20),
 					review_overall, List.of(20),
 					review_appearance, List.of(20),
 					review_palate, List.of(20));
 	
-	Map<Attribute, Collection<Double>> _parRts = 
+	Map<Attribute<Double>, Collection<Double>> _parRts = 
 			Map.of( review_taste, List.of(0.8d/*, 0.6d, 0.5d*/),
 					review_aroma, List.of(0.8d/*, 0.6d, 0.5d*/),
 					review_overall, List.of(0.8d/*, 0.6d, 0.5d*/),
@@ -130,8 +132,8 @@ public class BeerReviews extends Experiment {
 	protected TabularExpression prepareDataQuery(Table primaryData) {
 		return new Selection(primaryData, 
 				new ProductAnd(
-						new Similar(review_overall, new Constant<Double>(1.d), reviewSimilarity_5),
-						new Similar(review_appearance, new Constant<Double>(4.d), reviewSimilarity_5)));
+						new Similar<>(review_overall, new Constant<Double>(1.d), reviewSimilarity_5),
+						new Similar<>(review_appearance, new Constant<Double>(4.d), reviewSimilarity_5)));
 	}
 
 	@Override
@@ -140,27 +142,27 @@ public class BeerReviews extends Experiment {
 	}
 
 	@Override
-	protected List<Attribute> numericAttributes() {
+	protected List<Attribute<Double>> numericAttributes() {
 		return this.numericAttributes;
 	}
 
 	@Override
-	protected List<Attribute> nominalAttributes() {
+	protected List<Attribute<?>> nominalAttributes() {
 		return this.nominalAttributes;
 	}
 
 	@Override
-	protected double histSampleSize(Attribute a) {
+	protected double histSampleSize(Attribute<Double> a) {
 		return this.histSampleSizes.get(a);
 	}
 
 	@Override
-	protected List<Integer> intervals(Attribute a) {
+	protected List<Integer> intervals(Attribute<?> a) {
 		return this.intervals.get(a);
 	}
 
 	@Override
-	protected double similarUntil(Attribute a) {
+	protected double similarUntil(Attribute<Double> a) {
 		return this.similarities.get(a);
 	}
 
@@ -170,7 +172,7 @@ public class BeerReviews extends Experiment {
 	}
 
 	@Override
-	protected List<Integer> estSamples(Attribute a) {
+	protected List<Integer> estSamples(Attribute<?> a) {
 		return this.samples.get(a);
 	}
 
@@ -179,24 +181,24 @@ public class BeerReviews extends Experiment {
 		return Map.of(
 				"s1", new Selection(preparedData,
 						new InfimumAnd(
-							new LesserThanOrEquals(this.review_palate, new Constant<Double>(2.0d)),
-							new GreaterThanOrEquals(this.review_palate, new Constant<Double>(1.0d)))),
+							new LesserThanOrEquals<>(this.review_palate, new Constant<Double>(2.0d)),
+							new GreaterThanOrEquals<>(this.review_palate, new Constant<Double>(1.0d)))),
 				"s2", new Selection(preparedData,
 						new InfimumAnd(
-								new LesserThanOrEquals(this.review_taste,  new Constant<Double>(2d)),
-								new GreaterThanOrEquals(this.review_taste, new Constant<Double>(1.5d)))),
+								new LesserThanOrEquals<>(this.review_taste,  new Constant<Double>(2d)),
+								new GreaterThanOrEquals<>(this.review_taste, new Constant<Double>(1.5d)))),
 				"s3", new Selection(preparedData,
 						new InfimumAnd(
-								new LesserThanOrEquals(this.review_aroma,  new Constant<Double>(2.5d)),
-								new GreaterThanOrEquals(this.review_aroma, new Constant<Double>(2d)))),
+								new LesserThanOrEquals<>(this.review_aroma,  new Constant<Double>(2.5d)),
+								new GreaterThanOrEquals<>(this.review_aroma, new Constant<Double>(2d)))),
 				"s4", new Selection(preparedData,
 						new InfimumAnd(
-								new LesserThanOrEquals(this.review_appearance,  new Constant<Double>(2.5d)),
-								new GreaterThanOrEquals(this.review_appearance, new Constant<Double>(2d)))),
+								new LesserThanOrEquals<>(this.review_appearance,  new Constant<Double>(2.5d)),
+								new GreaterThanOrEquals<>(this.review_appearance, new Constant<Double>(2d)))),
 				"s5", new Selection(preparedData,
 						new InfimumAnd(
-								new LesserThanOrEquals(this.review_overall,  new Constant<Double>(1.5d)),
-								new GreaterThanOrEquals(this.review_overall, new Constant<Double>(1d))))
+								new LesserThanOrEquals<>(this.review_overall,  new Constant<Double>(1.5d)),
+								new GreaterThanOrEquals<>(this.review_overall, new Constant<Double>(1d))))
 				);
 	}
 
@@ -204,7 +206,7 @@ public class BeerReviews extends Experiment {
 	
 	public void plzenskyPrazdroj() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.brewery_name, new Constant<Str50>(Str50.factory("Plzensky Prazdroj, a. s."))));
+				new Equals<>(this.brewery_name, new Constant<Str50>(Str50.factory("Plzensky Prazdroj, a. s."))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(plzenskyPrazdroj));
 	}
@@ -213,7 +215,7 @@ public class BeerReviews extends Experiment {
 	
 	public void leenanau() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.brewery_name, new Constant<Str50>(Str50.factory("Leelanau Brewing Company"))));
+				new Equals<>(this.brewery_name, new Constant<Str50>(Str50.factory("Leelanau Brewing Company"))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(leenanau));
 	}
@@ -222,13 +224,13 @@ public class BeerReviews extends Experiment {
 	
 	public void brasserie() throws IOException, ClassNotInContextException, DuplicateHeaderWriteException {
 		var q = new Selection(this.getPreparedData(),
-				new Equals(this.brewery_name, new Constant<Str50>(Str50.factory("Brasserie Dunham"))));
+				new Equals<>(this.brewery_name, new Constant<Str50>(Str50.factory("Brasserie Dunham"))));
 		var data = q.eval();
 		TableWriter.spit(data, this.preparedDataFolder().resolve(brasserie));
 	}
 	
 	@Override
-	protected Map<String, List<Attribute>> smallData() {
+	protected Map<String, List<Attribute<?>>> smallData() {
 		try {
 			this.plzenskyPrazdroj();
 			this.leenanau();
@@ -243,7 +245,7 @@ public class BeerReviews extends Experiment {
 	}
 
 	@Override
-	protected List<Attribute> projectionAttributes() {
+	protected List<Attribute<?>> projectionAttributes() {
 		return List.of(this.brewery_id, this.beer_beerid);
 	}
 
@@ -253,12 +255,12 @@ public class BeerReviews extends Experiment {
 	}
 
 	@Override
-	protected Map<Attribute, Collection<Integer>> nConsideredValues() {
+	protected Map<Attribute<Double>, Collection<Integer>> nConsideredValues() {
 		return this._nOfCnsVls;
 	}
 
 	@Override
-	protected Map<Attribute, Collection<Double>> paretRatios() {
+	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._parRts;
 	}
 }

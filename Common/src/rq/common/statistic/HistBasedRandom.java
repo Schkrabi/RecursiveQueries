@@ -1,12 +1,8 @@
 package rq.common.statistic;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
@@ -17,12 +13,12 @@ import rq.common.util.Pair;
 public class HistBasedRandom {
 	private final List<Pair<Double, Interval>> distroMap;
 	private final Random random;
-	private final RepresentativeProvider representativeProvider;
+	private final RepresentativeProvider<Double> representativeProvider;
 	
 	private HistBasedRandom(
 			List<Pair<Double, Interval>> distroMap, 
 			Random random,
-			RepresentativeProvider representativeProvider) {
+			RepresentativeProvider<Double> representativeProvider) {
 		this.distroMap = distroMap;
 		this.random = random;
 		this.representativeProvider = representativeProvider;
@@ -33,7 +29,7 @@ public class HistBasedRandom {
 		// 0.33
 		var ticket = this.random.nextDouble();
 		for(var e : this.distroMap) {
-			if(ticket > e.first) {
+			if(ticket > e.first.doubleValue()) {
 				return this.representativeProvider.representative(e.second);
 			}
 		}
@@ -45,9 +41,9 @@ public class HistBasedRandom {
 	}
 	
 	public static HistBasedRandom fromSampledHist(
-			SampledHistogram hist, 
+			SampledHistogram<Double> hist, 
 			Random rand,
-			RepresentativeProvider reprsentativeProvider) {
+			RepresentativeProvider<Double> reprsentativeProvider) {
 		//sample size : 50, count = 100
 		//0 = 10; 50 = 30; 100 = 60
 		//0.0 : (0,50]; 0.1 : (50,100]; 0.4 : (100,150]
@@ -66,22 +62,22 @@ public class HistBasedRandom {
 	}
 	
 	public static HistBasedRandom fromSampledHist(
-			SampledHistogram hist,
+			SampledHistogram<Double> hist,
 			Random rand) {
 		return fromSampledHist(hist, rand, new RandRepresentativeProvider(rand));
 	}
 	
 	public static HistBasedRandom fromSampledHist(
-			SampledHistogram hist,
+			SampledHistogram<Double> hist,
 			long seed) {
 		var rand = new Random(seed);
 		return fromSampledHist(hist, rand);
 	}
 	
 	public static HistBasedRandom fromDataSlicedHist(
-			DataSlicedHistogram hist,
+			DataSlicedHistogram<Double> hist,
 			Random rand,
-			RepresentativeProvider representativeProvider) {
+			RepresentativeProvider<Double> representativeProvider) {
 		var cnt = hist.totalSize();
 		List<Pair<Double, Interval>> h = new ArrayList<>();
 		var agg = 0.0d;
@@ -96,7 +92,7 @@ public class HistBasedRandom {
 	}
 	
 	public static HistBasedRandom fromDataSLicedHist(
-			DataSlicedHistogram hist,
+			DataSlicedHistogram<Double> hist,
 			Random rand){
 		return fromDataSlicedHist(hist, rand, new RandRepresentativeProvider(rand));
 	}

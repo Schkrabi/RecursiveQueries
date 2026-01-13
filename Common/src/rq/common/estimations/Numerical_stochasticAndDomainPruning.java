@@ -14,13 +14,13 @@ public class Numerical_stochasticAndDomainPruning extends Numerical_domainPrunin
 	public final int samples;
 	
 	public Numerical_stochasticAndDomainPruning(Selection selection, int resultSlices,
-			 double domainSampleSize, int samples, rq.common.statistic.SampledHistogram h) {
+			 double domainSampleSize, int samples, rq.common.statistic.SampledHistogram<Double> h) {
 		super(selection, resultSlices, domainSampleSize, h);
 		this.samples = samples;
 	}
 
 	@Override
-	protected RankHistogram estimateProbability(Set<Object> histValues) {		
+	protected RankHistogram estimateProbability(Set<Double> histValues) {		
 		int localSamples = Math.min(histValues.size(), this.samples);
 		
 		long count = (long)(histValues.stream()
@@ -51,7 +51,7 @@ public class Numerical_stochasticAndDomainPruning extends Numerical_domainPrunin
 			double domainSampleSize, 
 			int samples,
 			int probes,
-			rq.common.statistic.SampledHistogram h) {
+			rq.common.statistic.SampledHistogram<Double> h) {
 		var me = new Numerical_stochasticAndDomainPruning(selection, resultSlices, domainSampleSize, samples, h);
 		me.setProbes(probes);
 		return me.estimate();

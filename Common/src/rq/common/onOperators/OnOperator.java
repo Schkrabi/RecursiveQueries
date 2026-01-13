@@ -11,11 +11,11 @@ import rq.common.table.Schema;
  * @author Mgr. Radomir Skrabal
  *
  */
-public abstract class OnOperator {
-	public final RecordValue left;
-	public final RecordValue right;
+public abstract class OnOperator<T> {
+	public final RecordValue<T> left;
+	public final RecordValue<T> right;
 	
-	protected OnOperator(RecordValue left, RecordValue right) {
+	protected OnOperator(RecordValue<T> left, RecordValue<T> right) {
 		this.left = left;
 		this.right = right;
 	}

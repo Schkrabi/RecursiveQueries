@@ -16,7 +16,6 @@ import rq.common.exceptions.AttributeNotInSchemaException;
 import rq.common.interfaces.LazyExpression;
 import rq.common.io.contexts.ClassNotInContextException;
 import rq.common.io.contexts.ValueSerializerContext;
-import rq.common.table.Attribute;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 import rq.files.exceptions.DuplicateHeaderWriteException;
@@ -57,7 +56,7 @@ public class RecordWriter implements Closeable, Flushable {
 	private String[] serializeHeader(Schema schema) {
 		String[] serialized = new String[schema.size()+1];
 		int i = 0;
-		for(Attribute a : schema) {
+		for(var a : schema) {
 			String s = AttributeSerializer.serialize(a);
 			serialized[i] = s;
 			i++;
@@ -91,7 +90,7 @@ public class RecordWriter implements Closeable, Flushable {
 	private String[] serialize(Record record) throws ClassNotInContextException {
 		String[] serialized = new String[record.schema.size()+1];
 		int i = 0;
-		for(Attribute a : record.schema) {
+		for(var a : record.schema) {
 			Object value = null;
 			try {
 				value = record.get(a);

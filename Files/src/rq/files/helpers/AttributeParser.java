@@ -19,7 +19,7 @@ public class AttributeParser {
 	 * @return parsed attribute
 	 * @throws ClassNotFoundException
 	 */
-	public Attribute parse() 
+	public <T> Attribute<T> parse() 
 			throws ClassNotFoundException {
 		return Attribute.parse(parsed);
 	}
@@ -30,7 +30,7 @@ public class AttributeParser {
 	 * @return parsed attribute
 	 * @throws ClassNotFoundException
 	 */
-	public static Attribute parse(String headerColumn)
+	public static <T> Attribute<T> parse(String headerColumn)
 		throws ClassNotFoundException {
 		AttributeParser p = new AttributeParser(headerColumn);
 		return p.parse();

@@ -19,7 +19,8 @@ import rq.common.exceptions.TypeSchemaMismatchException;
 class RecordTest {
 	
 	Schema schema;
-	Attribute a, b;
+	Attribute<Integer> a;
+	Attribute<String> b;
 	Record r1, r2, r3, r4;
 
 	@BeforeAll
@@ -32,35 +33,35 @@ class RecordTest {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
 		this.schema = Schema.factory(a, b);
 		
 		r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				1.0d);
-		Attribute c = new Attribute("C", Integer.class);
-		Attribute d = new Attribute("D", String.class);
+		Attribute<Integer> c = new Attribute<>("C", Integer.class);
+		Attribute<String> d = new Attribute<>("D", String.class);
 		r2 = Record.factory(
 				Schema.factory(c, d), 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 1), 
-						new Record.AttributeValuePair(d, "foo")), 
+						new Record.AttributeValuePair<>(c, 1), 
+						new Record.AttributeValuePair<>(d, "foo")), 
 				1.0d);
 		r3 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				1.0d);
 		r4 = Record.factory(
 				schema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b,"foo")), 
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b,"foo")), 
 				0.8d);
 	}
 
@@ -75,8 +76,8 @@ class RecordTest {
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 1),
-								new Record.AttributeValuePair(b, "foo")),
+								new Record.AttributeValuePair<>(a, 1),
+								new Record.AttributeValuePair<>(b, "foo")),
 						1.0d).hashCode());
 		
 		assertNotEquals(this.r1.hashCode(), this.r2.hashCode());
@@ -92,19 +93,19 @@ class RecordTest {
 					Record.factory(
 							this.schema,
 							Arrays.asList(
-								new Record.AttributeValuePair(a, "foo"), 
-								new Record.AttributeValuePair(b, "bar")),
+								new Record.AttributeValuePair<>(a, "foo"), 
+								new Record.AttributeValuePair<>(b, "bar")),
 							1.0d);
 				});
 	}
 
 	@Test
 	void testGet() throws AttributeNotInSchemaException {
-		assertEquals("foo", this.r1.get(new Attribute("B", String.class)));
+		assertEquals("foo", this.r1.get(new Attribute<>("B", String.class)));
 		assertThrows(
 				AttributeNotInSchemaException.class,
 				() -> {
-					this.r1.get(new Attribute("C", Integer.class));
+					this.r1.get(new Attribute<>("C", Integer.class));
 				});
 		assertEquals("foo", this.r1.get("B"));
 		assertThrows(
@@ -126,8 +127,8 @@ class RecordTest {
 				Record.factory(
 						this.schema,
 						Arrays.asList(
-								new Record.AttributeValuePair(a, 1),
-								new Record.AttributeValuePair(b, "foo")),
+								new Record.AttributeValuePair<>(a, 1),
+								new Record.AttributeValuePair<>(b, "foo")),
 						1.0d));
 		
 		assertNotEquals(this.r1, this.r2);
@@ -146,7 +147,7 @@ class RecordTest {
 	@Test
 	void testSet() throws AttributeNotInSchemaException, TypeSchemaMismatchException {
 		assertThrows(AttributeNotInSchemaException.class, 
-				() -> r1.set(new Attribute("C", Integer.class), "foo"));
+				() -> r1.set(new Attribute<>("C", Integer.class), "foo"));
 		assertThrows(TypeSchemaMismatchException.class,
 				() -> r1.set(this.a, "foo"));
 		Record s = r1.set(this.b, "bar");

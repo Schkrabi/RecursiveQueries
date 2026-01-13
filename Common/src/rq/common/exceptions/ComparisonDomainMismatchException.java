@@ -15,9 +15,9 @@ public class ComparisonDomainMismatchException extends Exception {
 	 * 
 	 */
 	private static final long serialVersionUID = 6100649929719460196L;
-	public final Attribute attribute1, attribute2;
+	public final Attribute<?> attribute1, attribute2;
 	
-	public ComparisonDomainMismatchException(Attribute attribute1, Attribute attribute2) {
+	public ComparisonDomainMismatchException(Attribute<?> attribute1, Attribute<?> attribute2) {
 		super(new StringBuilder()
 				.append("Cannot compare attribute ")
 				.append(attribute1)

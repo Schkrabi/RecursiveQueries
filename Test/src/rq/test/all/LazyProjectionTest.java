@@ -28,7 +28,8 @@ class LazyProjectionTest {
 		+	"3, \"baz\", 0.7";
 	
 	Schema schema, subschema, schema2;
-	Attribute a, b, c;
+	Attribute<Integer> a, c;
+	Attribute<String> b;
 	Record r1, r2, r3;
 	
 	LazyTable table = null, table2 = null;
@@ -38,9 +39,9 @@ class LazyProjectionTest {
 	void setUp() throws Exception {
 		table = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
 		table2 = LazyTable.open(new ByteArrayInputStream(this.data.getBytes()));
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.c = new Attribute("C", Integer.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.c = new Attribute<>("C", Integer.class);
 		this.schema = Schema.factory(a, b);		
 		
 		this.subschema = Schema.factory(a);
@@ -49,26 +50,26 @@ class LazyProjectionTest {
 		this.r1 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")), 
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")), 
 				0.8d);
 		this.r2 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b, "bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b, "bar")), 
 				0.5d);
 		this.r3 = Record.factory(
 				this.schema,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(b, "baz")), 
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(b, "baz")), 
 				0.7d);
 		
 		p1 = LazyProjection.factory(table, subschema);
 		p2 = LazyProjection.factory(table2, 
-				new Projection.To(a, c), 
-				new Projection.To(b, b));
+				new Projection.To<>(a, c), 
+				new Projection.To<>(b, b));
 	}
 
 	@AfterEach
@@ -90,7 +91,7 @@ class LazyProjectionTest {
 				NotSubschemaException.class,
 				() -> LazyProjection.factory(
 						table, 
-						Schema.factory(new Attribute("C", Integer.class)))
+						Schema.factory(new Attribute<>("C", Integer.class)))
 				);
 	}
 
@@ -105,19 +106,19 @@ class LazyProjectionTest {
 		assertEquals(Record.factory(
 				this.subschema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1)), 
+						new Record.AttributeValuePair<>(a, 1)), 
 				0.8d),
 				p1.next());
 		assertEquals(Record.factory(
 				this.subschema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2)), 
+						new Record.AttributeValuePair<>(a, 2)), 
 				0.5d),
 				p1.next());
 		assertEquals(Record.factory(
 				this.subschema, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3)), 
+						new Record.AttributeValuePair<>(a, 3)), 
 				0.7d),
 				p1.next());
 		assertNull(p1.next());
@@ -125,22 +126,22 @@ class LazyProjectionTest {
 		assertEquals(Record.factory(
 				this.schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 1), 
-						new Record.AttributeValuePair(b, "foo")), 
+						new Record.AttributeValuePair<>(c, 1), 
+						new Record.AttributeValuePair<>(b, "foo")), 
 				0.8d),
 				p2.next());
 		assertEquals(Record.factory(
 				this.schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 2), 
-						new Record.AttributeValuePair(b,"bar")),  
+						new Record.AttributeValuePair<>(c, 2), 
+						new Record.AttributeValuePair<>(b,"bar")),  
 				0.5d),
 				p2.next());
 		assertEquals(Record.factory(
 				this.schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(c, 3), 
-						new Record.AttributeValuePair(b, "baz")), 
+						new Record.AttributeValuePair<>(c, 3), 
+						new Record.AttributeValuePair<>(b, "baz")), 
 				0.7d),
 				p2.next());
 		assertNull(p2.next());

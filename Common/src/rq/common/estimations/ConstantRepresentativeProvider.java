@@ -1,18 +1,18 @@
 package rq.common.estimations;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.IntervalEstimation.RepresentativeProvider;
 import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.DataSlicedHistogram;
 import rq.common.statistic.DataSlicedHistogram.Interval;
+import rq.common.similarities.ISimilarity;
 
-public class ConstantRepresentativeProvider implements RepresentativeProvider {
-	public final double representative;
+public class ConstantRepresentativeProvider<T> implements RepresentativeProvider<T> {
+	public final T representative;
 	
-	public ConstantRepresentativeProvider(double representative) {
+	public ConstantRepresentativeProvider(T representative) {
 		this.representative = representative;
 	}
 
@@ -23,53 +23,53 @@ public class ConstantRepresentativeProvider implements RepresentativeProvider {
 	
 	@Override
 	public Map<String, String> params() {
-		return Map.of("K", Double.toString(this.representative));
+		return Map.of("K", this.representative.toString());
 	}
 
 	@Override
-	public double representative(Interval interval) {
+	public T representative(Interval interval) {
 		return this.representative;
 	}
 
-	public static IntervalEstimation eqdK(
+	public static IntervalEstimation<Double> eqdK(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquidistantHistogram hist,
+			ISimilarity<Double> similarity,
+			EquidistantHistogram<Double> hist,
 			double representative) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
-				new ConstantRepresentativeProvider(representative),
+				new ConstantRepresentativeProvider<>(representative),
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
 				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
 		return est;
 	}
 	
-	public static IntervalEstimation eqnK(
+	public static IntervalEstimation<Double> eqnK(
 			int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			EquinominalHistogram hist,
+			ISimilarity<Double> similarity,
+			EquinominalHistogram<Double> hist,
 			double representative) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
-				new ConstantRepresentativeProvider(representative),
+				new ConstantRepresentativeProvider<>(representative),
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
 				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
 		return est;
 	}
 	
-	public static IntervalEstimation fromHist(int slices, 
-			BiFunction<Object, Object, Double> similarity,
-			DataSlicedHistogram hist,
+	public static IntervalEstimation<Double> fromHist(int slices, 
+			ISimilarity<Double> similarity,
+			DataSlicedHistogram<Double> hist,
 			double representative) {
-		var est = new IntervalEstimation(
+		var est = new IntervalEstimation<>(
 				slices, 
 				similarity,
 				hist,
-				new ConstantRepresentativeProvider(representative),
+				new ConstantRepresentativeProvider<>(representative),
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
 				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
 		return est;

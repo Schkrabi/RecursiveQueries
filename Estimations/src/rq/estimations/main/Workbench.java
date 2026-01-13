@@ -5,13 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,7 +16,6 @@ import java.util.stream.Stream;
 import com.opencsv.exceptions.CsvValidationException;
 
 import rq.common.estimations.IEstimation;
-import rq.common.estimations.IntervalEstimation;
 import rq.common.estimations.Numerical;
 import rq.common.estimations.Numerical_domainPruning;
 import rq.common.estimations.Numerical_stochastic;
@@ -33,15 +29,15 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.io.contexts.ClassNotInContextException;
-import rq.common.onOperators.Constant;
 import rq.common.operators.Selection;
-import rq.common.restrictions.Similar;
-import rq.common.statistic.AttributeHistogram;
-import rq.common.statistic.EquidistantHistogram;
-import rq.common.statistic.EquinominalHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
 import rq.common.table.Attribute;
+import rq.estimations.experiments.AmazonBookScrappings;
+import rq.estimations.experiments.AnimeDataset2023;
+import rq.estimations.experiments.BeerReviews;
+import rq.estimations.experiments.TopRankedRealMovies;
+import rq.estimations.experiments.VideoGameSales;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
 import rq.files.io.TableReader;
@@ -148,7 +144,7 @@ public class Workbench {
 				.toString();
 	}
 	
-	public static Path mcvFile(Path dataFile, Attribute a) {
+	public static Path mcvFile(Path dataFile, Attribute<?> a) {
 		return Workbench.histFolder(dataFile)
 				.resolve(Workbench.mcvName(dataFile.getFileName().toString(), a.name));
 	}
@@ -206,7 +202,7 @@ public class Workbench {
 		Files.writeString(Paths.get(path, fileName), sb.toString());
 	}
 	
-	public static Path restrictionEstimationDir(Path base, Attribute a) {
+	public static Path restrictionEstimationDir(Path base, Attribute<?> a) {
 		var path = base.resolve(a.name);
 		if(!Files.exists(path)) {
 			try {
@@ -218,7 +214,7 @@ public class Workbench {
 		return path;
 	}
 	
-	public static Path restrictionEstimationPath(Path base, Attribute a, IEstimation est) {
+	public static Path restrictionEstimationPath(Path base, Attribute<?> a, IEstimation est) {
 		return restrictionEstimationDir(base, a).resolve(est.filename());
 	}
 	
@@ -262,7 +258,7 @@ public class Workbench {
 		return fld;
 	}
 	
-	public static void num(Selection selection, int slices, int probes, SampledHistogram attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+	public static void num(Selection selection, int slices, int probes, SampledHistogram<Double> attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
 		var est = Numerical.estimateStatic(selection, slices, attHist.sampleSize, probes, attHist);
 		est = ReintroduceRanks.recalculate(est, hist);
 		est.writeFile(Path.of(path, numEstName(namePrefix, slices, probes)));
@@ -279,7 +275,7 @@ public class Workbench {
 				.toString();
 	}
 	
-	public static void numP(Selection selection, int slices, int probes, SampledHistogram attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+	public static void numP(Selection selection, int slices, int probes, SampledHistogram<Double> attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
 		var est = Numerical_domainPruning.estimateStatic(selection, slices, attHist.sampleSize, probes, attHist);
 		est = ReintroduceRanks.recalculate(est, hist);
 		est.writeFile(Path.of(path, numPEstName(namePrefix, slices, probes)));
@@ -296,7 +292,7 @@ public class Workbench {
 				.toString();
 	}
 	
-	public static void numS(Selection selection, int slices, int probes, int samples, SampledHistogram attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+	public static void numS(Selection selection, int slices, int probes, int samples, SampledHistogram<Double> attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
 		var est = Numerical_stochastic.estimateStatic(selection, slices, attHist.sampleSize, samples, probes, attHist);
 		est = ReintroduceRanks.recalculate(est, hist);
 		est.writeFile(Path.of(path, numSEstName(namePrefix, slices, probes, samples)));
@@ -315,7 +311,7 @@ public class Workbench {
 				.toString();
 	}
 	
-	public static void numPS(Selection selection, int slices, int probes, int samples, SampledHistogram attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
+	public static void numPS(Selection selection, int slices, int probes, int samples, SampledHistogram<Double> attHist, RankHistogram hist, String path, String namePrefix) throws IOException {
 		var est = Numerical_stochasticAndDomainPruning.estimateStatic(selection, slices, attHist.sampleSize, samples, probes, attHist);
 		est = ReintroduceRanks.recalculate(est, hist);
 		est.writeFile(Path.of(path, numPSEstName(namePrefix, slices, probes, samples)));

@@ -1,7 +1,6 @@
 package queries;
 
 import java.time.Duration;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import annotations.CallingArg;
@@ -22,8 +21,10 @@ import rq.common.operators.LazyJoin;
 import rq.common.operators.LazyProjection;
 import rq.common.operators.LazyRestriction;
 import rq.common.operators.Projection;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
+import rq.common.similarities.LinearSimilarities;
 import rq.common.tools.AlgorithmMonitor;
+import rq.common.types.DateTime;
 import rq.common.table.LazyFacade;
 
 @CallingArg("electricityWeekTra")
@@ -42,14 +43,14 @@ public class Queries2_Electricity_Week_tra extends Queries2 {
 	}
 	
 	private Duration _stepSimilarity = Duration.ofDays(20);
-	private BiFunction<Object, Object, Double> stepSimilarity = 
-			LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+	private ISimilarity<DateTime> stepSimilarity = 
+			LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	
 	@QueryParameter("stepSimilarity")
 	public void setStepSimilarity(String similarityScale) {
 		this._stepSimilarity = Duration.ofDays(Integer.parseInt(similarityScale));
 		this.stepSimilarity = 
-				LinearSimilarity.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
+				LinearSimilarities.dateTimeSimilarityUntil(_stepSimilarity.toSeconds());
 	}
 	
 	@QueryParameterGetter("stepSimilarity")
@@ -114,10 +115,10 @@ public class Queries2_Electricity_Week_tra extends Queries2 {
 					LazyRestriction.factory(
 							new LazyFacade(iTable), 
 							r -> (Double)r.getNoThrow(Electricity.value) > peakMultiplier * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
-					new Projection.To(Electricity.customer, Electricity.customer),
-					new Projection.To(Electricity.time, Electricity.fromTime),
-					new Projection.To(Electricity.time, Electricity.toTime),
-					new Projection.To(new Constant<Integer>(1), Electricity.peaks));
+					new Projection.To<>(Electricity.customer, Electricity.customer),
+					new Projection.To<>(Electricity.time, Electricity.fromTime),
+					new Projection.To<>(Electricity.time, Electricity.toTime),
+					new Projection.To<>(new Constant<Integer>(1), Electricity.peaks));
 			};
 	}
 
@@ -131,15 +132,15 @@ public class Queries2_Electricity_Week_tra extends Queries2 {
 									LazyRestriction.factory(
 											new LazyFacade(iTable), 
 											r -> (Double)r.getNoThrow(Electricity.value) > peakMultiplierAfterFirst * (Double)r.getNoThrow(Electricity.movingAvg) ? r.rank : 0.0d), 
-									new OnEquals(Electricity.customer, Electricity.customer),
-									new OnSimilar(
+									new OnEquals<>(Electricity.customer, Electricity.customer),
+									new OnSimilar<>(
 											new PlusDateTime(Electricity.toTime, timeStep), 
 											Electricity.time, 
 											this.stepSimilarity)), 
-							new Projection.To(Join.left(Electricity.customer), Electricity.customer),
-							new Projection.To(Electricity.fromTime, Electricity.fromTime),
-							new Projection.To(Electricity.time, Electricity.toTime),
-							new Projection.To(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
+							new Projection.To<>(Join.left(Electricity.customer), Electricity.customer),
+							new Projection.To<>(Electricity.fromTime, Electricity.fromTime),
+							new Projection.To<>(Electricity.time, Electricity.toTime),
+							new Projection.To<>(new PlusInteger(Electricity.peaks, new Constant<Integer>(1)), Electricity.peaks));
 				};
 		};
 	}
@@ -150,7 +151,7 @@ public class Queries2_Electricity_Week_tra extends Queries2 {
 			LazyRestriction.factory(
 				new LazyFacade(iTable),
 				re -> {
-					int numOfPeaks = (Integer)re.getNoThrow(Electricity.peaks);
+					int numOfPeaks = re.getNoThrow(Electricity.peaks);
 					if(numOfPeaks >= numberOfPeaks) {
 						return re.rank;
 					}

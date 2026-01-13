@@ -92,7 +92,7 @@ public class FileMappedTable implements Closeable, Table {
 	 * @throws IOException
 	 */
 	public static FileMappedTable factory(Schema schema, int recordCapacity) throws IOException {
-		List<Attribute> failAttrs = FileMappedTable.validateSchema(schema);
+		List<Attribute<?>> failAttrs = FileMappedTable.validateSchema(schema);
 		if(!failAttrs.isEmpty()) {
 			throw new DomainNotByteSerializeableException(failAttrs.stream().findAny().get().domain);
 		}		
@@ -130,7 +130,7 @@ public class FileMappedTable implements Closeable, Table {
 	 * @param schema 
 	 * @return list of attributes
 	 */
-	private static List<Attribute> validateSchema(Schema schema) {
+	private static List<Attribute<?>> validateSchema(Schema schema) {
 		return schema.stream()
 				.filter(a -> !(a.domain.equals(Double.class) 
 							|| a.domain.equals(Float.class) 
@@ -233,10 +233,44 @@ public class FileMappedTable implements Closeable, Table {
 	 * @throws TableRecordSchemaMismatch 
 	 */
 	@Override
-	public boolean insert(Collection<Record.AttributeValuePair> values, double rank)
+	public boolean insert(Collection<Record.AttributeValuePair<?>> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException, TableRecordSchemaMismatch {
 		Record r = Record.factory(this.schema, values, rank);
 		return this.insert(r);
+	}
+	
+	
+	private Number readNumber(Class<? extends Number> domain) {
+		if(domain.isAssignableFrom(Double.class)) {
+			return this.mappedBuffer.getDouble();
+		}
+		if(domain.isAssignableFrom(Float.class)) {
+			return this.mappedBuffer.getFloat();
+		}
+		if(domain.isAssignableFrom(Integer.class)) {
+			return this.mappedBuffer.getInt();
+		}
+		if(domain.isAssignableFrom(Long.class)) {
+			return this.mappedBuffer.getLong();
+		}
+		if(domain.isAssignableFrom(Short.class)) {
+			return this.mappedBuffer.getShort();
+		}
+		throw new RuntimeException("Attribute not supported number " + domain.toString());
+	}
+	
+	private Object readBas(Class<? extends ByteArraySerializable> domain) {
+		ByteArraySerializable value = null;
+		try {
+			value = (ByteArraySerializable)domain.getConstructor().newInstance();
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+		byte[] bytes = new byte[value.byteArraySize()];
+		this.mappedBuffer.get(bytes);
+		value.fromBytes(bytes);
+		return value;
 	}
 	
 	/**
@@ -244,36 +278,19 @@ public class FileMappedTable implements Closeable, Table {
 	 * @param attribute
 	 * @return value
 	 */
-	private Object readValue(Attribute attribute) {
-		if(attribute.domain.isAssignableFrom(Double.class)) {
-			return this.mappedBuffer.getDouble();
+	@SuppressWarnings({ "unchecked" })
+	private Object readValue(Class<?> domain) {
+		if(domain.isAssignableFrom(Double.class)
+				|| domain.isAssignableFrom(Float.class)
+				|| domain.isAssignableFrom(Integer.class)
+				|| domain.isAssignableFrom(Long.class)
+				|| domain.isAssignableFrom(Short.class)) {
+			return this.readNumber((Class<? extends Number>)domain);
 		}
-		if(attribute.domain.isAssignableFrom(Float.class)) {
-			return this.mappedBuffer.getFloat();
+		else if(ByteArraySerializable.class.isAssignableFrom(domain)) {
+			return this.readBas((Class<? extends ByteArraySerializable>)domain);
 		}
-		if(attribute.domain.isAssignableFrom(Integer.class)) {
-			return this.mappedBuffer.getInt();
-		}
-		if(attribute.domain.isAssignableFrom(Long.class)) {
-			return this.mappedBuffer.getLong();
-		}
-		if(attribute.domain.isAssignableFrom(Short.class)) {
-			return this.mappedBuffer.getShort();
-		}
-		if(ByteArraySerializable.class.isAssignableFrom(attribute.domain)) {
-			ByteArraySerializable value = null;
-			try {
-				value = (ByteArraySerializable)attribute.domain.getConstructor().newInstance();
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				throw new RuntimeException(e);
-			}
-			byte[] bytes = new byte[value.byteArraySize()];
-			this.mappedBuffer.get(bytes);
-			value.fromBytes(bytes);
-			return value;
-		}
-		throw new DomainNotByteSerializeableException(attribute.domain);
+		throw new DomainNotByteSerializeableException(domain);
 	}
 	
 	/**
@@ -281,9 +298,9 @@ public class FileMappedTable implements Closeable, Table {
 	 * @return record
 	 */
 	private Record readRecord() {
-		List<Record.AttributeValuePair> vls = 
+		List<Record.AttributeValuePair<?>> vls = 
 			this.schema.stream()
-				.map(a -> new Record.AttributeValuePair(a, this.readValue(a)))
+				.map(a -> new Record.AttributeValuePair<>(a, this.readValue(a.domain)))
 				.collect(Collectors.toList());
 		
 		double rank = this.mappedBuffer.getDouble();

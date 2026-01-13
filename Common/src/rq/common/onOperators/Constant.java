@@ -3,7 +3,7 @@ package rq.common.onOperators;
 import rq.common.table.Record;
 import rq.common.table.Schema;
 
-public class Constant<T> implements RecordValue {
+public class Constant<T> implements RecordValue<T> {
 
 	T value;
 	
@@ -21,9 +21,10 @@ public class Constant<T> implements RecordValue {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Class<?> domain() {
-		return this.value.getClass();
+	public Class<T> domain() {
+		return (Class<T>)this.value.getClass();
 	}
 
 	@Override

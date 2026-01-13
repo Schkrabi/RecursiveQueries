@@ -2,7 +2,6 @@ package rq.common.estimations;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SampledHistogram;
@@ -11,15 +10,15 @@ import rq.common.util.Pair;
 public class ParetWeightedEstimation_sampledHist implements IEstimation {
 
 	public final int slices;
-	public final BiFunction<Object, Object, Double> similarity;
+	public final rq.common.similarities.ISimilarity<Double> similarity;
 	public final int numOfConsideredValues;
-	public final SampledHistogram hist;
+	public final SampledHistogram<Double> hist;
 	
 	public ParetWeightedEstimation_sampledHist(
 			int resultSlices,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			int numOfConsideredValues,
-			SampledHistogram hist) {
+			SampledHistogram<Double> hist) {
 		this.slices = resultSlices;
 		this.similarity = similarity;
 		this.numOfConsideredValues = numOfConsideredValues;
@@ -66,9 +65,9 @@ public class ParetWeightedEstimation_sampledHist implements IEstimation {
 	
 	public static RankHistogram estimate(
 			int resultSlices,
-			BiFunction<Object, Object, Double> similarity,
+			rq.common.similarities.ISimilarity<Double> similarity,
 			int numOfConsideredValues,
-			SampledHistogram hist) {
+			SampledHistogram<Double> hist) {
 		var est = new ParetWeightedEstimation_sampledHist(resultSlices, similarity, numOfConsideredValues, hist);
 		var rslt = est.estimate();
 		return rslt;

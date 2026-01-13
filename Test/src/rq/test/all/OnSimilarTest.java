@@ -12,54 +12,55 @@ import rq.common.table.Record;
 import rq.common.table.Schema;
 
 import rq.common.onOperators.OnSimilar;
-import rq.common.similarities.NaiveSimilarity;
+import rq.common.similarities.LinearSimilarities;
 
 class OnSimilarTest {
 
 	Schema schema1, schema2;
-	Attribute a, b, c;
+	Attribute<Integer> a;
+	Attribute<String> b, c;
 	Record r11, r12, r21, r22;
-	OnSimilar onSimilar;
+	OnSimilar<Integer> onSimilar;
 	
 	@BeforeEach
 	void setUp() throws Exception {
-		this.a = new Attribute("A", Integer.class);
-		this.b = new Attribute("B", String.class);
-		this.c = new Attribute("C", String.class);
+		this.a = new Attribute<>("A", Integer.class);
+		this.b = new Attribute<>("B", String.class);
+		this.c = new Attribute<>("C", String.class);
 		schema1 = Schema.factory(a, b);
 		schema2 = Schema.factory(a, c);
 		r11 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(b, "foo")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(b, "foo")),
 				0.8d);
 		r12 = Record.factory(
 				schema1, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 2), 
-						new Record.AttributeValuePair(b,"bar")), 
+						new Record.AttributeValuePair<>(a, 2), 
+						new Record.AttributeValuePair<>(b,"bar")), 
 				0.7d);
 		r21 = Record.factory(
 				schema2, 
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 1), 
-						new Record.AttributeValuePair(c, "baz")),
+						new Record.AttributeValuePair<>(a, 1), 
+						new Record.AttributeValuePair<>(c, "baz")),
 				1.0d);
 		r22 = Record.factory(
 				schema2,
 				Arrays.asList(
-						new Record.AttributeValuePair(a, 3), 
-						new Record.AttributeValuePair(c, "bah")),
+						new Record.AttributeValuePair<>(a, 3), 
+						new Record.AttributeValuePair<>(c, "bah")),
 				0.4d);
 		
-		onSimilar = new OnSimilar(a, a, NaiveSimilarity.INTEGER_SIMILARITY);
+		onSimilar = new OnSimilar<>(a, a, LinearSimilarities.integerSimilarityUntil(2));
 	}
 
 	@Test
 	void testEval() {
 		assertEquals(1.0d, this.onSimilar.eval(r11, r11));
-		assertEquals(0.25d, this.onSimilar.eval(r11, r12));
+		assertEquals(0.5d, this.onSimilar.eval(r11, r12));
 		assertEquals(0.0d, this.onSimilar.eval(r11, r22));
 	}
 

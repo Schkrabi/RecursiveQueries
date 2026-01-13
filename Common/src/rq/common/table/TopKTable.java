@@ -92,7 +92,7 @@ public class TopKTable implements Table {
 	}
 
 	@Override
-	public boolean insert(Collection<AttributeValuePair> values, double rank)
+	public boolean insert(Collection<AttributeValuePair<?>> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException, TableRecordSchemaMismatch {
 		Record r = Record.factory(this.schema, values, rank);
 		return this.insert(r);

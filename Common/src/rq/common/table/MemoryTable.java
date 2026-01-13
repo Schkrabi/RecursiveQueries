@@ -71,7 +71,7 @@ public class MemoryTable implements Table, LazyIterable{
 	 * @throws TableRecordSchemaMismatch 
 	 */
 	@Override
-	public boolean insert(Collection<Record.AttributeValuePair> values, double rank)
+	public boolean insert(Collection<Record.AttributeValuePair<?>> values, double rank)
 			throws TypeSchemaMismatchException, AttributeNotInSchemaException, TableRecordSchemaMismatch {
 		Record r = Record.factory(this.schema, values, rank);
 		return this.insert(r);

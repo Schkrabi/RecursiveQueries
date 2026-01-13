@@ -19,9 +19,9 @@ import rq.common.table.Attribute;
  */
 class AttributeTest {
 	
-	Attribute As = new Attribute("A", String.class);
-	Attribute Ai = new Attribute("A", Integer.class);
-	Attribute Bs = new Attribute("B", String.class);
+	Attribute<String> As = new Attribute<>("A", String.class);
+	Attribute<Integer> Ai = new Attribute<>("A", Integer.class);
+	Attribute<String> Bs = new Attribute<>("B", String.class);
 
 	/**
 	 * @throws java.lang.Exception
@@ -67,7 +67,7 @@ class AttributeTest {
 	 */
 	@Test
 	void testAttribute() {
-		assertAll(() -> new Attribute("A", Integer.class));
+		assertAll(() -> new Attribute<Integer>("A", Integer.class));
 	}
 
 	/**

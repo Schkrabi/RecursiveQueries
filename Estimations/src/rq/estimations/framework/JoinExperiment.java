@@ -1,4 +1,4 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,11 +22,13 @@ import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.RankHistogram;
 import rq.common.table.Attribute;
 import rq.common.table.LazyFacade;
+import rq.estimations.main.Workbench;
 import rq.files.exceptions.ColumnOrderingNotInitializedException;
 import rq.files.exceptions.DuplicateHeaderWriteException;
+import rq.files.helpers.JsonSerializer;
 import rq.files.io.TableReader;
 
-public abstract class JoinExperiment {
+public abstract class JoinExperiment<T> {
 
 	public final Experiment parent;
 	/** Small data for the left side of the join*/
@@ -35,9 +37,9 @@ public abstract class JoinExperiment {
 	/** Name of the small data */
 	public final String smallDataId;
 	/** Attribute to join over */
-	public final Attribute joined;
+	public final Attribute<T> joined;
 	
-	private JoinExperiment(Experiment parent, String smallDataId, Attribute joined) {
+	private JoinExperiment(Experiment parent, String smallDataId, Attribute<T> joined) {
 		this.parent = parent;
 		this.smallDataId = smallDataId;
 		this.joined = joined;
@@ -180,22 +182,25 @@ public abstract class JoinExperiment {
 		}
 	}
 	
-	public static JoinExperiment joinExperiment(Experiment parent, String fileName, Attribute joined) {
-		return new JoinExperiment(parent, fileName, joined) {
+	public static <T> JoinExperiment<T> joinExperiment(Experiment parent, String fileName, Attribute<T> joined) {
+		return new JoinExperiment<>(parent, fileName, joined) {
 
 			@Override
 			protected String name() {
 				return "join";
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
 			protected RankHistogram provideEstimate(int slice, RankHistogram hist, String id)
 					throws ClassNotFoundException, IOException {
-				var lah = AttributeHistogram.readFile(this.parent.preparedDataHistFolder()
-						.resolve(Workbench.histName(this.smallDataId, joined.name)));
-				var rah = AttributeHistogram.readFile(this.parent.preparedDataHistFolder()
-						.resolve(Workbench.histName(id, joined.name)));
-				return EstimateJoinNominal.estimate(
+				var lah = (AttributeHistogram<T>)JsonSerializer.instance().deserialize(Files.readString(this.parent.preparedDataHistFolder()
+						.resolve(Workbench.histName(this.smallDataId, joined.name))), AttributeHistogram.class);
+						
+				var rah = (AttributeHistogram<T>)JsonSerializer.instance().deserialize(Files.readString(this.parent.preparedDataHistFolder()
+						.resolve(Workbench.histName(id, joined.name))), AttributeHistogram.class);
+						
+				return EstimateJoinNominal.<T>estimate(
 						this.smallDataHist, 
 						hist, 
 						lah, 
@@ -209,14 +214,14 @@ public abstract class JoinExperiment {
 				return LazyJoin.factory(
 						new LazyFacade(this.smallData), 
 						new LazyFacade(t), 
-						new rq.common.onOperators.OnEquals(this.joined, this.joined));
+						new rq.common.onOperators.OnEquals<>(this.joined, this.joined));
 			}
 			
 		};
 	}
 	
-	public static JoinExperiment crossjoinExperiment(Experiment parent, String filename) {
-		return new JoinExperiment(parent, filename, null) {
+	public static JoinExperiment<Object> crossjoinExperiment(Experiment parent, String filename) {
+		return new JoinExperiment<Object>(parent, filename, null) {
 
 			@Override
 			protected String name() {

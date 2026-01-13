@@ -1,31 +1,31 @@
-package rq.estimations.main;
+package rq.estimations.framework;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import rq.common.estimations.ConstantRepresentativeProvider;
 import rq.common.estimations.IEstimation;
 import rq.common.estimations.IntervalParetHybridEstimation;
 import rq.common.estimations.ParPrecConst;
-import rq.common.similarities.LinearSimilarity;
+import rq.common.similarities.ISimilarity;
 import rq.estimations.main.QueryHistogramHolder.RankHistogramInfo;
 
 /** Holds all estimations against constant against given query result*/
 public class ConstantRestrictionExperiment {
 
 	private List<IEstimation> _estimations;
-	public final RankHistogramInfo rsltInfo;
-	private final BiFunction<Object, Object, Double> similarity;
+	public final RankHistogramInfo<Double> rsltInfo;
+	private final ISimilarity<Double> similarity;
+	@SuppressWarnings("unused")
 	private final Collection<Integer> values;
 	
 	public ConstantRestrictionExperiment(
-			RankHistogramInfo rsltInfo,
+			RankHistogramInfo<Double> rsltInfo,
 			Collection<Integer> values) {
 		this.rsltInfo = rsltInfo;
 		this.values = values;
-		this.similarity = LinearSimilarity.doubleSimilarityUntil(this.rsltInfo.queryInfo.similarUntil);
+		this.similarity = this.rsltInfo.queryInfo.similarity;
 	}
 
 	/**Gets the estimations, cached*/
@@ -53,7 +53,9 @@ public class ConstantRestrictionExperiment {
 		var eqd = ResourceLoader.instance()
 				.getOrLoadAllEqdHistograms(this.rsltInfo.queryInfo.dataPath, this.rsltInfo.queryInfo.attribute)
 				.stream()
-				.reduce((e1, e2) -> e1.n > e2.n ? e1 : e2).get();
+				.findAny().get();
+				
+				//.reduce((EquidistantHistogram<?> e1, EquidistantHistogram<?> e2) -> e1.n > e2.n ? e1 : e2).get();
 		l.add(ConstantRepresentativeProvider.eqdK(this.rsltInfo.slice, similarity, eqd, this.rsltInfo.queryInfo.constant));
 		l.add(IntervalParetHybridEstimation.knownConstant(
 				this.rsltInfo.slice, 
