@@ -29,7 +29,7 @@ import rq.common.exceptions.TableRecordSchemaMismatch;
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
 import rq.common.io.contexts.ClassNotInContextException;
-import rq.common.similarities.LinearSimilarities;
+import rq.common.similarities.ISimilarity;
 import rq.common.statistic.AttributeHistogram;
 import rq.common.statistic.EquidistantHistogram;
 import rq.common.statistic.EquinominalHistogram;
@@ -78,11 +78,14 @@ public abstract class Experiment {
 			cnt.setConsideredValues(this.nConsideredValues());
 			cnt.setParetRatios(this.paretRatios());
 			cnt.setIntervals(this.IntervalsMany(this.numericAttributes()));
-			cnt.setSimilarUntil(this.similarsUntil(this.numericAttributes()));
+//			cnt.setSimilarUntil(this.similarsUntil(this.numericAttributes()));
 			cnt.setRandom(this.getRand());
 			cnt.setUseRankedDataAsPrimary(this.USE_RANKED_TABLE_AS_PRIMARY_DATA);
 			cnt.setQueryGenerationStrategy(this.getQueryGenerationStrategy());
 			cnt.setQueryValues(this.getQueryValues());
+			cnt.setEstFolder(Workbench.estFolder(this.folder()));
+			cnt.setHistFolder(Workbench.histFolder(this.folder()));
+			cnt.setSimilarity(this.numericalSimilarityMap());
 			
 			this._restrictionExperiment = 
 					new RestrictionExperiment(cnt);
@@ -241,19 +244,17 @@ public abstract class Experiment {
 	}
 	
 	/** Returns similarity used for queries and estimates of given attribute */
-	protected rq.common.similarities.ISimilarity<Double> similarity(Attribute<Double> a){
-		return LinearSimilarities.doubleSimilarityUntil(this.similarUntil(a));
-	}
+	protected abstract rq.common.similarities.ISimilarity<Double> similarity(Attribute<Double> a);
 	
-	protected abstract double similarUntil(Attribute<Double> a);
+//	protected abstract double similarUntil(Attribute<Double> a);
 	
-	protected Map<Attribute<Double>, Double> similarsUntil(Collection<Attribute<Double>> as){
-		var m = new HashMap<Attribute<Double>, Double>();
-		for(var a : as) {
-			m.put(a, this.similarUntil(a));
-		}
-		return m;
-	}
+//	protected Map<Attribute<Double>, Double> similarsUntil(Collection<Attribute<Double>> as){
+//		var m = new HashMap<Attribute<Double>, Double>();
+//		for(var a : as) {
+//			m.put(a, this.similarUntil(a));
+//		}
+//		return m;
+//	}
 	
 	/** List of tested number of probes in the experiment */
 	protected abstract List<Integer> probes();
@@ -615,7 +616,7 @@ public abstract class Experiment {
 						this.nConsideredValues().get(a).stream().findFirst().get(), 
 						this.paretRatios().get(a).stream().findFirst().get(), 
 						this.intervals(a).get(0), 
-						this.similarUntil(a), 
+						this.similarity(a), 
 						List.of()))
 				.toList();
 		
@@ -629,4 +630,6 @@ public abstract class Experiment {
 		
 		return JsonSerializer.instance().serialize(cnt);
 	}
+	
+	protected abstract Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap();
 }

@@ -86,12 +86,12 @@ public class BeerReviews extends Experiment {
 	ISimilarity<Double> reviewSimilarity_2 = LinearSimilarities.doubleSimilarityUntil(2d);
 	ISimilarity<Double> reviewSimilarity_5 = LinearSimilarities.doubleSimilarityUntil(5d);
 	
-	Map<Attribute<Double>, Double> similarities = 
-			Map.of( review_taste, 2.0d,
-					review_aroma, 2.0d,
-					review_overall, 2.0d,
-					review_appearance, 2.0d,
-					review_palate, 2.0d);
+	Map<Attribute<Double>, ISimilarity<Double>> similarities = 
+			Map.of( review_taste, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					review_aroma, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					review_overall, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					review_appearance, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					review_palate, LinearSimilarities.doubleSimilarityUntil(2.0d));
 	Map<Attribute<Double>, Collection<Integer>> _nOfCnsVls =
 			Map.of( review_taste, List.of(20),
 					review_aroma, List.of(20),
@@ -161,10 +161,10 @@ public class BeerReviews extends Experiment {
 		return this.intervals.get(a);
 	}
 
-	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		return this.similarities.get(a);
-	}
+//	@Override
+//	protected double similarUntil(Attribute<Double> a) {
+//		return this.similarities.get(a);
+//	}
 
 	@Override
 	protected List<Integer> probes() {
@@ -262,5 +262,15 @@ public class BeerReviews extends Experiment {
 	@Override
 	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._parRts;
+	}
+
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		return this.similarities.get(a);
+	}
+
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		return this.similarities;
 	}
 }

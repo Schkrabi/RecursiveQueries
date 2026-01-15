@@ -9,6 +9,7 @@ import java.util.Map;
 
 import rq.common.interfaces.Table;
 import rq.common.interfaces.TabularExpression;
+import rq.common.similarities.ISimilarity;
 import rq.common.table.Attribute;
 import rq.estimations.framework.Experiment;
 import rq.files.contracts.EstimationExperimentContract;
@@ -121,16 +122,16 @@ public class ParametrizedExperiment extends Experiment {
 
 	Map<Attribute<Double>, Double> sml = null;
 	
-	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		if(sml == null) {
-			sml = new HashMap<>();
-			this.contract.attributes.stream()
-				.filter(ac -> ac.isNumericAttribute())
-				.forEach(ac -> sml.put(ac.getDoubleAttribute(), ac.similarUntil));
-		}
-		return sml.get(a);
-	}
+//	@Override
+//	protected double similarUntil(Attribute<Double> a) {
+//		if(sml == null) {
+//			sml = new HashMap<>();
+//			this.contract.attributes.stream()
+//				.filter(ac -> ac.isNumericAttribute())
+//				.forEach(ac -> sml.put(ac.getDoubleAttribute(), ac.similarUntil));
+//		}
+//		return sml.get(a);
+//	}
 	
 	@Override
 	protected List<Integer> probes() {
@@ -180,5 +181,28 @@ public class ParametrizedExperiment extends Experiment {
 	@Override
 	protected QueryGenerationStrategy getQueryGenerationStrategy() {
 		return this.contract.getQueryGenerationStrategy();
+	}
+
+	
+	private Map<Attribute<Double>, ISimilarity<Double>> similarities = new HashMap<>();
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		var sim = this.similarities.get(a);
+		if(sim == null) {
+			sim = this.contract.attributes.stream()
+					.filter(ac -> ac.getAttribute() == a)
+					.findFirst().get().similarity;
+			this.similarities.put(a, sim);
+		}
+		return sim;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		this.contract.attributes.stream()
+			.filter(ac -> ac.isNumericAttribute())
+			.forEach(ac -> similarities.put((Attribute<Double>)ac.getAttribute(), (ISimilarity<Double>)ac.similarity));
+		return this.similarities;
 	}
 }

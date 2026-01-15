@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import rq.common.similarities.ISimilarity;
 import rq.common.table.Attribute;
 
 /**Contract for experiment arguments*/
@@ -79,7 +80,7 @@ public class EstimationExperimentContract {
 				int consideredValues,
 				double paretValue,
 				int intervals,
-				double similarUntil,
+				ISimilarity<Double> similarity,
 				Collection<Double> restrictionQueryArgs) {
 			this.name = name;
 			this.typeName = typeName;
@@ -87,7 +88,7 @@ public class EstimationExperimentContract {
 			this.consideredValues = consideredValues;
 			this.paretValue = paretValue;
 			this.intervals = intervals;
-			this.similarUntil = similarUntil;
+			this.similarity = similarity;
 			this.restrictionQryArgs = new ArrayList<Double>(restrictionQueryArgs);
 		}
 		
@@ -104,7 +105,7 @@ public class EstimationExperimentContract {
 		/** Number of intervals for interval based estimations */
 		public int intervals;
 		/** Defines the similarity */
-		public double similarUntil;
+		public ISimilarity<Double> similarity;
 		/** List of restriction query arguments */
 		public List<Double> restrictionQryArgs = new ArrayList<Double>();
 		
@@ -117,7 +118,7 @@ public class EstimationExperimentContract {
 						&& this.consideredValues == cnt.consideredValues
 						&& this.paretValue == cnt.paretValue
 						&& this.intervals == cnt.intervals
-						&& this.similarUntil == cnt.similarUntil
+						&& this.similarity.equals(cnt.similarity)
 						&& this.restrictionQryArgs.equals(cnt.restrictionQryArgs);
 			}
 			return false;
@@ -132,7 +133,7 @@ public class EstimationExperimentContract {
 					.append(Integer.hashCode(consideredValues))
 					.append(Double.hashCode(this.paretValue))
 					.append(Integer.hashCode(this.intervals))
-					.append(Double.hashCode(this.similarUntil))
+					.append(this.similarity.hashCode())
 					.append(this.restrictionQryArgs.hashCode())
 					.toString().hashCode();
 		}

@@ -134,17 +134,17 @@ public class VideoGameSales extends Experiment {
 					user_score, List.of(40/*, 20*/),
 					user_count, List.of(40/*, 20*/));
 			
-	Map<Attribute<Double>, Double> similarities = 
-			Map.of(	year_of_release, 3.0d,
-					na_sales, 2.0d,
-					eu_sales, 2.0d,
-					jp_sales, 2.0d,
-					other_sales, 2.0d,
-					global_sales, 2.0d,
-					critic_score, 30.0d,
-					critic_count, 50.0d,
-					user_score, 30.0d,
-					user_count, 50.0d);
+	Map<Attribute<Double>, ISimilarity<Double>> similarities = 
+			Map.of(	year_of_release, LinearSimilarities.doubleSimilarityUntil(3.0d),
+					na_sales, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					eu_sales, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					jp_sales, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					other_sales, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					global_sales, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					critic_score, LinearSimilarities.doubleSimilarityUntil(30.0d),
+					critic_count, LinearSimilarities.doubleSimilarityUntil(50.0d),
+					user_score, LinearSimilarities.doubleSimilarityUntil(30.0d),
+					user_count, LinearSimilarities.doubleSimilarityUntil(50.0d));
 
 	private VideoGameSales() {};
 	private static VideoGameSales singleton = new VideoGameSales();
@@ -198,11 +198,6 @@ public class VideoGameSales extends Experiment {
 	@Override
 	protected List<Integer> intervals(Attribute<?> a) {
 		return this.intervals.get(a);
-	}
-
-	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		return this.similarities.get(a);
 	}
 
 	@Override
@@ -301,5 +296,15 @@ public class VideoGameSales extends Experiment {
 	@Override
 	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._prtRts;
+	}
+
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		return this.similarities.get(a);
+	}
+
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		return this.similarities;
 	}
 }

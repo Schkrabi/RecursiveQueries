@@ -88,7 +88,7 @@ public class TopRankedRealMovies extends Experiment {
 					Votes, List.of(/*25, 50,*/ 75),
 					Gross, List.of(/*20, 40,*/ 60));
 	
-	Map<Attribute<?>, Double> similarities = 
+	Map<Attribute<Double>, ISimilarity<Double>> similarities = 
 //			Map.of( Year_of_Release, 5.0d,
 //					Watch_Time, 30.0d,
 //					Movie_Rating, 2.0d,
@@ -101,12 +101,12 @@ public class TopRankedRealMovies extends Experiment {
 //					Meatscore_of_movie, 5.0d,
 //					Votes, 5000.0d,
 //					Gross, 10.0d);
-			Map.of( Year_of_Release, 10d,
-					Watch_Time, 20d,
-					Movie_Rating, 0.2d,
-					Meatscore_of_movie, 20d,
-					Votes, 200_000d,
-					Gross, 100.0d);
+			Map.of( Year_of_Release, LinearSimilarities.doubleSimilarityUntil(10d),
+					Watch_Time, LinearSimilarities.doubleSimilarityUntil(20d),
+					Movie_Rating, LinearSimilarities.doubleSimilarityUntil(0.2d),
+					Meatscore_of_movie, LinearSimilarities.doubleSimilarityUntil(20d),
+					Votes, LinearSimilarities.doubleSimilarityUntil(200_000d),
+					Gross, LinearSimilarities.doubleSimilarityUntil(100.0d));
 	
 	Map<Attribute<Double>, List<Integer>> estSamples =
 			Map.of( Year_of_Release, List.of(/*3, 5,*/ 8),
@@ -172,11 +172,6 @@ public class TopRankedRealMovies extends Experiment {
 	}
 
 	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		return this.similarities.get(a);
-	}
-
-	@Override
 	protected List<Integer> probes() {
 		return this.probes;
 	}
@@ -237,6 +232,16 @@ public class TopRankedRealMovies extends Experiment {
 	@Override
 	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return _prtVls;
+	}
+
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		return this.similarities.get(a);
+	}
+
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		return this.similarities;
 	}
 
 }

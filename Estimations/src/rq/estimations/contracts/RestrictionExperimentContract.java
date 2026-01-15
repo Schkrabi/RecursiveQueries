@@ -16,7 +16,7 @@ public class RestrictionExperimentContract {
 	private Collection<Integer> slices;
 	
 	private Map<Attribute<Double>, Collection<Integer>> intervals;
-	private Map<Attribute<Double>, Double> similarUntil;
+//	private Map<Attribute<Double>, Double> similarUntil;
 	private Random random;	
 	
 	private QueryGenerationStrategy queryGenerationStrategy;
@@ -73,13 +73,13 @@ public class RestrictionExperimentContract {
 		this.intervals = intervals;
 	}
 
-	public Map<Attribute<Double>, Double> getSimilarUntil() {
-		return similarUntil;
-	}
-
-	public void setSimilarUntil(Map<Attribute<Double>, Double> similarUntil) {
-		this.similarUntil = similarUntil;
-	}
+//	public Map<Attribute<Double>, Double> getSimilarUntil() {
+//		return similarUntil;
+//	}
+//
+//	public void setSimilarUntil(Map<Attribute<Double>, Double> similarUntil) {
+//		this.similarUntil = similarUntil;
+//	}
 
 	public Random getRandom() {
 		return random;

@@ -127,14 +127,14 @@ public class AnimeDataset2023 extends Experiment {
 					Scored_By, List.of(/*12, 25,*/ 50),
 					Members, List.of(/*18, 35,*/ 70));
 	
-	private Map<Attribute<Double>, Double> similarities =
-			Map.of( Score, 2.0d,
-					Episodes, 150.0d,
-					Rank, 2000.0d,
-					Popularity, 2000.0d,
-					Favorites, 20000.0d,
-					Scored_By, 200000.0d,
-					Members, 200000.0d);
+	private Map<Attribute<Double>, ISimilarity<Double>> similarities =
+			Map.of( Score, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					Episodes, LinearSimilarities.doubleSimilarityUntil(150.0d),
+					Rank, LinearSimilarities.doubleSimilarityUntil(2000.0d),
+					Popularity, LinearSimilarities.doubleSimilarityUntil(2000.0d),
+					Favorites, LinearSimilarities.doubleSimilarityUntil(20000.0d),
+					Scored_By, LinearSimilarities.doubleSimilarityUntil(200000.0d),
+					Members, LinearSimilarities.doubleSimilarityUntil(200000.0d));
 	
 	private Map<Attribute<Double>, List<Integer>> estSamples =
 			Map.of( Score, List.of(/*3, 5,*/ 10),
@@ -198,11 +198,6 @@ public class AnimeDataset2023 extends Experiment {
 	@Override
 	protected List<Integer> intervals(Attribute<?> a) {
 		return this.intervals.get(a);
-	}
-
-	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		return this.similarities.get(a);
 	}
 
 	@Override
@@ -301,5 +296,15 @@ public class AnimeDataset2023 extends Experiment {
 	@Override
 	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._prtRts;
+	}
+
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		return this.similarities.get(a);
+	}
+
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		return this.similarities;
 	}
 }

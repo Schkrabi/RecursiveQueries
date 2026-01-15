@@ -66,10 +66,10 @@ public class AmazonBookScrappings extends Experiment {
 					Rating, List.of(/*3, 5,*/ 10),
 					No_of_People_rated, List.of(/*5, 20,*/ 80));
 	
-	private Map<Attribute<Double>, Double> similarities =
-			Map.of( Price, 50.0d,
-					Rating, 2.0d,
-					No_of_People_rated, 1000.0d);
+	private Map<Attribute<Double>, ISimilarity<Double>> similarities =
+			Map.of( Price, LinearSimilarities.doubleSimilarityUntil(50.0d),
+					Rating, LinearSimilarities.doubleSimilarityUntil(2.0d),
+					No_of_People_rated, LinearSimilarities.doubleSimilarityUntil(1000.0d));
 	
 	private Map<Attribute<Double>, List<Integer>> estSamples = 
 			Map.of( Price, List.of(/*50, 100,*/ 300),
@@ -138,12 +138,6 @@ public class AmazonBookScrappings extends Experiment {
 	@Override
 	protected List<Integer> intervals(Attribute<?> a) {
 		return this.intervals.get(a);
-	}
-
-	
-	@Override
-	protected double similarUntil(Attribute<Double> a) {
-		return this.similarities.get(a);
 	}
 
 	@Override
@@ -243,5 +237,15 @@ public class AmazonBookScrappings extends Experiment {
 	@Override
 	protected Map<Attribute<Double>, Collection<Double>> paretRatios() {
 		return this._prtRts;
+	}
+
+	@Override
+	protected ISimilarity<Double> similarity(Attribute<Double> a) {
+		return this.similarities.get(a);
+	}
+
+	@Override
+	protected Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap() {
+		return this.similarities;
 	}
 }

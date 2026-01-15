@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import rq.common.similarities.LinearSimilarities;
 import rq.files.contracts.EstimationExperimentContract;
 import rq.files.helpers.JsonSerializer;
 
@@ -15,9 +16,9 @@ class EstimationExperimentContractTest {
 	private EstimationExperimentContract cnt = new EstimationExperimentContract(
 			"Top Ranker Real Moves Dataset.csv", "/home/user/test", 3, 50, 1L,
 			List.of(new EstimationExperimentContract.AttributeContract("foo", Double.class.getName(), 2.5d, 3, 0.8, 40,
-					80.0d, List.of(1.0, 2.0)),
+					LinearSimilarities.doubleSimilarityUntil(80.0d), List.of(1.0, 2.0)),
 					new EstimationExperimentContract.AttributeContract("bar", Integer.class.getName(), 2.5d, 3, 0.8, 40,
-							80.0d, List.of(3.0, 4.0))));
+							LinearSimilarities.doubleSimilarityUntil(80.0d), List.of(3.0, 4.0))));
 	
 	@Test
 	void testSerialization() throws IOException {
