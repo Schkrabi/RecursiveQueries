@@ -93,7 +93,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -125,7 +126,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -157,7 +159,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -189,7 +192,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -227,7 +231,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -265,7 +270,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -303,7 +309,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -341,7 +348,8 @@ public class InternalParetPostprocessProvider_intervalHist implements IntervalPo
 						similarity, 
 						numOfConsideredValues, 
 						paretRatio,
-						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER));
+						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 }

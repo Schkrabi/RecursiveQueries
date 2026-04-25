@@ -42,7 +42,8 @@ public class GlobalCenterRepresentativeProvider implements RepresentativeProvide
 				hist,
 				new GlobalCenterRepresentativeProvider(hist),
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -56,7 +57,8 @@ public class GlobalCenterRepresentativeProvider implements RepresentativeProvide
 				hist,
 				new GlobalCenterRepresentativeProvider(hist),
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 

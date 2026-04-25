@@ -79,6 +79,7 @@ public class WeightedCompositeEstimation implements IEstimation {
 				hist, 
 				new ConstantRepresentativeProvider<>(representative), 
 				IntervalEstimation.DEFAULT_GLOBAL_POSTPROCESS_PROVIDER, 
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				ConstantRepresentativeProvider.SUM_AGGREGATION_PROVIDER);
 	}
 }

@@ -34,6 +34,9 @@ public class ValueParser<T> {
 	 */
 	public T parse() 
 		throws ClassNotInContextException {
+		if(attribute.domain == Double.class && this.parsed == "") {
+			System.out.println();
+		}
 		var oParsed = this.context.parseValue(attribute.domain, this.parsed);
 		return oParsed;
 	}

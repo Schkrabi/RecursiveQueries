@@ -64,16 +64,10 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 				this.similarity, 
 				this.mostCommon);
 		
-		var mcc = this.mostCommon.stream() //Most common count
-				.mapToDouble(p -> (double)p.second).sum();
-		
-		var ratio = mcc/this.hist.totalSize();
 		var intv_h = intv.estimate();
 		var ppc_h = ppc.estimate();
 		
-		var est = RankHistogram.weightedAvg(List.of(
-				Pair.of(intv_h, 1.0 - ratio),
-				Pair.of(ppc_h, ratio)));
+		var est = RankHistogram.add(intv_h,  ppc_h);
 		
 		return est;
 	}
@@ -108,7 +102,11 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 
 					@Override
 					public IEstimation subestimation(DataSlicedHistogram<Double> sHist) {
-						return IntervalEstimation.fromHist(this.slices, this.similarity, sHist);
+						return ConstantRepresentativeProvider.fromHist(this.slices, this.similarity, sHist, this.c);
+					}
+					@Override
+					public String signature() {
+						return super.signature() + "k";
 					}
 		};
 	}
@@ -123,21 +121,10 @@ public abstract class IntervalParetHybridEstimation implements IEstimation {
 				hist,
 				mcv.mostCommon(20), //Magic constant
 				similarity,
-				mcv.centerOfGravity()) {
-
-					@Override
-					public String signature() {
-						return new StringBuilder()
-								.append("H") // Hybrid
-								.append(this.hist instanceof EquinominalHistogram ? "eqnK" : 
-									    this.hist instanceof EquidistantHistogram ? "eqdK" : "genK")
-								.append("ppc")
-								.toString();
-					}
-			
+				mcv.centerOfGravity()) {			
 					@Override
 					public IEstimation subestimation(DataSlicedHistogram<Double> sHist) {
-						return ConstantRepresentativeProvider.fromHist(this.slices, this.similarity, sHist, this.c);
+						return IntervalEstimation.fromHist(this.slices, this.similarity, sHist);
 					}
 		};
 	}

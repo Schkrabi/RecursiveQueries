@@ -3,6 +3,7 @@ package rq.estimations.framework;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +16,8 @@ import rq.common.statistic.RankHistogram;
 import rq.common.statistic.SlicedStatistic.RankInterval;
 import rq.common.table.Attribute;
 import rq.common.util.Pair;
+import rq.estimations.contracts.ConstantRestrictionExperimentContract;
+import rq.estimations.contracts.NumericalEstimationsContract;
 import rq.estimations.contracts.RestrictionExperimentContract;
 import rq.estimations.main.Measurement;
 import rq.estimations.main.QueryHistogramHolder;
@@ -29,26 +32,6 @@ public class RestrictionExperiment {
 	public RestrictionExperiment(
 			RestrictionExperimentContract cnt) {
 		this.contract = cnt;
-		
-//		this.dataPath = dataPath;
-//		this.dataFileName = this.dataPath.getFileName().toString();
-//		this.similarUntil = similarUntil;
-//		this.queryCount = queryCount;
-//		this.attributes = attributes;
-//		this.slices = slices;
-//		this.intervals = intervals;
-//		this.consideredValues = consideredValues;
-//		this.random = random;
-//		this.paretRatios = paretRatios;
-//		
-//		for(var e : similarUntil.entrySet()) {
-//			this.similarity.put(e.getKey(), LinearSimilarities.doubleSimilarityUntil(e.getValue()));
-//		}
-//		this.histFolder = Workbench.histFolder(dataPath);
-//		this.estFolder = Workbench.estFolder(dataPath);
-//		this.USE_RANKED_TABLE_AS_PRIMARY_DATA = useRankedTableAsPrimaryData;
-//		this.queryGenerationStrategy = queryGenerationStrategy;
-//		this.queryValues = queryValues;
 	}
 	
 	private Map<Attribute<Double>, Map<Integer, NumericalEstimations>> _numericalEsts = 
@@ -67,14 +50,14 @@ public class RestrictionExperiment {
 		var perInterval = this._getPerIntervalEsts(a);
 		var ne = perInterval.get(slice);
 		if(ne == null) {
-			ne = new NumericalEstimations(
+			var cnt = new NumericalEstimationsContract(
 					this.contract.getDataPath(),
 					a,
 					slice,
 					this.contract.getSimilarity().get(a),
-					this.contract.getIntervals().get(a),
-					this.contract.getConsideredValues().get(a),
-					this.contract.getParetRatios().get(a));
+					this.contract.getUnknownConstantSignatures());
+			
+			ne = new NumericalEstimations(cnt);
 			perInterval.put(slice, ne);
 		}
 		return ne;
@@ -97,8 +80,13 @@ public class RestrictionExperiment {
 			ests = new ArrayList<>();
 			var ne = this.numericalEst(a, slice);
 
+			var gstart = System.currentTimeMillis();
+			
 			for (var est : ne.getEstmations()) {
 				RankHistogram finalRanks;
+				
+				var start = System.currentTimeMillis();
+				
 				if(this.contract.isUseRankedDataAsPrimary())
 				{
 					var orgRanks = RankHistogram.readFile(this.contract.getHistFolder()
@@ -110,6 +98,11 @@ public class RestrictionExperiment {
 				{
 					finalRanks = est.estimate();
 				}
+				
+				var end = System.currentTimeMillis();
+				
+				System.out.println(est.signature() + " completed, duration: " + Duration.ofMillis(end - start).toString());
+				
 				ests.add(Pair.of(est, finalRanks));
 				m.put(slice, ests);
 				try {
@@ -120,6 +113,9 @@ public class RestrictionExperiment {
 					throw new RuntimeException(e);
 				}
 			}
+			var gend = System.currentTimeMillis();
+
+			System.out.println("Restriction estimation - unknown constant completed, duration: " + Duration.ofMillis(gend - gstart).toString());
 		}
 		return ests;
 	}
@@ -216,6 +212,10 @@ public class RestrictionExperiment {
 					.append(this.measuredIntervals().stream()
 							.map(i -> "Ratio:" + i.toString().replace(',', ';'))
 							.reduce((f, s) -> f +  "," + s).get())
+					.append(",")
+					.append(this.measuredIntervals().stream()
+							.map(i -> "Actual qry:" + i.toString().replace(',', ';'))
+							.reduce((f, s) -> f +  "," + s).get())
 					.append(",query,accuracy,inaccuracy")
 					.toString();
 		}
@@ -226,7 +226,8 @@ public class RestrictionExperiment {
 	public ConstantRestrictionExperiment constantExperiment(RankHistogramInfo<Double> info) {
 		var exp = this._cnstEsts.get(info);
 		if(exp == null) {
-			exp = new ConstantRestrictionExperiment(info, this.contract.getConsideredValues().get(info.queryInfo.attribute));
+			var cnt = new ConstantRestrictionExperimentContract(info, info.queryInfo.similarity, this.contract.getKnownConstantSignatures());
+			exp = new ConstantRestrictionExperiment(cnt);
 			_cnstEsts.put(info, exp);
 		}
 		return exp;
@@ -280,6 +281,17 @@ public class RestrictionExperiment {
 			}
 		}
 		
+		// Actual qry results
+		for(var i : this.measuredIntervals()) {
+			if(qhist.contains(i)) {
+				sb.append(qhist.get(i))
+					.append(",");
+			}
+			else {
+				sb.append(",");
+			}
+		}
+		
 		sb.append(query.fileName())
 			.append(",")
 			.append(Measurement.accuracy(ehist, qhist, size))
@@ -309,8 +321,13 @@ public class RestrictionExperiment {
 					}
 					
 					//Constant estimations
+					var gstart = System.currentTimeMillis();
 					for(var est : this.constantExperiment(query.first).estimations()) {
+						var start = System.currentTimeMillis();						
 						var hest = est.estimate();
+						var end = System.currentTimeMillis();
+						System.out.println(est.signature() + " completed, duration: " + Duration.ofMillis(end - start).toString());
+						
 						sb.append(this.line(
 								est, 
 								hest, 
@@ -325,6 +342,8 @@ public class RestrictionExperiment {
 							throw new RuntimeException(e);
 						}
 					}
+					var gend = System.currentTimeMillis();
+					System.out.println("Restrinction estimation - known constant completed, duration: " + Duration.ofMillis(gend - gstart).toString());
 				}
 			}
 		}

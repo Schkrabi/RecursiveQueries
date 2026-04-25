@@ -38,6 +38,9 @@ public class EstimationExperimentContract {
 	public long seed;
 	public String queryValuesGenerationStrategy;
 	public List<AttributeContract> attributes = new ArrayList<AttributeContract>();
+	/**Signatures of restriction experiment with known constants */
+	public List<String> restrictionEstimationKnownConstantSignatures = new ArrayList<String>();
+	public List<String> restrictionEstimationUnknownConstantSignatures = new ArrayList<String>();
 	
 	@Override
 	public boolean equals(Object other) {

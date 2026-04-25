@@ -205,4 +205,14 @@ public class ParametrizedExperiment extends Experiment {
 			.forEach(ac -> similarities.put((Attribute<Double>)ac.getAttribute(), (ISimilarity<Double>)ac.similarity));
 		return this.similarities;
 	}
+
+	@Override
+	protected Collection<String> restrictionEstimationKnownConstantSignatures() {
+		return this.contract.restrictionEstimationKnownConstantSignatures;
+	}
+
+	@Override
+	protected Collection<String> restrictionEstimationUnknownConstantSignatures() {
+		return this.contract.restrictionEstimationUnknownConstantSignatures;
+	}
 }

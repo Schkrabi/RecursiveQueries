@@ -32,6 +32,9 @@ public class RestrictionExperimentContract {
 	private boolean useRankedDataAsPrimary;
 	
 	private Map<Attribute<Double>, Collection<Double>> queryValues;
+	
+	private Collection<String> knownConstantSignatures;
+	private Collection<String> unknownConstantSignatures;
 
 	public Path getDataPath() {
 		return dataPath;
@@ -159,6 +162,34 @@ public class RestrictionExperimentContract {
 
 	public void setQueryValues(Map<Attribute<Double>, Collection<Double>> queryValues) {
 		this.queryValues = queryValues;
+	}
+
+	/**
+	 * @return the knownConstantSignatures
+	 */
+	public Collection<String> getKnownConstantSignatures() {
+		return knownConstantSignatures;
+	}
+
+	/**
+	 * @param knownConstantSignatures the knownConstantSignatures to set
+	 */
+	public void setKnownConstantSignatures(Collection<String> knownConstantSignatures) {
+		this.knownConstantSignatures = knownConstantSignatures;
+	}
+
+	/**
+	 * @return the unknownConstantSignatures
+	 */
+	public Collection<String> getUnknownConstantSignatures() {
+		return unknownConstantSignatures;
+	}
+
+	/**
+	 * @param unknownConstantSignatures the unknownConstantSignatures to set
+	 */
+	public void setUnknownConstantSignatures(Collection<String> unknownConstantSignatures) {
+		this.unknownConstantSignatures = unknownConstantSignatures;
 	}
 	
 }

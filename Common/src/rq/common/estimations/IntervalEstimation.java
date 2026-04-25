@@ -1,6 +1,7 @@
 package rq.common.estimations;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 	private final RepresentativeProvider<T> representativeProvider;
 	private final GlobalPostprocessProvider globalPostprocessProvider;
 	private final IntervalPostprocessProvider<T> intervalPostrprocessProvider;
+	private final AggregationProvider aggregationProvider;
 	
 	/** number of result slices*/
 	public final int slices;
@@ -33,13 +35,15 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 			DataSlicedHistogram<T> dataIntervals,
 			RepresentativeProvider<T> representativeProvider,
 			GlobalPostprocessProvider globalPostprocessProvider,
-			IntervalPostprocessProvider<T> intervalPostprocessProvider) {
+			IntervalPostprocessProvider<T> intervalPostprocessProvider,
+			AggregationProvider aggregationProvider) {
 		this.slices = slices;
 		this.similarity = similarity;
 		this.dataIntervals = dataIntervals;
 		this.representativeProvider = representativeProvider;
 		this.globalPostprocessProvider = globalPostprocessProvider;
 		this.intervalPostrprocessProvider = intervalPostprocessProvider;
+		this.aggregationProvider = aggregationProvider;
 	}
 	
 	@Override
@@ -56,7 +60,8 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 			histograms.add(Pair.of(histogram, share));
 		}
 		
-		var rslt = RankHistogram.weightedAvg(histograms);
+		var rslt = this.aggregationProvider.aggregate(histograms);
+		
 		rslt = this.postprocess(rslt);
 		return rslt;
 	}
@@ -81,8 +86,10 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 		//Iterate over number of samples from the interval
 		for (int i = 0; i < count; i++) {
 			double rank = this.similarity.apply(x, value.doubleValue());
-			if (rank == 0)
+			if (rank == 0) {
 				break;
+				//continue;
+			}
 			result.add(rank);
 			x += step;
 		}
@@ -113,6 +120,26 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 		me.putAll(ippP);
 		return me;
 	}
+	
+	public static interface AggregationProvider extends SignatureProvider {
+		public RankHistogram aggregate(Collection<Pair<RankHistogram, Double>> histsAndRatios);
+	}
+	
+	private static class WeightedAvgAggregationProvider implements AggregationProvider {
+
+		@Override
+		public String signature() {
+			return "";
+		}
+
+		@Override
+		public RankHistogram aggregate(Collection<Pair<RankHistogram, Double>> histsAndRatios) {
+			return RankHistogram.weightedAvg(histsAndRatios);
+		}
+		
+	}
+	
+	public static AggregationProvider WEIGHTED_AVG_AGGREGATION_PROVIDER = new WeightedAvgAggregationProvider();
 	
 	public static interface RepresentativeProvider<T> extends SignatureProvider, IParametrized {
 		public T representative (Interval interval);
@@ -257,7 +284,8 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 				hist,
 				DEFAULT_REPRESENTATIVE_PROVIDER,
 				DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
-				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -280,7 +308,8 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 				hist,
 				DEFAULT_REPRESENTATIVE_PROVIDER,
 				DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
-				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 
@@ -306,6 +335,7 @@ public class IntervalEstimation<T extends Number> implements IEstimation {
 				hist,
 				DEFAULT_REPRESENTATIVE_PROVIDER,
 				DEFAULT_GLOBAL_POSTPROCESS_PROVIDER,
-				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				WEIGHTED_AVG_AGGREGATION_PROVIDER);
 	}
 }

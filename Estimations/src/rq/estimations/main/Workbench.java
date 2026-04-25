@@ -403,26 +403,26 @@ public class Workbench {
 
 	public static void main(String[] args) throws CsvValidationException, ClassNotFoundException, IOException, DuplicateAttributeNameException, ColumnOrderingNotInitializedException, ClassNotInContextException, TableRecordSchemaMismatch, DuplicateHeaderWriteException, SchemaNotEqualException, NotSubschemaException, OnOperatornNotApplicableToSchemaException {
 		var datasets = List.of(
-				VideoGameSales.instance()
-				,
-				AnimeDataset2023.instance()
-				, 
-				TopRankedRealMovies.instance()
-				, 
-				AmazonBookScrappings.instance()
-				, 
-				BeerReviews.instance()
+//				VideoGameSales.instance()
+//				,
+//				AnimeDataset2023.instance()
+//				, 
+//				TopRankedRealMovies.instance()
+//				, 
+//				AmazonBookScrappings.instance()
+//				, 
+//				BeerReviews.instance()
 				);
 		
 		var start = System.currentTimeMillis();
-		for(var ds : datasets) {
-			System.out.println(ds.makeContract());
+//		for(var ds : datasets) {
+//			System.out.println(ds.makeContract());
 //			System.out.println(ds.getClass().getSimpleName());
 //			ds.experiment();
 //			ds.reloadPreparedData();
 //			ds.projection.estimate();
 //			ds.gatherData();
-		}
+//		}
 		var end = System.currentTimeMillis();
 		
 		System.out.println("Finished, time: " + Duration.ofMillis(end - start).toString());

@@ -78,7 +78,8 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 				hist,
 				IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER,
 				new WeighterdParetPostprocessProvider_sampledHist(slices, similarity, numOfConsideredValues, paretRatio, sHist),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -105,7 +106,8 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 				hist,
 				IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER,
 				new WeighterdParetPostprocessProvider_sampledHist(slices, similarity, numOfConsideredValues, paretRatio, sHist),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -133,7 +135,8 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 				hist,
 				new GlobalCenterRepresentativeProvider(hist),
 				new WeighterdParetPostprocessProvider_sampledHist(slices, similarity, numOfConsideredValues, paretRatio, sHist),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -160,7 +163,8 @@ public class WeighterdParetPostprocessProvider_sampledHist implements GlobalPost
 				hist,
 				new GlobalCenterRepresentativeProvider(hist),
 				new WeighterdParetPostprocessProvider_sampledHist(slices, similarity, numOfConsideredValues, paretRatio, sHist),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	

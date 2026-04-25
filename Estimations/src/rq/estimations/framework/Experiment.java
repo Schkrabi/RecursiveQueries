@@ -86,6 +86,8 @@ public abstract class Experiment {
 			cnt.setEstFolder(Workbench.estFolder(this.folder()));
 			cnt.setHistFolder(Workbench.histFolder(this.folder()));
 			cnt.setSimilarity(this.numericalSimilarityMap());
+			cnt.setKnownConstantSignatures(this.restrictionEstimationKnownConstantSignatures());
+			cnt.setUnknownConstantSignatures(this.restrictionEstimationUnknownConstantSignatures());
 			
 			this._restrictionExperiment = 
 					new RestrictionExperiment(cnt);
@@ -211,6 +213,7 @@ public abstract class Experiment {
 			hist.gather(this.preparedData);
 			hist.writeFile(this.preparedDataHistFolder()
 					.resolve(Workbench.sampledHistName(this.preparedDataFileName(), a.name)));
+			ResourceLoader.instance().getOrLoadSampledHistogram(this.preparedDataPath(), a);
 			
 			var attHist = new AttributeHistogram<>(a);
 			attHist.gather(this.preparedData);
@@ -221,17 +224,20 @@ public abstract class Experiment {
 			var mcv = new MostCommonValues<>(a);
 			mcv.gather(this.preparedData);
 			mcv.writeFile(Workbench.mcvFile(this.preparedDataPath(), a));
+			ResourceLoader.instance().getOrLoadMCV(this.preparedDataPath(), a);
 			
 			for(var i : this.intervals(a)) {
 				var eqn = new EquinominalHistogram<>(a, i);
 				eqn.gather(this.preparedData);
 				eqn.writeFile(this.preparedDataHistFolder()
 						.resolve(Workbench.eqnHistName(this.preparedDataFileName(), a.name, i)));
+				ResourceLoader.instance().getOrLoadEqnHistogram(this.preparedDataPath(), a, i);
 				
 				var eqd = new EquidistantHistogram<>(a, i);
 				eqd.gather(this.preparedData);
 				eqd.writeFile(this.preparedDataHistFolder()
 						.resolve(Workbench.eqdHistName(this.preparedDataFileName(), a.name, i)));
+				ResourceLoader.instance().getOrLoadEqdHistogram(this.preparedDataPath(), a, i);
 			}
 		}
 		this.biDataStatistics();
@@ -632,4 +638,7 @@ public abstract class Experiment {
 	}
 	
 	protected abstract Map<Attribute<Double>, ISimilarity<Double>> numericalSimilarityMap();
+	
+	protected abstract Collection<String> restrictionEstimationKnownConstantSignatures();
+	protected abstract Collection<String> restrictionEstimationUnknownConstantSignatures();
 }

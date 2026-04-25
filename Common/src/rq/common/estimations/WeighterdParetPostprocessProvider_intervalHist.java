@@ -94,7 +94,8 @@ public class WeighterdParetPostprocessProvider_intervalHist implements GlobalPos
 						paretRatio, 
 						hist,
 						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -126,7 +127,8 @@ public class WeighterdParetPostprocessProvider_intervalHist implements GlobalPos
 						paretRatio, 
 						hist,
 						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -159,7 +161,8 @@ public class WeighterdParetPostprocessProvider_intervalHist implements GlobalPos
 						paretRatio, 
 						hist,
 						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 	
@@ -191,7 +194,8 @@ public class WeighterdParetPostprocessProvider_intervalHist implements GlobalPos
 						paretRatio, 
 						hist,
 						IntervalEstimation.DEFAULT_REPRESENTATIVE_PROVIDER),
-				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER);
+				IntervalEstimation.DEFAULT_INTERVAL_POSTPROCESS_PROVIDER,
+				IntervalEstimation.WEIGHTED_AVG_AGGREGATION_PROVIDER);
 		return est;
 	}
 

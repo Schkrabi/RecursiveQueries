@@ -1,31 +1,25 @@
 package rq.estimations.framework;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import rq.common.estimations.ConstantRepresentativeProvider;
 import rq.common.estimations.IEstimation;
 import rq.common.estimations.IntervalParetHybridEstimation;
 import rq.common.estimations.ParPrecConst;
-import rq.common.similarities.ISimilarity;
-import rq.estimations.main.QueryHistogramHolder.RankHistogramInfo;
+import rq.estimations.contracts.ConstantRestrictionExperimentContract;
 
 /** Holds all estimations against constant against given query result*/
 public class ConstantRestrictionExperiment {
 
+	private ConstantRestrictionExperimentContract contract;
+	
 	private List<IEstimation> _estimations;
-	public final RankHistogramInfo<Double> rsltInfo;
-	private final ISimilarity<Double> similarity;
-	@SuppressWarnings("unused")
-	private final Collection<Integer> values;
 	
 	public ConstantRestrictionExperiment(
-			RankHistogramInfo<Double> rsltInfo,
-			Collection<Integer> values) {
-		this.rsltInfo = rsltInfo;
-		this.values = values;
-		this.similarity = this.rsltInfo.queryInfo.similarity;
+			ConstantRestrictionExperimentContract contract) {
+		this.contract = contract;
 	}
 
 	/**Gets the estimations, cached*/
@@ -38,45 +32,48 @@ public class ConstantRestrictionExperiment {
 	
 	/** creates all estimation objects*/
 	protected List<IEstimation> doEstimations(){
-		var mcv = 
-				ResourceLoader.instance().getOrLoadMCV(this.rsltInfo.queryInfo.dataPath, this.rsltInfo.queryInfo.attribute);
-		
-		var l = new ArrayList<IEstimation>();
-		l.add(new ParPrecConst(
-			this.rsltInfo.queryInfo.attribute,
-			this.rsltInfo.slice, 
-			this.rsltInfo.queryInfo.constant, 
-			this.similarity,
-//			mcv.mostCommon(5)
-			mcv.mostCommon(20)
-			));
-		var eqd = ResourceLoader.instance()
-				.getOrLoadAllEqdHistograms(this.rsltInfo.queryInfo.dataPath, this.rsltInfo.queryInfo.attribute)
-				.stream()
-				.findAny().get();
-				
-				//.reduce((EquidistantHistogram<?> e1, EquidistantHistogram<?> e2) -> e1.n > e2.n ? e1 : e2).get();
-		l.add(ConstantRepresentativeProvider.eqdK(this.rsltInfo.slice, similarity, eqd, this.rsltInfo.queryInfo.constant));
-		l.add(IntervalParetHybridEstimation.knownConstant(
-				this.rsltInfo.slice, 
-				eqd, 
-				mcv, 
-				similarity, 
-				this.rsltInfo.queryInfo.constant));
-		
-		var eqn = ResourceLoader.instance()
-				.getOrLoadAllEqnHistograms(this.rsltInfo.queryInfo.dataPath, this.rsltInfo.queryInfo.attribute)
-				.stream()
-				.reduce((e1, e2) -> e1.n > e2.n ? e1 : e2).get();
-		l.add(ConstantRepresentativeProvider.eqnK(this.rsltInfo.slice, similarity, eqn, this.rsltInfo.queryInfo.constant));
-		l.add(IntervalParetHybridEstimation.knownConstant(
-				this.rsltInfo.slice, 
-				eqn, 
-				mcv, 
-				similarity, 
-				this.rsltInfo.queryInfo.constant));
-		
-		
-		return l;
+		return this.contract.getEstSignatures().stream()
+				.map(sig -> {
+					var c = estInitializer.get(sig);
+					if(c == null) {
+						//System.err.print("Estimation signature not recognized " + sig);
+						return null;
+					}
+					return c.apply(this.contract);
+				})
+				.filter(est -> est != null)
+				.toList();
 	}
+	
+	private static Map<String, Function<ConstantRestrictionExperimentContract, IEstimation>> estInitializer =
+			Map.of("ppc", cnt -> new ParPrecConst(
+									cnt.getRsltInfo().queryInfo.attribute,
+									cnt.getRsltInfo().slice, 
+									cnt.getRsltInfo().queryInfo.constant, 
+									cnt.getSimilarity(),
+									//mcv.mostCommon(5)
+									cnt.getMcv().mostCommon(20)),
+					"eqdk", cnt -> ConstantRepresentativeProvider.eqdK(
+									cnt.getRsltInfo().slice, 
+									cnt.getSimilarity(), 
+									cnt.getEqd(), 
+									cnt.getRsltInfo().queryInfo.constant),
+					"heqdppck", cnt -> IntervalParetHybridEstimation.knownConstant(
+										cnt.getRsltInfo().slice, 
+										cnt.getEqd(), 
+										cnt.getMcv(), 
+										cnt.getSimilarity(), 
+										cnt.getRsltInfo().queryInfo.constant),
+					"eqnk", cnt -> ConstantRepresentativeProvider.eqnK(
+									cnt.getRsltInfo().slice, 
+									cnt.getSimilarity(), 
+									cnt.getEqn(), 
+									cnt.getRsltInfo().queryInfo.constant),
+					"heqnppck", cnt ->IntervalParetHybridEstimation.knownConstant(
+										cnt.getRsltInfo().slice, 
+										cnt.getEqn(), 
+										cnt.getMcv(), 
+										cnt.getSimilarity(), 
+										cnt.getRsltInfo().queryInfo.constant)
+					);
 }
